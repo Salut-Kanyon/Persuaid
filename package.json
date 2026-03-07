@@ -10,8 +10,8 @@
     "start": "next start",
     "lint": "next lint",
     "desktop": "next build && electron .",
-    "desktop:dev": "cross-env DESKTOP_DEV=1 electron .",
-    "desktop:build": "next build && electron-builder",
+    "desktop:dev": "DESKTOP_DEV=1 electron .",
+    "desktop:build": "next build && electron-builder && cp dist/*.dmg public/downloads/Persuaid.dmg 2>/dev/null || echo 'DMG file will be in dist/ folder'",
     "pack": "next build && electron-builder --dir"
   },
   "build": {

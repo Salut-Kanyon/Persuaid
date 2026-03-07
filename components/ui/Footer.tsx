@@ -37,7 +37,7 @@ export function Footer() {
               The AI copilot for sales calls. Say the right thing on every
               conversation.
             </p>
-            <CTAButton variant="primary" href="#pricing">
+            <CTAButton variant="primary" href="/download">
               Get Started
             </CTAButton>
           </div>

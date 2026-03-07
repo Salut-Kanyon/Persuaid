@@ -47,7 +47,7 @@ export function Navbar() {
             >
               Dashboard
             </a>
-            <CTAButton href="#pricing" variant="primary">
+            <CTAButton href="/download" variant="primary">
               Start Free Trial
             </CTAButton>
           </div>

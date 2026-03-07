@@ -73,7 +73,7 @@ export function PricingCard({
       <CTAButton
         variant={highlighted ? "primary" : "secondary"}
         className="w-full"
-        href="#"
+        href="/download"
       >
         {cta}
       </CTAButton>

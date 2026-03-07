@@ -58,7 +58,7 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.5 }}
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12"
             >
-              <CTAButton variant="primary" href="#pricing">
+              <CTAButton variant="primary" href="/download">
                 Start Free Trial
               </CTAButton>
               <CTAButton variant="secondary" href="#product">
