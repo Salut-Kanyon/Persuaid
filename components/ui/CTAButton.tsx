@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 interface CTAButtonProps {
   children: ReactNode;
   variant?: "primary" | "secondary";
+  size?: "default" | "large";
   className?: string;
   onClick?: () => void;
   href?: string;
@@ -12,12 +13,18 @@ interface CTAButtonProps {
 export function CTAButton({
   children,
   variant = "primary",
+  size = "default",
   className,
   onClick,
   href,
 }: CTAButtonProps) {
+  const sizeStyles = {
+    default: "px-8 py-4 text-base",
+    large: "px-10 py-5 text-lg",
+  };
+  
   const baseStyles =
-    "inline-flex items-center justify-center px-8 py-4 rounded-button font-semibold text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background transform hover:scale-[1.02] active:scale-[0.98]";
+    `inline-flex items-center justify-center rounded-button font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background transform hover:scale-[1.02] active:scale-[0.98] ${sizeStyles[size]}`;
 
   const variants = {
     primary:

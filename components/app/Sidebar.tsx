@@ -100,19 +100,18 @@ export function Sidebar() {
   return (
     <aside className="w-52 bg-background-elevated/35 backdrop-blur-2xl border-r border-border/8 flex flex-col">
       {/* Logo */}
-      <div className="h-16 flex items-center px-4 border-b border-border/6">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <img 
-            src="/Logo.png" 
-            alt="Persuaid" 
-            className="w-14 h-14 flex-shrink-0 object-contain"
+      <div className="px-4 pt-4 pb-2">
+        <div className="flex items-end gap-0">
+          <img
+            src="/PersuaidLogo.png"
+            alt="Persuaid"
+            className="w-8 h-8 flex-shrink-0 object-contain translate-y-1"
           />
-          <span className="text-xl font-semibold text-text-primary tracking-tight">
-            Persuaid
+          <span className="text-lg font-semibold text-text-primary tracking-tight -ml-1 translate-y-3">
+            ersuaid
           </span>
-        </Link>
+        </div>
       </div>
-
       {/* Navigation */}
       <nav className="flex-1 px-2.5 py-4 space-y-1">
         {navigation.map((item) => {

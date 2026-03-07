@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { PersuaidLogo } from "@/components/ui/PersuaidLogo";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -48,18 +47,22 @@ export default function SignInPage() {
 
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <PersuaidLogo className="w-14 h-14 text-green-primary" />
+        <div className="flex items-end justify-center gap-0 mb-8">
+          <img
+            src="/PersuaidLogo.png"
+            alt="Persuaid"
+            className="w-12 h-12 flex-shrink-0 object-contain translate-y-1"
+          />
+          <span className="text-2xl font-bold text-text-primary tracking-tight -ml-1 translate-y-3">
+            ersuaid
+          </span>
         </div>
 
-        <h1 className="text-4xl font-bold text-text-primary mb-2 text-center tracking-tight">
-          {isSignUp ? "Create account" : "Sign in"}
-        </h1>
-        <p className="text-center text-text-muted mb-8">
-          {isSignUp ? "Get started with Persuaid" : "Welcome back to Persuaid"}
-        </p>
-
         <div className="w-full bg-background-elevated rounded-2xl shadow-card border border-border p-8">
+          <h1 className="text-xl font-semibold text-text-primary mb-8 text-center tracking-tight">
+            {isSignUp ? "Create account" : "Sign in"}
+          </h1>
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-2">Email</label>

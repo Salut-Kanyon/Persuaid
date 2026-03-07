@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
-import { supabase } from "@/lib/supabase/client";
 
 function formatElapsed(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -18,10 +17,7 @@ export function Header() {
     setRecording,
     elapsedSeconds,
     setElapsedSeconds,
-    transcript,
   } = useSession();
-  const [takingNotes, setTakingNotes] = useState(false);
-  const [notesMessage, setNotesMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isRecording) return;
@@ -65,77 +61,32 @@ export function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center">
         <button
           type="button"
           onClick={() => setRecording(!isRecording)}
-          className="px-3.5 py-1.5 text-sm font-medium text-text-secondary/75 hover:text-text-primary hover:bg-background-surface/25 rounded-xl transition-all duration-300"
+          className={cn(
+            "px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 flex items-center gap-2 shadow-lg",
+            isRecording
+              ? "bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/15"
+              : "bg-black border border-green-primary/60 text-white hover:bg-gray-900 hover:border-green-primary/80 hover:shadow-xl"
+          )}
         >
-          {isRecording ? "Pause" : "Resume"}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setRecording(false);
-            setElapsedSeconds(0);
-          }}
-          className="px-3.5 py-1.5 text-sm font-medium text-text-secondary/75 hover:text-text-primary hover:bg-background-surface/25 rounded-xl transition-all duration-300"
-        >
-          End Call
-        </button>
-        <div className="h-4 w-px bg-border/12" />
-        <button
-          type="button"
-          disabled={transcript.length === 0 || takingNotes}
-          onClick={async () => {
-            setTakingNotes(true);
-            setNotesMessage(null);
-            try {
-              const { data: { session: sess } } = await supabase.auth.getSession();
-              if (!sess?.access_token) {
-                setNotesMessage("Sign in required");
-                return;
-              }
-              const res = await fetch("/api/ai/notes", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${sess.access_token}`,
-                },
-                body: JSON.stringify({
-                  transcript: transcript.map((m) => ({ speaker: m.speaker, text: m.text })),
-                }),
-              });
-              if (!res.ok) {
-                setNotesMessage("Failed to generate notes");
-                return;
-              }
-              const data = (await res.json()) as { items?: unknown[] };
-              const count = Array.isArray(data.items) ? data.items.length : 0;
-              setNotesMessage(count > 0 ? `${count} notes added` : "No notes generated");
-              window.dispatchEvent(new CustomEvent("persuaid-notes-updated"));
-              setTimeout(() => setNotesMessage(null), 3000);
-            } catch {
-              setNotesMessage("Failed to generate notes");
-            } finally {
-              setTakingNotes(false);
-            }
-          }}
-          className="px-3.5 py-1.5 bg-green-primary/90 text-white text-sm font-medium rounded-xl hover:bg-green-primary transition-all duration-300 shadow-[0_6px_20px_rgba(16,185,129,0.2)] hover:shadow-[0_8px_24px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {takingNotes ? "Taking notes…" : "Take notes"}
-        </button>
-        {notesMessage && (
-          <span className="text-xs text-text-muted animate-in fade-in">
-            {notesMessage}
-          </span>
-        )}
-        <div className="h-4 w-px bg-border/12" />
-        <button
-          type="button"
-          className="px-3.5 py-1.5 text-sm font-medium text-text-secondary/75 hover:text-text-primary hover:bg-background-surface/25 rounded-xl transition-all duration-300"
-        >
-          Export
+          {isRecording ? (
+            <>
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span>Pause</span>
+            </>
+          ) : (
+            <>
+              <img
+                src="/PersuaidLogo.png"
+                alt="Persuaid"
+                className="w-4 h-4 flex-shrink-0 object-contain"
+              />
+              <span className="text-white">Start Call</span>
+            </>
+          )}
         </button>
       </div>
     </header>

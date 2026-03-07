@@ -30,9 +30,16 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
           {/* Brand */}
           <div className="col-span-2">
-            <h3 className="text-2xl font-bold mb-4">
-              <span className="text-green-primary">Persuaid</span>
-            </h3>
+            <div className="flex items-end gap-0 mb-4">
+              <img
+                src="/PersuaidLogo.png"
+                alt="Persuaid"
+                className="w-10 h-10 flex-shrink-0 object-contain translate-y-0.5"
+              />
+              <span className="text-2xl font-bold text-text-primary tracking-tight -ml-1 translate-y-2">
+                ersuaid
+              </span>
+            </div>
             <p className="text-text-muted mb-4 max-w-sm">
               The AI copilot for sales calls. Say the right thing on every
               conversation.

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase/client";
-import { PersuaidLogo } from "@/components/ui/PersuaidLogo";
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -69,11 +68,15 @@ export default function WelcomePage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.05 }}
-          className="flex items-center justify-center gap-3 mb-8"
+          className="flex items-end justify-center gap-0 mb-8"
         >
-          <PersuaidLogo className="w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0" />
-          <span className="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight">
-            <span className="text-green-primary">Persuaid</span>
+          <img
+            src="/PersuaidLogo.png"
+            alt="Persuaid"
+            className="w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 object-contain translate-y-1"
+          />
+          <span className="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight -ml-1 translate-y-3">
+            ersuaid
           </span>
         </motion.div>
 

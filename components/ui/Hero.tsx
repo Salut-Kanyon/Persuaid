@@ -12,74 +12,65 @@ export function Hero() {
       <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-green-primary/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-green-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 xl:gap-24 items-center">
-          {/* Left Column - Text Content */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
+        <div className="flex flex-col items-center gap-8">
+          {/* Hero Content - Above */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="text-center lg:text-left"
+            className="text-center w-full -mt-8"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-primary/10 border border-green-primary/20 mb-8"
-            >
-              <span className="w-2 h-2 bg-green-primary rounded-full animate-pulse"></span>
-              <span className="text-sm font-medium text-green-accent">AI-Powered Sales Intelligence</span>
-            </motion.div>
-
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-text-primary mb-8 leading-[1.1] tracking-tight"
+              transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight"
             >
-              Say the right thing on{" "}
-              <span className="text-green-primary">every sales call</span>
+              Sales calls are hard.{" "}
+              <span className="text-green-primary">Persuaid guides you</span> on what to say.
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-xl sm:text-2xl text-text-muted mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-light"
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-base sm:text-lg text-text-muted mb-8 max-w-2xl mx-auto leading-relaxed font-light"
             >
-              Real-time AI guidance for sales conversations. The copilot that helps
-              closers, reps, and founders{" "}
-              <span className="text-text-secondary font-medium">win more deals</span>.
+              Our AI listens to your sales calls in real time and suggests exactly what to say to move the deal forward.
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12"
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex justify-center mb-8"
             >
-              <CTAButton variant="primary" href="/download">
-                Start Free Trial
-              </CTAButton>
-              <CTAButton variant="secondary" href="#product">
-                Watch Demo
-              </CTAButton>
+              <a
+                href="/download"
+                className="group flex items-center gap-3 px-8 py-3.5 text-base font-semibold rounded-2xl transition-all duration-300 border-2 border-green-primary/70 bg-black text-white hover:bg-gray-900 hover:border-green-primary hover:shadow-2xl hover:shadow-green-primary/20 shadow-lg transform hover:scale-105 active:scale-100"
+              >
+                <img
+                  src="/PersuaidLogo.png"
+                  alt="Persuaid"
+                  className="w-5 h-5 flex-shrink-0 object-contain group-hover:scale-110 transition-transform duration-300"
+                />
+                <span className="text-lg">Download</span>
+              </a>
             </motion.div>
-
-            {/* Trust indicators */}
           </motion.div>
 
-          {/* Right Column - Product Preview */}
+          {/* Product Preview - Below, Centered */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="relative"
+            className="relative w-full max-w-4xl mx-auto"
           >
             <div className="relative">
               {/* Enhanced glow effects */}
-              <div className="absolute -inset-8 bg-green-primary/30 blur-3xl rounded-3xl opacity-60 animate-pulse" />
-              <div className="absolute -inset-4 bg-green-primary/20 blur-2xl rounded-3xl opacity-40" />
+              <div className="absolute -inset-6 bg-green-primary/30 blur-3xl rounded-3xl opacity-60 animate-pulse" />
+              <div className="absolute -inset-3 bg-green-primary/20 blur-2xl rounded-3xl opacity-40" />
               <ProductPreview className="relative transform hover:scale-[1.01] transition-transform duration-700" />
             </div>
           </motion.div>

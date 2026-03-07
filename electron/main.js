@@ -55,27 +55,66 @@ const DESKTOP_ENTRY_FILE = 'welcome.html';
 function createBundleServer(dir) {
   return http.createServer((req, res) => {
     let urlPath = req.url.split('?')[0].split('#')[0];
-    if (urlPath === '/' || urlPath === '') urlPath = DESKTOP_ENTRY_PATH;
+    // Handle root path
+    if (urlPath === '/' || urlPath === '') {
+      urlPath = DESKTOP_ENTRY_PATH;
+    }
+    
     let filePath = path.join(dir, urlPath);
+    
+    // If no extension, try .html or index.html
     if (!path.extname(filePath)) {
       const htmlPath = filePath + '.html';
-      if (fs.existsSync(htmlPath)) filePath = htmlPath;
-      else filePath = fs.existsSync(path.join(filePath, 'index.html')) ? path.join(filePath, 'index.html') : htmlPath;
+      if (fs.existsSync(htmlPath)) {
+        filePath = htmlPath;
+      } else {
+        const dirIndex = path.join(filePath, 'index.html');
+        filePath = fs.existsSync(dirIndex) ? dirIndex : htmlPath;
+      }
     }
+    
     const resolved = path.resolve(filePath);
     const dirResolved = path.resolve(dir);
+    
+    // Security check: ensure file is within the out directory
     if (!resolved.startsWith(dirResolved)) {
+      console.warn('Forbidden path:', urlPath, '→', resolved);
       res.writeHead(403).end('Forbidden');
       return;
     }
-    fs.readFile(filePath, (err, data) => {
+    
+    // Check if file exists
+    if (!fs.existsSync(resolved)) {
+      console.warn('File not found:', urlPath, '→', resolved);
+      res.writeHead(404).end('Not Found');
+      return;
+    }
+    
+    fs.readFile(resolved, (err, data) => {
       if (err) {
-        res.writeHead(err.code === 'ENOENT' ? 404 : 500).end();
+        console.error('Error reading file:', resolved, err.message);
+        res.writeHead(500).end('Internal Server Error');
         return;
       }
-      const ext = path.extname(filePath);
-      const types = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.ico': 'image/x-icon', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf' };
+      
+      const ext = path.extname(resolved).toLowerCase();
+      const types = {
+        '.html': 'text/html; charset=utf-8',
+        '.js': 'application/javascript; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+        '.json': 'application/json; charset=utf-8',
+        '.ico': 'image/x-icon',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.svg': 'image/svg+xml',
+        '.woff': 'font/woff',
+        '.woff2': 'font/woff2',
+        '.ttf': 'font/ttf',
+      };
+      
       res.setHeader('Content-Type', types[ext] || 'application/octet-stream');
+      res.setHeader('Cache-Control', 'no-cache');
       res.end(data);
     });
   });
@@ -195,20 +234,32 @@ function createWindow() {
       contextIsolation: true,
       partition: 'persist:persuaid',
       preload: fs.existsSync(preloadPath) ? preloadPath : undefined,
+      webSecurity: false, // Allow loading local files
     },
     title: 'Persuaid',
   });
 
   // Start maximized (full screen) when entering the workspace / app
   mainWindow.maximize();
+  
+  // Open DevTools for debugging
+  if (!isPackaged) {
+    mainWindow.webContents.openDevTools();
+  }
 
   function loadBundle() {
     const entryFile = path.join(OUT_DIR, DESKTOP_ENTRY_FILE);
+    console.log('Checking for entry file:', entryFile);
+    console.log('OUT_DIR:', OUT_DIR);
+    console.log('Entry file exists:', fs.existsSync(entryFile));
+    
     if (!fs.existsSync(entryFile)) {
+      console.error('Entry file not found:', entryFile);
       mainWindow.loadURL('data:text/html,' + encodeURIComponent(`
         <!DOCTYPE html><html><head><meta charset="utf-8"><title>Persuaid</title></head><body style="font-family:sans-serif;padding:2rem;max-width:480px;margin:0 auto;color:#333;">
         <h1>App bundle incomplete</h1>
         <p>Run <code>npm run build</code> then try again.</p>
+        <p>Looking for: ${entryFile}</p>
         </body></html>
       `));
       return;
@@ -217,30 +268,23 @@ function createWindow() {
     const bundleUrl = `http://127.0.0.1:${BUNDLE_SERVER_PORT}${DESKTOP_ENTRY_PATH}`;
     console.log('Serving bundle from', OUT_DIR, '→', bundleUrl);
     bundleHttpServer = createBundleServer(OUT_DIR);
+    bundleHttpServer.on('error', (err) => {
+      console.error('Bundle server error:', err);
+    });
     bundleHttpServer.listen(BUNDLE_SERVER_PORT, '127.0.0.1', () => {
+      console.log('Bundle server listening on', bundleUrl);
       mainWindow.loadURL(bundleUrl);
+      mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+        console.error('Failed to load:', validatedURL, errorCode, errorDescription);
+      });
+      mainWindow.webContents.on('did-finish-load', () => {
+        console.log('Page loaded successfully');
+      });
     });
   }
 
-  if (forceDevServer || isPackaged) {
-    // desktop:dev and DMG: always use bundle HTTP server (avoids white screen from dev server or app://).
-    loadBundle();
-  } else {
-    // npm run desktop (unpacked, no DESKTOP_DEV): load via app://
-    const entryFile = path.join(OUT_DIR, DESKTOP_ENTRY_FILE);
-    if (!fs.existsSync(entryFile)) {
-      mainWindow.loadURL('data:text/html,' + encodeURIComponent(`
-        <!DOCTYPE html><html><head><meta charset="utf-8"><title>Persuaid</title></head><body style="font-family:sans-serif;padding:2rem;max-width:480px;margin:0 auto;color:#333;">
-        <h1>App bundle incomplete</h1>
-        <p>Run <code>npm run build</code> then <code>npm run desktop</code>.</p>
-        </body></html>
-      `));
-    } else {
-      const appUrl = `${APP_PROTOCOL}://${APP_HOST}/${DESKTOP_ENTRY_FILE}`;
-      console.log('Loading from bundle:', appUrl);
-      mainWindow.loadURL(appUrl);
-    }
-  }
+  // Always use HTTP server for better reliability with Next.js static assets
+  loadBundle();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
