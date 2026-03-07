@@ -5,21 +5,26 @@
   "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
+    "stt:proxy": "node scripts/stt-ws-proxy.js",
     "dev:web": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "desktop": "next build && electron .",
     "desktop:dev": "DESKTOP_DEV=1 electron .",
-    "desktop:build": "next build && electron-builder && node -e \"const fs=require('fs');const path=require('path');const distDir='dist';const dmgFiles=fs.readdirSync(distDir).filter(f=>f.endsWith('.dmg'));if(dmgFiles.length>0){const latest=dmgFiles.sort().reverse()[0];fs.copyFileSync(path.join(distDir,latest),'public/downloads/Persuaid.dmg');console.log('DMG copied to public/downloads/Persuaid.dmg');}else{console.log('No DMG file found in dist/');}\"",
-    "pack": "next build && electron-builder --dir"
+    "clean:desktop": "node scripts/clean-desktop.js",
+    "desktop:size": "node scripts/desktop-size.js",
+    "desktop:artifact": "node -e \"const fs=require('fs');const path=require('path');const d='dist';const f=fs.existsSync(d)?fs.readdirSync(d).filter(x=>x.endsWith('.dmg')).sort().reverse()[0]:null;console.log(f?path.join(d,f):'');\"",
+    "desktop:build": "npm run clean:desktop && next build && electron-builder && node -e \"const fs=require('fs');const path=require('path');const distDir='dist';const dmgFiles=fs.readdirSync(distDir).filter(f=>f.endsWith('.dmg'));if(dmgFiles.length>0){const latest=dmgFiles.sort().reverse()[0];fs.copyFileSync(path.join(distDir,latest),'public/downloads/Persuaid.dmg');console.log('DMG copied to public/downloads/Persuaid.dmg');}else{console.log('No DMG file found in dist/');}\"",
+    "pack": "npm run clean:desktop && next build && electron-builder --dir"
   },
   "build": {
     "appId": "com.persuaid.app",
     "productName": "Persuaid",
+    "asar": true,
     "files": [
-      "out/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      "package.json"
     ],
     "extraResources": [
       {
@@ -54,6 +59,7 @@
     "tailwind-merge": "^2.4.0"
   },
   "devDependencies": {
+    "@types/ws": "^8.5.10",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -65,6 +71,7 @@
     "eslint-config-next": "^14.2.5",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "ws": "^8.18.0"
   }
 }

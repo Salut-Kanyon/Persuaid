@@ -20,9 +20,13 @@ export async function GET() {
     if (!res.ok) {
       const text = await res.text();
       console.error("Deepgram grant error:", res.status, text);
+      const is403 = res.status === 403;
+      const error = is403
+        ? "Deepgram API key has insufficient permissions. In the Deepgram Console, use an API key with Member or Owner role (not a restricted key)."
+        : "Failed to get STT token";
       return NextResponse.json(
-        { error: "Failed to get STT token" },
-        { status: 502 }
+        { error },
+        { status: is403 ? 403 : 502 }
       );
     }
     const data = (await res.json()) as { access_token?: string; expires_in?: number };

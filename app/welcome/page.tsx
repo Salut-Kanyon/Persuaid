@@ -12,10 +12,26 @@ export default function WelcomePage() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setChecking(false);
-      if (session) router.replace("/dashboard");
-    });
+    let cancelled = false;
+    const stopChecking = () => {
+      if (!cancelled) setChecking(false);
+    };
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (!cancelled) {
+          setChecking(false);
+          if (session) router.replace("/dashboard");
+        }
+      })
+      .catch(stopChecking)
+      .finally(stopChecking);
+    // If getSession hangs (e.g. desktop app, network), show welcome after 2.5s
+    const t = setTimeout(stopChecking, 2500);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [router]);
 
   if (checking) {

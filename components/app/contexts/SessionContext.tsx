@@ -42,6 +42,9 @@ interface SessionContextValue {
   setSuggestions: (s: Suggestion[] | ((prev: Suggestion[]) => Suggestion[])) => void;
   isRecording: boolean;
   setRecording: (value: boolean) => void;
+  /** Set when mic fails to start (permission or device). Cleared on success or when user stops recording. */
+  micError: string | null;
+  setMicError: (value: string | null) => void;
   elapsedSeconds: number;
   setElapsedSeconds: React.Dispatch<React.SetStateAction<number>>;
   selectedScriptId: string | null;
@@ -62,6 +65,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [scriptContext, setScriptContext] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [micError, setMicError] = useState<string | null>(null);
 
   const appendTranscript = useCallback(
     (segment: {
@@ -96,6 +100,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setSuggestions,
       isRecording,
       setRecording,
+      micError,
+      setMicError,
       elapsedSeconds,
       setElapsedSeconds,
       selectedScriptId,
@@ -111,6 +117,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       clearTranscript,
       suggestions,
       isRecording,
+      micError,
       elapsedSeconds,
       selectedScriptId,
       scriptContext,
