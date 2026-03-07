@@ -15,31 +15,38 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background-near-black/80 backdrop-blur-xl border-b border-border/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+        <div className="flex items-center justify-between h-18 lg:h-20">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <a href="/" className="text-2xl font-bold text-text-primary">
-              <span className="text-green-primary">Persuaid</span>
+            <a href="/" className="text-2xl font-bold text-text-primary tracking-tight group">
+              <span className="text-green-primary group-hover:text-green-accent transition-colors duration-300">Persuaid</span>
             </a>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex md:items-center md:space-x-8">
+          <div className="hidden md:flex md:items-center md:space-x-10">
             {navLinks.map((link) => (
               <a
                 key={link.label}
                 href={link.href}
-                className="text-text-secondary hover:text-green-accent transition-colors duration-200"
+                className="text-sm font-medium text-text-secondary hover:text-green-accent transition-colors duration-300 relative group"
               >
                 {link.label}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-primary group-hover:w-full transition-all duration-300"></span>
               </a>
             ))}
           </div>
 
           {/* CTA Button */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex md:items-center md:gap-3">
+            <a
+              href="/dashboard"
+              className="text-sm font-medium text-text-secondary hover:text-green-accent transition-colors duration-200"
+            >
+              Dashboard
+            </a>
             <CTAButton href="#pricing" variant="primary">
               Start Free Trial
             </CTAButton>

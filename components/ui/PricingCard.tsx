@@ -26,41 +26,46 @@ export function PricingCard({
   return (
     <div
       className={cn(
-        "bg-background-surface border rounded-card p-8 transition-all duration-300",
+        "bg-background-surface border rounded-card p-10 transition-all duration-500 relative overflow-hidden group",
         highlighted
-          ? "border-green-primary shadow-glow-sm scale-105"
-          : "border-border hover:border-green-border hover:shadow-card-hover",
+          ? "border-green-primary/50 shadow-glow-sm scale-105 lg:scale-110"
+          : "border-border/50 hover:border-green-primary/40 hover:shadow-card-elevated hover:-translate-y-1",
         className
       )}
     >
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold text-text-primary mb-2">{name}</h3>
-        <p className="text-text-muted text-sm mb-4">{description}</p>
+      {highlighted && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-primary via-green-accent to-green-primary"></div>
+      )}
+      <div className="mb-8">
+        <h3 className="text-2xl font-bold text-text-primary mb-3 tracking-tight">{name}</h3>
+        <p className="text-text-muted text-sm mb-6 leading-relaxed">{description}</p>
         <div className="flex items-baseline">
-          <span className="text-4xl font-bold text-text-primary">{price}</span>
+          <span className="text-5xl font-bold text-text-primary tracking-tight">{price}</span>
           {period && (
-            <span className="text-text-dim ml-2 text-lg">{period}</span>
+            <span className="text-text-dim ml-2 text-lg font-medium">{period}</span>
           )}
         </div>
       </div>
 
-      <ul className="space-y-3 mb-8">
+      <ul className="space-y-4 mb-10">
         {features.map((feature, index) => (
           <li key={index} className="flex items-start">
-            <svg
-              className="w-5 h-5 text-green-primary mr-2 flex-shrink-0 mt-0.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            <span className="text-text-secondary text-sm">{feature}</span>
+            <div className="w-5 h-5 rounded-full bg-green-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5 mr-3">
+              <svg
+                className="w-3 h-3 text-green-primary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={3}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <span className="text-text-secondary text-sm leading-relaxed">{feature}</span>
           </li>
         ))}
       </ul>

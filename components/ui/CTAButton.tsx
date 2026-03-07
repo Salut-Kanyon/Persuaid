@@ -17,13 +17,13 @@ export function CTAButton({
   href,
 }: CTAButtonProps) {
   const baseStyles =
-    "inline-flex items-center justify-center px-6 py-3 rounded-button font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background";
+    "inline-flex items-center justify-center px-8 py-4 rounded-button font-semibold text-base transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background transform hover:scale-[1.02] active:scale-[0.98]";
 
   const variants = {
     primary:
-      "bg-green-primary text-white hover:bg-green-dark focus:ring-green-primary shadow-lg hover:shadow-glow-sm",
+      "bg-green-primary text-white hover:bg-green-dark focus:ring-green-primary shadow-button hover:shadow-button-hover hover:shadow-glow-button relative overflow-hidden group",
     secondary:
-      "bg-transparent text-text-primary border-2 border-border hover:border-green-primary hover:text-green-accent focus:ring-green-primary",
+      "bg-transparent text-text-primary border-2 border-border hover:border-green-primary hover:text-green-accent focus:ring-green-primary hover:bg-green-primary/5",
   };
 
   const Component = href ? "a" : "button";
@@ -34,7 +34,10 @@ export function CTAButton({
       onClick={onClick}
       className={cn(baseStyles, variants[variant], className)}
     >
-      {children}
+      {variant === "primary" && (
+        <span className="absolute inset-0 bg-gradient-to-r from-green-accent/0 via-green-accent/20 to-green-accent/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+      )}
+      <span className="relative z-10">{children}</span>
     </Component>
   );
 }

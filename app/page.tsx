@@ -23,17 +23,28 @@ export default function Home() {
       {/* Product Preview Section */}
       <Section id="product" className="bg-background-elevated">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
+          <div className="text-center mb-16 lg:mb-20">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="inline-block mb-6"
+            >
+              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
+                Product Overview
+              </span>
+            </motion.div>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
               Your control center for{" "}
               <span className="text-green-primary">winning conversations</span>
             </h2>
-            <p className="text-lg text-text-muted max-w-2xl mx-auto">
+            <p className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light">
               See everything you need in one place. Real-time guidance, live
               transcripts, smart scripts, and structured notes.
             </p>
@@ -50,11 +61,22 @@ export default function Home() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
+          <div className="text-center mb-20 lg:mb-24">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="inline-block mb-6"
+            >
+              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
+                Value Proposition
+              </span>
+            </motion.div>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
               Why sales teams choose Persuaid
             </h2>
-            <p className="text-lg text-text-muted max-w-2xl mx-auto">
+            <p className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light">
               Built for closers who want to win more deals, not just manage
               them.
             </p>
@@ -149,11 +171,22 @@ export default function Home() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
+          <div className="text-center mb-20 lg:mb-24">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="inline-block mb-6"
+            >
+              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
+                Simple Process
+              </span>
+            </motion.div>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
               How it works
             </h2>
-            <p className="text-lg text-text-muted max-w-2xl mx-auto">
+            <p className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light">
               Get started in minutes. No complex setup, no training required.
             </p>
           </div>
@@ -210,11 +243,22 @@ export default function Home() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
+          <div className="text-center mb-20 lg:mb-24">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="inline-block mb-6"
+            >
+              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
+                Features
+              </span>
+            </motion.div>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
               Everything you need to win
             </h2>
-            <p className="text-lg text-text-muted max-w-2xl mx-auto">
+            <p className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light">
               Powerful features designed for modern sales teams.
             </p>
           </div>
@@ -293,11 +337,22 @@ export default function Home() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
+          <div className="text-center mb-20 lg:mb-24">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="inline-block mb-6"
+            >
+              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
+                Testimonials
+              </span>
+            </motion.div>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
               Trusted by sales teams
             </h2>
-            <p className="text-lg text-text-muted max-w-2xl mx-auto">
+            <p className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light">
               See what closers, reps, and founders are saying about Persuaid.
             </p>
           </div>
@@ -348,11 +403,22 @@ export default function Home() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
+          <div className="text-center mb-20 lg:mb-24">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="inline-block mb-6"
+            >
+              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
+                Pricing
+              </span>
+            </motion.div>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
               Simple, transparent pricing
             </h2>
-            <p className="text-lg text-text-muted max-w-2xl mx-auto">
+            <p className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light">
               Choose the plan that fits your team. All plans include a 14-day
               free trial.
             </p>
@@ -416,10 +482,10 @@ export default function Home() {
           transition={{ duration: 0.6 }}
           className="text-center max-w-3xl mx-auto"
         >
-          <h2 className="text-3xl lg:text-5xl font-bold text-text-primary mb-6">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-text-primary mb-8 leading-tight tracking-tight">
             Ready to close more deals?
           </h2>
-          <p className="text-xl text-text-muted mb-8 leading-relaxed">
+          <p className="text-xl sm:text-2xl text-text-muted mb-12 leading-relaxed font-light max-w-2xl mx-auto">
             Join sales teams using Persuaid to win more conversations. Start
             your free trial today.
           </p>

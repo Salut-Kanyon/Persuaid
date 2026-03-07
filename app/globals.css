@@ -16,8 +16,15 @@
   }
 
   body {
-    @apply bg-background text-text-primary antialiased;
+    @apply bg-background-near-black text-text-primary antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+    letter-spacing: -0.02em;
   }
 }
 
