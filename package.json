@@ -11,7 +11,7 @@
     "lint": "next lint",
     "desktop": "next build && electron .",
     "desktop:dev": "DESKTOP_DEV=1 electron .",
-    "desktop:build": "next build && electron-builder && cp dist/*.dmg public/downloads/Persuaid.dmg 2>/dev/null || echo 'DMG file will be in dist/ folder'",
+    "desktop:build": "next build && electron-builder && node -e \"const fs=require('fs');const path=require('path');const distDir='dist';const dmgFiles=fs.readdirSync(distDir).filter(f=>f.endsWith('.dmg'));if(dmgFiles.length>0){const latest=dmgFiles.sort().reverse()[0];fs.copyFileSync(path.join(distDir,latest),'public/downloads/Persuaid.dmg');console.log('DMG copied to public/downloads/Persuaid.dmg');}else{console.log('No DMG file found in dist/');}\"",
     "pack": "next build && electron-builder --dir"
   },
   "build": {

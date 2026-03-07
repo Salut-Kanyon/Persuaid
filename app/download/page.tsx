@@ -7,20 +7,50 @@ import { Footer } from "@/components/ui/Footer";
 
 export default function DownloadPage() {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     setIsDownloading(true);
-    // Link to the DMG file - will be in public/downloads after build
-    const link = document.createElement("a");
-    link.href = "/downloads/Persuaid.dmg";
-    link.download = "Persuaid.dmg";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setDownloadError(null);
     
-    setTimeout(() => {
+    try {
+      // DMG file path - served from public/downloads in production
+      const dmgUrl = "/downloads/Persuaid.dmg";
+      
+      // First, check if file exists (optional - for better UX)
+      try {
+        const response = await fetch(dmgUrl, { method: "HEAD" });
+        if (!response.ok && response.status === 404) {
+          throw new Error("Download file not found");
+        }
+      } catch (err) {
+        // If HEAD fails, still try to download (might be CORS issue)
+        console.warn("Could not verify file existence, proceeding with download");
+      }
+      
+      // Create download link
+      const link = document.createElement("a");
+      link.href = dmgUrl;
+      link.download = "Persuaid.dmg";
+      link.style.display = "none";
+      
+      // Add to DOM, click, then remove
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up after a short delay
+      setTimeout(() => {
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+        setIsDownloading(false);
+      }, 100);
+      
+    } catch (error) {
+      console.error("Download error:", error);
+      setDownloadError("Failed to start download. Please try again or contact support.");
       setIsDownloading(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -121,6 +151,33 @@ export default function DownloadPage() {
                 )}
               </span>
             </motion.button>
+
+            {/* Error Message */}
+            {downloadError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm max-w-md mx-auto"
+              >
+                {downloadError}
+              </motion.div>
+            )}
+
+            {/* Direct Download Link (fallback) */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+              className="mt-4"
+            >
+              <a
+                href="/downloads/Persuaid.dmg"
+                download="Persuaid.dmg"
+                className="text-sm text-text-muted hover:text-green-accent transition-colors duration-200"
+              >
+                Or click here to download directly
+              </a>
+            </motion.div>
 
             {/* Instructions */}
             <motion.div
