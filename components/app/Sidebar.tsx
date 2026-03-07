@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase/client";
-import { PersuaidLogo } from "@/components/ui/PersuaidLogo";
 import type { User } from "@supabase/supabase-js";
 
 const navigation = [
@@ -101,11 +100,15 @@ export function Sidebar() {
   return (
     <aside className="w-52 bg-background-elevated/35 backdrop-blur-2xl border-r border-border/8 flex flex-col">
       {/* Logo */}
-      <div className="h-14 flex items-center gap-2.5 px-4 border-b border-border/6">
-        <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
-          <PersuaidLogo className="w-8 h-8 flex-shrink-0 text-green-primary" />
-          <span className="text-base font-semibold text-text-primary tracking-tight truncate">
-            <span className="text-green-primary/90">Persuaid</span>
+      <div className="h-16 flex items-center px-4 border-b border-border/6">
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <img 
+            src="/Logo.png" 
+            alt="Persuaid" 
+            className="w-14 h-14 flex-shrink-0 object-contain"
+          />
+          <span className="text-xl font-semibold text-text-primary tracking-tight">
+            Persuaid
           </span>
         </Link>
       </div>
@@ -121,8 +124,8 @@ export function Sidebar() {
               className={cn(
                 "flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-medium transition-all duration-300 group relative",
                 isActive
-                  ? "bg-green-primary/8 text-green-accent/90 shadow-[0_0_0_1px_rgba(16,185,129,0.08)]"
-                  : "text-text-secondary/75 hover:text-text-primary hover:bg-background-surface/25"
+                  ? "bg-green-primary/8 text-text-primary shadow-[0_0_0_1px_rgba(16,185,129,0.08)]"
+                  : "text-text-primary hover:bg-background-surface/25"
               )}
             >
               <span className={cn(

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useLayoutEffect, useRef, useEffect } from "react";
-import Link from "next/link";
 import { DraggableResizablePanel } from "./DraggableResizablePanel";
 import { TranscriptPanel } from "./panels/TranscriptPanel";
 import { AISuggestionsPanel } from "./panels/AISuggestionsPanel";
@@ -21,8 +20,8 @@ interface PanelPosition {
 export type PanelId = "transcript" | "aiSuggestions" | "script" | "notes";
 
 export const WORKSPACE_PANELS: { id: PanelId; label: string }[] = [
-  { id: "transcript", label: "Live Transcript" },
-  { id: "aiSuggestions", label: "AI Suggestions" },
+  { id: "transcript", label: "AI Live Transcript" },
+  { id: "aiSuggestions", label: "Suggestions" },
   { id: "script", label: "Script" },
   { id: "notes", label: "Notes" },
 ];
@@ -41,21 +40,21 @@ function computeLayout(containerWidth: number, containerHeight: number) {
 
   return {
     transcript: { x: pad, y: pad, width: leftWidth, height: topHeight },
-    aiSuggestions: { x: pad + leftWidth + gap, y: pad, width: rightWidth, height: topHeight },
-    script: { x: pad, y: pad + topHeight + gap, width: leftWidth, height: bottomHeight },
+    script: { x: pad + leftWidth + gap, y: pad, width: rightWidth, height: topHeight },
+    aiSuggestions: { x: pad, y: pad + topHeight + gap, width: leftWidth, height: bottomHeight },
     notes: { x: pad + leftWidth + gap, y: pad + topHeight + gap, width: rightWidth, height: bottomHeight },
   };
 }
 
 const DEFAULT_LAYOUT = computeLayout(1280, 800);
 
-function HidePanelButton({ onHide }: { onHide: () => void }) {
+function MinimizeButton({ onMinimize }: { onMinimize: () => void }) {
   return (
     <button
       type="button"
-      onClick={(e) => { e.stopPropagation(); onHide(); }}
+      onClick={(e) => { e.stopPropagation(); onMinimize(); }}
       className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-colors text-text-dim/70 hover:text-text-primary"
-      title="Hide panel"
+      title="Minimize panel"
     >
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
@@ -128,6 +127,14 @@ interface WorkspaceProps {
 export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [panelPositions, setPanelPositions] = useState<Record<string, PanelPosition>>(DEFAULT_LAYOUT);
+  const [minimizedPanels, setMinimizedPanels] = useState<Record<PanelId, boolean>>({
+    transcript: false,
+    aiSuggestions: false,
+    script: false,
+    notes: false,
+  });
+  const [panelPickerOpen, setPanelPickerOpen] = useState(false);
+  const panelPickerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const el = containerRef.current;
@@ -137,6 +144,18 @@ export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProp
     setPanelPositions(computeLayout(rect.width, rect.height));
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (panelPickerRef.current && !panelPickerRef.current.contains(e.target as Node)) {
+        setPanelPickerOpen(false);
+      }
+    };
+    if (panelPickerOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [panelPickerOpen]);
+
   const handlePositionChange = (id: string, position: PanelPosition) => {
     setPanelPositions((prev) => ({ ...prev, [id]: position }));
   };
@@ -145,15 +164,108 @@ export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProp
     setPanelVisibility((prev) => ({ ...prev, [id]: visible }));
   };
 
+  const toggleMinimize = (id: PanelId) => {
+    setMinimizedPanels((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleBackgroundDoubleClick = (e: React.MouseEvent) => {
+    // Only open if clicking directly on the background (not on a panel)
+    if (e.target === e.currentTarget) {
+      setPanelPickerOpen(true);
+    }
+  };
+
   const visibleCount = Object.values(panelVisibility).filter(Boolean).length;
 
   return (
-    <div ref={containerRef} className="workspace-container relative h-full w-full min-h-0 min-w-0 bg-transparent overflow-hidden border-b border-border">
+    <div 
+      ref={containerRef} 
+      className="workspace-container relative h-full w-full min-h-0 min-w-0 bg-transparent overflow-hidden border-b border-border"
+      onDoubleClick={handleBackgroundDoubleClick}
+    >
       <LiveTranscription />
       <AISuggestionsFetcher />
       {visibleCount === 0 && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
-          <p className="text-text-muted text-sm">All panels hidden. Use <strong className="text-text-primary">Panels</strong> in the header to show one.</p>
+          <p className="text-text-muted text-sm">All panels hidden. Double-click the background to show panels.</p>
+        </div>
+      )}
+
+      {/* Panel Picker - appears on double-click */}
+      {panelPickerOpen && (
+        <div 
+          ref={panelPickerRef}
+          className="absolute inset-0 flex items-center justify-center z-50"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="bg-background-elevated/95 backdrop-blur-2xl border border-border/20 rounded-3xl shadow-2xl p-6 min-w-[320px] max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-text-primary">Panel Manager</h3>
+              <button
+                type="button"
+                onClick={() => setPanelPickerOpen(false)}
+                className="p-2 hover:bg-background-surface/30 rounded-xl transition-colors text-text-dim/70 hover:text-text-primary"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-2">
+              {WORKSPACE_PANELS.map(({ id, label }) => (
+                <div
+                  key={id}
+                  className="flex items-center justify-between p-3 rounded-xl bg-background-surface/30 border border-border/15 hover:bg-background-surface/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={cn("w-4 h-4 rounded border flex items-center justify-center flex-shrink-0", panelVisibility[id] ? "bg-green-primary/20 border-green-primary/50" : "border-border")}>
+                      {panelVisibility[id] && <svg className="w-2.5 h-2.5 text-green-primary" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+                    </span>
+                    <span className="text-sm font-medium text-text-primary">{label}</span>
+                    {panelVisibility[id] && minimizedPanels[id] && (
+                      <span className="text-xs text-text-dim/60">(Minimized)</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {panelVisibility[id] && (
+                      <button
+                        type="button"
+                        onClick={() => toggleMinimize(id)}
+                        className="p-1.5 hover:bg-background-surface/50 rounded-lg transition-colors text-text-dim/70 hover:text-text-primary"
+                        title={minimizedPanels[id] ? "Expand" : "Minimize"}
+                      >
+                        {minimizedPanels[id] ? (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVisible(id, !panelVisibility[id]);
+                        if (panelVisibility[id]) {
+                          setMinimizedPanels((prev) => ({ ...prev, [id]: false }));
+                        }
+                      }}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                      style={{
+                        backgroundColor: panelVisibility[id] ? "rgba(239, 68, 68, 0.1)" : "rgba(16, 185, 129, 0.1)",
+                        color: panelVisibility[id] ? "rgb(248, 113, 113)" : "rgb(16, 185, 129)",
+                      }}
+                    >
+                      {panelVisibility[id] ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -165,28 +277,27 @@ export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProp
         minHeight={200}
         onPositionChange={(pos) => handlePositionChange("transcript", pos)}
         className="bg-background-surface/28"
+        minimized={minimizedPanels.transcript}
+        onMinimizeToggle={() => toggleMinimize("transcript")}
+        headerClassName="bg-green-primary/10 border-green-primary/20"
         header={
           <>
-            <div className="relative">
-              <div className="w-2 h-2 bg-green-primary rounded-full animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.5)]"></div>
-              <div className="absolute inset-0 w-2 h-2 bg-green-primary rounded-full animate-ping opacity-60"></div>
-            </div>
-            <h2 className="text-sm font-medium text-text-primary tracking-tight">Live Transcript</h2>
+            <svg className="w-4 h-4 text-green-primary animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" />
+            </svg>
+            <h2 className="text-sm font-semibold text-text-primary tracking-tight">AI Live Transcript</h2>
           </>
         }
         actions={
           <>
-            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary group" title="Download">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-            </button>
-            <HidePanelButton onHide={() => setVisible("transcript", false)} />
-            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary" title="More">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-              </svg>
-            </button>
+            {!minimizedPanels.transcript && (
+              <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary group" title="Download">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </button>
+            )}
+            <MinimizeButton onMinimize={() => toggleMinimize("transcript")} />
           </>
         }
       >
@@ -202,25 +313,20 @@ export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProp
         minHeight={200}
         onPositionChange={(pos) => handlePositionChange("aiSuggestions", pos)}
         className="bg-background-surface/28"
+        minimized={minimizedPanels.aiSuggestions}
+        onMinimizeToggle={() => toggleMinimize("aiSuggestions")}
         header={
           <>
-            <div className="w-6 h-6 rounded-2xl bg-green-primary/12 border border-green-primary/15 flex items-center justify-center shadow-sm">
-              <svg className="w-3.5 h-3.5 text-green-primary" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            <div className="w-6 h-6 rounded-xl bg-background-elevated/40 border border-border/20 flex items-center justify-center flex-shrink-0">
+              <svg className="w-3.5 h-3.5 text-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             </div>
-            <h2 className="text-sm font-medium text-text-primary tracking-tight">AI Suggestions</h2>
+            <h2 className="text-sm font-medium text-text-primary tracking-tight">Suggestions</h2>
           </>
         }
         actions={
-          <>
-            <HidePanelButton onHide={() => setVisible("aiSuggestions", false)} />
-            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary" title="More">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-              </svg>
-            </button>
-          </>
+          <MinimizeButton onMinimize={() => toggleMinimize("aiSuggestions")} />
         }
       >
         <AISuggestionsPanel />
@@ -235,22 +341,20 @@ export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProp
         minHeight={160}
         onPositionChange={(pos) => handlePositionChange("script", pos)}
         className="bg-background-surface/20"
-        header={<h2 className="text-sm font-medium text-text-primary tracking-tight">Script</h2>}
-        actions={
+        minimized={minimizedPanels.script}
+        onMinimizeToggle={() => toggleMinimize("script")}
+        header={
           <>
-            <Link href="/dashboard/scripts" className="px-4 py-2 text-xs font-medium text-green-primary/90 hover:bg-green-primary/8 rounded-2xl transition-all duration-300 flex items-center gap-2" title="Manage scripts">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            <div className="w-6 h-6 rounded-xl bg-background-elevated/40 border border-border/20 flex items-center justify-center flex-shrink-0">
+              <svg className="w-3.5 h-3.5 text-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Edit
-            </Link>
-            <HidePanelButton onHide={() => setVisible("script", false)} />
-            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary" title="More">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-              </svg>
-            </button>
+            </div>
+            <h2 className="text-sm font-medium text-text-primary tracking-tight">Script</h2>
           </>
+        }
+        actions={
+          <MinimizeButton onMinimize={() => toggleMinimize("script")} />
         }
       >
         <ScriptPanel />
@@ -265,22 +369,20 @@ export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProp
         minHeight={160}
         onPositionChange={(pos) => handlePositionChange("notes", pos)}
         className="bg-background-surface/18"
-        header={<h2 className="text-sm font-medium text-text-primary tracking-tight">Notes</h2>}
-        actions={
+        minimized={minimizedPanels.notes}
+        onMinimizeToggle={() => toggleMinimize("notes")}
+        header={
           <>
-            <Link href="/dashboard/notes" className="px-3 py-2 text-xs font-medium text-green-primary/90 hover:bg-green-primary/8 rounded-2xl transition-all duration-300 flex items-center gap-2" title="Manage notes">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            <div className="w-6 h-6 rounded-xl bg-background-elevated/40 border border-border/20 flex items-center justify-center flex-shrink-0">
+              <svg className="w-3.5 h-3.5 text-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
               </svg>
-              Edit
-            </Link>
-            <HidePanelButton onHide={() => setVisible("notes", false)} />
-            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary" title="More">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-              </svg>
-            </button>
+            </div>
+            <h2 className="text-sm font-medium text-text-primary tracking-tight">Notes</h2>
           </>
+        }
+        actions={
+          <MinimizeButton onMinimize={() => toggleMinimize("notes")} />
         }
       >
         <NotesPanel />
