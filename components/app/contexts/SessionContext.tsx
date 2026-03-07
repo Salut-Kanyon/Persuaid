@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -53,9 +54,30 @@ interface SessionContextValue {
   setScriptContext: (s: string) => void;
   sessionId: string | null;
   setSessionId: React.Dispatch<React.SetStateAction<string | null>>;
+  /** Current speech buffer (what was last said). Updated by LiveTranscription. Read on Enter to submit Q&A. */
+  recentSpeechRef: React.MutableRefObject<string>;
+  /** Clear recent speech and the internal phrase buffer (call after submitting Q&A). */
+  clearRecentSpeech: () => void;
+  /** Register a function to clear the phrase buffer. Called by LiveTranscription. */
+  registerClearBuffer: (fn: () => void) => void;
+  /** Selected audio input device ID for listening to call (e.g. Phone/Bluetooth). null = default device. Persisted in localStorage. */
+  audioInputDeviceId: string | null;
+  setAudioInputDeviceId: (id: string | null) => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
+
+const AUDIO_INPUT_STORAGE_KEY = "persuaid_audio_input_id";
+
+function getStoredAudioInputId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const id = localStorage.getItem(AUDIO_INPUT_STORAGE_KEY);
+    return id === "" ? null : id;
+  } catch {
+    return null;
+  }
+}
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
@@ -66,6 +88,28 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [scriptContext, setScriptContext] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
+  const [audioInputDeviceId, setAudioInputDeviceIdState] = useState<string | null>(() => getStoredAudioInputId());
+  const recentSpeechRef = useRef("");
+  const clearBufferRef = useRef<(() => void) | null>(null);
+
+  const setAudioInputDeviceId = useCallback((id: string | null) => {
+    setAudioInputDeviceIdState(id);
+    try {
+      if (typeof window !== "undefined") {
+        if (id === null) localStorage.removeItem(AUDIO_INPUT_STORAGE_KEY);
+        else localStorage.setItem(AUDIO_INPUT_STORAGE_KEY, id);
+      }
+    } catch (_) {}
+  }, []);
+
+  const clearRecentSpeech = useCallback(() => {
+    recentSpeechRef.current = "";
+    clearBufferRef.current?.();
+  }, []);
+
+  const registerClearBuffer = useCallback((fn: () => void) => {
+    clearBufferRef.current = fn;
+  }, []);
 
   const appendTranscript = useCallback(
     (segment: {
@@ -110,6 +154,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setScriptContext,
       sessionId,
       setSessionId,
+      recentSpeechRef,
+      clearRecentSpeech,
+      registerClearBuffer,
+      audioInputDeviceId,
+      setAudioInputDeviceId,
     }),
     [
       transcript,
@@ -122,6 +171,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       selectedScriptId,
       scriptContext,
       sessionId,
+      clearRecentSpeech,
+      registerClearBuffer,
+      audioInputDeviceId,
+      setAudioInputDeviceId,
     ]
   );
 

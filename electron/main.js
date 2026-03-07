@@ -2,6 +2,11 @@ const { app, BrowserWindow, session, protocol } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const { WebSocketServer } = require('ws');
+
+const STT_PROXY_PORT = 2998;
+const DEEPGRAM_ORIGIN = 'wss://api.deepgram.com';
+let sttProxyServer = null;
 
 const APP_PROTOCOL = 'app';
 const APP_HOST = 'persuaid';
@@ -76,6 +81,75 @@ function createBundleServer(dir) {
   });
 }
 
+/** Read DEEPGRAM_API_KEY from process.env or from userData/.env (one line: DEEPGRAM_API_KEY=...) */
+function getDeepgramApiKey() {
+  if (process.env.DEEPGRAM_API_KEY) return process.env.DEEPGRAM_API_KEY.trim();
+  try {
+    const userDataDir = app.getPath('userData');
+    const envPath = path.join(userDataDir, '.env');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf8');
+      const m = content.match(/DEEPGRAM_API_KEY\s*=\s*["']?([^"'\s\n]+)/);
+      if (m) return m[1].trim();
+    }
+  } catch (e) {
+    console.warn('Could not read .env from userData:', e.message);
+  }
+  return null;
+}
+
+/** Start in-app STT WebSocket proxy so the DMG can use transcription without a separate proxy. */
+function startSttProxy(apiKey) {
+  if (!apiKey || sttProxyServer) return;
+  const server = http.createServer();
+  const wss = new WebSocketServer({ server });
+  wss.on('connection', (clientWs, req) => {
+    const pathPart = req.url?.split('?')[0] || '/v1/listen';
+    const query = req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+    const deepgramUrl = `${DEEPGRAM_ORIGIN}${pathPart}${query}`;
+    const WebSocket = require('ws');
+    const upstream = new WebSocket(deepgramUrl, {
+      headers: { Authorization: `Token ${apiKey}` },
+    });
+    const pending = [];
+    clientWs.on('message', (data) => {
+      if (upstream.readyState === upstream.OPEN) upstream.send(data);
+      else pending.push(data);
+    });
+    upstream.on('open', () => {
+      pending.forEach((d) => upstream.send(d));
+      clientWs.on('close', () => {
+        try {
+          upstream.send(JSON.stringify({ type: 'CloseStream' }));
+          upstream.close();
+        } catch (_) {}
+      });
+      upstream.on('message', (data) => {
+        if (clientWs.readyState === clientWs.OPEN) {
+          clientWs.send(Buffer.isBuffer(data) ? data.toString('utf8') : data);
+        }
+      });
+    });
+    upstream.on('error', (err) => {
+      try { clientWs.close(1011, 'Upstream error'); } catch (_) {}
+    });
+    upstream.on('close', () => {
+      try { clientWs.close(); } catch (_) {}
+    });
+    clientWs.on('error', () => {
+      try { upstream.close(); } catch (_) {}
+    });
+  });
+  server.listen(STT_PROXY_PORT, '127.0.0.1', () => {
+    console.log('STT proxy (in-app) listening on ws://127.0.0.1:' + STT_PROXY_PORT);
+  });
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') console.warn('STT proxy port', STT_PROXY_PORT, 'in use');
+    else console.warn('STT proxy error:', err.message);
+  });
+  sttProxyServer = server;
+}
+
 /** Serve app bundle via app://persuaid/ (unpacked only). Packaged app uses HTTP server so DMG loads correctly. */
 function registerAppProtocol() {
   protocol.registerFileProtocol(APP_PROTOCOL, (request, callback) => {
@@ -110,6 +184,8 @@ function registerAppProtocol() {
   });
 }
 
+const preloadPath = path.join(__dirname, 'preload.js');
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -118,6 +194,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       partition: 'persist:persuaid',
+      preload: fs.existsSync(preloadPath) ? preloadPath : undefined,
     },
     title: 'Persuaid',
   });
@@ -176,6 +253,9 @@ function createWindow() {
 
 app.whenReady().then(() => {
   registerAppProtocol();
+  const deepgramKey = getDeepgramApiKey();
+  if (deepgramKey) startSttProxy(deepgramKey);
+  else console.log('No DEEPGRAM_API_KEY in env or userData/.env – STT will not work in desktop app until set.');
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
     const allowed = permission === 'media';
     callback(allowed);
@@ -185,6 +265,10 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (bundleHttpServer) bundleHttpServer.close();
+  if (sttProxyServer) {
+    sttProxyServer.close();
+    sttProxyServer = null;
+  }
   app.quit();
 });
 

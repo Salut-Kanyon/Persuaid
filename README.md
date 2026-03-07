@@ -47,13 +47,17 @@ When building the desktop app or DMG (`npm run desktop:build` or `npm run pack`)
 - **DMG size:** The clean step also removes **`public/downloads/*.dmg`** (and other installers) before `next build`. Otherwise the Next.js export would put the previous DMG into `out/`, and the new DMG would package it — so the file would grow every build. After a build, the new DMG is copied to `public/downloads/Persuaid.dmg` for the website.
 - **Cloud upload:** Upload only the built DMG, not the repo or `node_modules`. Paths: **`dist/*.dmg`** (or **`public/downloads/Persuaid.dmg`** after `desktop:build`). In CI, use **`npm run desktop:artifact`** to print the DMG path (e.g. `dist/Persuaid-0.1.0.dmg`).
 
-### Microphone (Live Session)
+### Microphone (Live Session) and Q&A
 
-Live transcription needs microphone access **and** the Next.js server (for the `/api/stt/token` and Deepgram flow). So:
-- If you see **"Transcription connection failed. Check your network and try again."** in the browser, use the **STT WebSocket proxy**: in one terminal run **`npm run stt:proxy`**, add **`NEXT_PUBLIC_STT_WS_PROXY=ws://localhost:3001`** to `.env.local`, restart **`npm run dev`**, then try recording again. The proxy connects to Deepgram with your API key so the browser doesn’t need to.
-- **In the browser** (http://localhost:3000 with `npm run dev`): transcription works.
-- **With `npm run desktop:dev`** (and `npm run dev` in another terminal): transcription works.
-- **In the standalone DMG**: the app has no API server, so transcription shows "Transcription isn't available in the standalone app" — use the browser or desktop:dev for live transcription. In the **desktop app (Electron)** on macOS, if you see “Microphone access denied”, open **System Settings → Privacy & Security → Microphone** and allow **Electron** (or **Persuaid** when running the built app). If you run from a terminal, macOS asks the **terminal** for mic access. To have **Persuaid** ask instead: run `npm run dev` in a terminal, then run `npm run pack` once and open **Persuaid.app** from `dist/mac-arm64` or `dist/mac` in Finder. The app will use the dev server (same as `npm run desktop:dev`) so the full app and mic work, and the mic prompt goes to Persuaid. Allow **Persuaid** in System Settings → Microphone.
+Live transcription (Q&A: speak, press Enter for an AI answer) needs microphone access and a way to reach Deepgram:
+
+- **In the browser** (http://localhost:3000 with `npm run dev`): use the **STT WebSocket proxy** so the connection works: run **`npm run stt:proxy`** in another terminal, add **`NEXT_PUBLIC_STT_WS_PROXY=ws://localhost:3001`** to `.env.local`, restart dev, then try again.
+- **With `npm run desktop:dev`** (and `npm run dev` in another terminal): same as browser; proxy recommended.
+- **In the standalone DMG**: the app runs an **in-app STT proxy** so transcription works without a separate process. You must provide your Deepgram API key once:
+  - **macOS:** Create a file named **`.env`** in **`~/Library/Application Support/Persuaid/`** with one line: **`DEEPGRAM_API_KEY=your_key_here`** (no quotes). Restart the app. If that folder doesn’t exist, run Persuaid once so it’s created, then add the file.
+  - **Windows:** Same idea: create **`.env`** in `%APPDATA%\Persuaid\` with **`DEEPGRAM_API_KEY=your_key_here`**.
+  - After that, open the dashboard in the DMG and use Q&A (mic listens; press Enter to get an answer) as usual.
+- **Mic permission:** On macOS, if you see “Microphone access denied”, open **System Settings → Privacy & Security → Microphone** and allow **Persuaid** (or **Electron** when running unpacked). If you launch from a terminal, the **terminal** may be prompted instead; run the built **Persuaid.app** from Finder so Persuaid gets the prompt.
 
 ## Project Structure
 

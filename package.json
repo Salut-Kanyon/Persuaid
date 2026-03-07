@@ -15,7 +15,8 @@
     "clean:desktop": "node scripts/clean-desktop.js",
     "desktop:size": "node scripts/desktop-size.js",
     "desktop:artifact": "node -e \"const fs=require('fs');const path=require('path');const d='dist';const f=fs.existsSync(d)?fs.readdirSync(d).filter(x=>x.endsWith('.dmg')).sort().reverse()[0]:null;console.log(f?path.join(d,f):'');\"",
-    "desktop:build": "npm run clean:desktop && next build && electron-builder && node -e \"const fs=require('fs');const path=require('path');const distDir='dist';const dmgFiles=fs.readdirSync(distDir).filter(f=>f.endsWith('.dmg'));if(dmgFiles.length>0){const latest=dmgFiles.sort().reverse()[0];fs.copyFileSync(path.join(distDir,latest),'public/downloads/Persuaid.dmg');console.log('DMG copied to public/downloads/Persuaid.dmg');}else{console.log('No DMG file found in dist/');}\"",
+    "clean:out-downloads": "node scripts/clean-out-downloads.js",
+    "desktop:build": "npm run clean:desktop && next build && npm run clean:out-downloads && electron-builder && node -e \"const fs=require('fs');const path=require('path');const distDir='dist';const dmgFiles=fs.readdirSync(distDir).filter(f=>f.endsWith('.dmg'));if(dmgFiles.length>0){const latest=dmgFiles.sort().reverse()[0];fs.copyFileSync(path.join(distDir,latest),'public/downloads/Persuaid.dmg');console.log('DMG copied to public/downloads/Persuaid.dmg');}else{console.log('No DMG file found in dist/');}\"",
     "pack": "npm run clean:desktop && next build && electron-builder --dir"
   },
   "build": {
@@ -52,6 +53,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
     "clsx": "^2.1.1",
+    "ws": "^8.18.0",
     "framer-motion": "^11.3.19",
     "next": "^14.2.5",
     "react": "^18.3.1",
@@ -71,7 +73,6 @@
     "eslint-config-next": "^14.2.5",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
-    "typescript": "^5.5.3",
-    "ws": "^8.18.0"
+    "typescript": "^5.5.3"
   }
 }

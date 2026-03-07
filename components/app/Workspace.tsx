@@ -20,7 +20,7 @@ interface PanelPosition {
 export type PanelId = "transcript" | "aiSuggestions" | "script" | "notes";
 
 export const WORKSPACE_PANELS: { id: PanelId; label: string }[] = [
-  { id: "transcript", label: "AI Live Transcript" },
+  { id: "transcript", label: "Q&A" },
   { id: "aiSuggestions", label: "Suggestions" },
   { id: "script", label: "Script" },
   { id: "notes", label: "Notes" },
