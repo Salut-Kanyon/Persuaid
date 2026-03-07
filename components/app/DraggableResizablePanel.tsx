@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, ReactNode } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface PanelPosition {
@@ -13,7 +13,7 @@ interface PanelPosition {
 interface DraggableResizablePanelProps {
   id: string;
   children: ReactNode;
-  defaultPosition: PanelPosition;
+  position: PanelPosition;
   minWidth?: number;
   minHeight?: number;
   onPositionChange?: (position: PanelPosition) => void;
@@ -23,9 +23,8 @@ interface DraggableResizablePanelProps {
 }
 
 export function DraggableResizablePanel({
-  id,
   children,
-  defaultPosition,
+  position: positionProp,
   minWidth = 300,
   minHeight = 200,
   onPositionChange,
@@ -33,151 +32,144 @@ export function DraggableResizablePanel({
   header,
   actions,
 }: DraggableResizablePanelProps) {
-  const [position, setPosition] = useState<PanelPosition>(defaultPosition);
+  const [livePosition, setLivePosition] = useState<PanelPosition>(positionProp);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState<string | null>(null);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const dragStartRef = useRef({ x: 0, y: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
+  const rafIdRef = useRef<number | null>(null);
+  const pendingRef = useRef<PanelPosition | null>(null);
+  const latestPositionRef = useRef<PanelPosition>(positionProp);
 
-  useEffect(() => {
-    if (onPositionChange) {
-      onPositionChange(position);
-    }
-  }, [position, onPositionChange]);
+  const isInteracting = isDragging || isResizing;
+  const displayPosition = isInteracting ? livePosition : positionProp;
+  latestPositionRef.current = displayPosition;
+
+  useLayoutEffect(() => {
+    if (!isInteracting) setLivePosition(positionProp);
+  }, [positionProp.x, positionProp.y, positionProp.width, positionProp.height, isInteracting]);
+
+  const flush = () => {
+    if (pendingRef.current === null) return;
+    const next = pendingRef.current;
+    pendingRef.current = null;
+    latestPositionRef.current = next;
+    setLivePosition(next);
+  };
+
+  const schedule = (next: PanelPosition) => {
+    pendingRef.current = next;
+    if (rafIdRef.current !== null) return;
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null;
+      flush();
+    });
+  };
 
   const handleMouseDown = (e: React.MouseEvent, type: "drag" | string) => {
     if (type === "drag") {
       setIsDragging(true);
-      setDragStart({
-        x: e.clientX - position.x,
-        y: e.clientY - position.y,
-      });
+      dragStartRef.current = { x: e.clientX - positionProp.x, y: e.clientY - positionProp.y };
+      setLivePosition(positionProp);
     } else {
       setIsResizing(type);
-      setDragStart({
-        x: e.clientX,
-        y: e.clientY,
-      });
+      dragStartRef.current = { x: e.clientX, y: e.clientY };
+      setLivePosition(positionProp);
     }
     e.preventDefault();
   };
 
   useEffect(() => {
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!panelRef.current) return;
+    if (!isDragging && !isResizing) return;
 
-    const container = panelRef.current.closest('.workspace-container') || panelRef.current.parentElement;
-    if (!container) return;
-
-    const containerRect = container.getBoundingClientRect();
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!panelRef.current) return;
+      const container = panelRef.current.closest(".workspace-container") || panelRef.current.parentElement;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const pos = latestPositionRef.current;
+      const inset = 2;
+      const maxX = Math.max(0, rect.width - inset);
+      const maxY = Math.max(0, rect.height - inset);
 
       if (isDragging) {
-        const newX = e.clientX - dragStart.x;
-        const newY = e.clientY - dragStart.y;
-
-        setPosition((prev) => ({
-          ...prev,
-          x: Math.max(0, Math.min(newX, containerRect.width - prev.width)),
-          y: Math.max(0, Math.min(newY, containerRect.height - prev.height)),
-        }));
-      } else if (isResizing) {
-        const deltaX = e.clientX - dragStart.x;
-        const deltaY = e.clientY - dragStart.y;
-
-        setPosition((prev) => {
-          let newWidth = prev.width;
-          let newHeight = prev.height;
-          let newX = prev.x;
-          let newY = prev.y;
-
-          // Handle right edge resizing
-          if (isResizing.includes("right")) {
-            const maxWidth = containerRect.width - prev.x;
-            newWidth = Math.max(minWidth, Math.min(prev.width + deltaX, maxWidth));
-          }
-          
-          // Handle left edge resizing
-          if (isResizing.includes("left")) {
-            const widthChange = deltaX;
-            const minX = 0;
-            const maxWidthChange = prev.width - minWidth;
-            const constrainedChange = Math.max(-maxWidthChange, Math.min(widthChange, prev.x - minX));
-            newWidth = prev.width - constrainedChange;
-            newX = prev.x + constrainedChange;
-          }
-          
-          // Handle bottom edge resizing
-          if (isResizing.includes("bottom")) {
-            const maxHeight = containerRect.height - prev.y;
-            newHeight = Math.max(minHeight, Math.min(prev.height + deltaY, maxHeight));
-          }
-          
-          // Handle top edge resizing
-          if (isResizing.includes("top")) {
-            const heightChange = deltaY;
-            const minY = 0;
-            const maxHeightChange = prev.height - minHeight;
-            const constrainedChange = Math.max(-maxHeightChange, Math.min(heightChange, prev.y - minY));
-            newHeight = prev.height - constrainedChange;
-            newY = prev.y + constrainedChange;
-          }
-
-          return {
-            x: Math.max(0, Math.min(newX, containerRect.width - minWidth)),
-            y: Math.max(0, Math.min(newY, containerRect.height - minHeight)),
-            width: Math.max(minWidth, Math.min(newWidth, containerRect.width)),
-            height: Math.max(minHeight, Math.min(newHeight, containerRect.height)),
-          };
+        const newX = Math.max(inset, Math.min(e.clientX - dragStartRef.current.x, maxX - pos.width));
+        const newY = Math.max(inset, Math.min(e.clientY - dragStartRef.current.y, maxY - pos.height));
+        schedule({
+          ...pos,
+          x: newX,
+          y: newY,
+          width: Math.min(pos.width, maxX - newX),
+          height: Math.min(pos.height, maxY - newY),
         });
-
-        setDragStart({ x: e.clientX, y: e.clientY });
+      } else if (isResizing) {
+        const dX = e.clientX - dragStartRef.current.x;
+        const dY = e.clientY - dragStartRef.current.y;
+        dragStartRef.current = { x: e.clientX, y: e.clientY };
+        let w = pos.width, h = pos.height, x = pos.x, y = pos.y;
+        if (isResizing.includes("right")) w = Math.max(minWidth, Math.min(pos.width + dX, maxX - pos.x));
+        if (isResizing.includes("left")) {
+          const c = Math.max(-(pos.width - minWidth), Math.min(dX, pos.x - inset));
+          w = pos.width - c;
+          x = pos.x + c;
+        }
+        if (isResizing.includes("bottom")) h = Math.max(minHeight, Math.min(pos.height + dY, maxY - pos.y));
+        if (isResizing.includes("top")) {
+          const c = Math.max(-(pos.height - minHeight), Math.min(dY, pos.y - inset));
+          h = pos.height + c;
+          y = pos.y + c;
+        }
+        x = Math.max(inset, Math.min(x, maxX - minWidth));
+        y = Math.max(inset, Math.min(y, maxY - minHeight));
+        w = Math.max(minWidth, Math.min(w, maxX - x));
+        h = Math.max(minHeight, Math.min(h, maxY - y));
+        schedule({ x, y, width: w, height: h });
       }
     };
 
     const handleMouseUp = () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      flush();
+      onPositionChange?.(latestPositionRef.current);
       setIsDragging(false);
       setIsResizing(null);
     };
 
-    if (isDragging || isResizing) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = isDragging ? "move" : isResizing?.includes("right") || isResizing?.includes("left") ? "ew-resize" : isResizing?.includes("bottom") || isResizing?.includes("top") ? "ns-resize" : "nwse-resize";
-      document.body.style.userSelect = "none";
-
-      return () => {
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-        document.body.style.cursor = "";
-        document.body.style.userSelect = "";
-      };
-    }
-  }, [isDragging, isResizing, dragStart, minWidth, minHeight]);
+    document.addEventListener("mousemove", handleMouseMove, { passive: true });
+    document.addEventListener("mouseup", handleMouseUp);
+    document.body.style.cursor = isDragging ? "move" : "nwse-resize";
+    document.body.style.userSelect = "none";
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isDragging, isResizing, minWidth, minHeight]);
 
   return (
     <div
       ref={panelRef}
       className={cn(
-        "absolute",
+        "absolute will-change-transform",
         "bg-background-surface/25 backdrop-blur-2xl",
-        "border border-border/12",
-        "rounded-3xl",
+        "border border-border/12 rounded-3xl overflow-hidden z-10",
         "shadow-[0_16px_48px_-12px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.04)]",
-        "overflow-hidden",
-        "transition-all duration-300",
-        "z-10",
-        isDragging && "shadow-[0_20px_64px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] z-30 scale-[1.005]",
+        !isInteracting && "transition-shadow duration-200",
+        isDragging && "shadow-[0_20px_64px_-12px_rgba(0,0,0,0.5)] z-30",
         isResizing && "z-30",
         className
       )}
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: `${position.width}px`,
-        height: `${position.height}px`,
+        left: `${displayPosition.x}px`,
+        top: `${displayPosition.y}px`,
+        width: `${displayPosition.width}px`,
+        height: `${displayPosition.height}px`,
       }}
     >
-      {/* Header with drag handle */}
       <div
         className={cn(
           "h-14 px-5 border-b border-border/8 flex items-center justify-between bg-background-elevated/15 backdrop-blur-xl cursor-move select-none",
@@ -189,46 +181,19 @@ export function DraggableResizablePanel({
         <div className="flex items-center gap-3 flex-1">{header}</div>
         {actions && <div className="flex items-center gap-1.5">{actions}</div>}
       </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-hidden" style={{ height: `calc(100% - 3.5rem)` }}>
+      <div className="flex-1 overflow-hidden" style={{ height: "calc(100% - 3.5rem)" }}>
         {children}
       </div>
-
-      {/* Resize handles - corners */}
-      <div
-        className="absolute top-0 right-0 w-3 h-3 cursor-nwse-resize z-30 hover:bg-green-primary/8 rounded-tl-3xl transition-colors opacity-0 hover:opacity-100"
-        onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top-right"); }}
-      />
-      <div
-        className="absolute top-0 left-0 w-3 h-3 cursor-nesw-resize z-30 hover:bg-green-primary/8 rounded-tr-3xl transition-colors opacity-0 hover:opacity-100"
-        onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top-left"); }}
-      />
-      <div
-        className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize z-30 hover:bg-green-primary/8 rounded-bl-3xl transition-colors opacity-0 hover:opacity-100"
-        onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom-right"); }}
-      />
-      <div
-        className="absolute bottom-0 left-0 w-3 h-3 cursor-nesw-resize z-30 hover:bg-green-primary/8 rounded-br-3xl transition-colors opacity-0 hover:opacity-100"
-        onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom-left"); }}
-      />
-      {/* Resize handles - edges */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-0.5 cursor-ns-resize z-30 hover:bg-green-primary/8 rounded-full transition-colors opacity-0 hover:opacity-100"
-        onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top"); }}
-      />
-      <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 cursor-ns-resize z-30 hover:bg-green-primary/8 rounded-full transition-colors opacity-0 hover:opacity-100"
-        onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom"); }}
-      />
-      <div
-        className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-12 cursor-ew-resize z-30 hover:bg-green-primary/8 rounded-full transition-colors opacity-0 hover:opacity-100"
-        onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-left"); }}
-      />
-      <div
-        className="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-12 cursor-ew-resize z-30 hover:bg-green-primary/8 rounded-full transition-colors opacity-0 hover:opacity-100"
-        onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-right"); }}
-      />
+      {/* Full-edge resize handles (full width/height, 8px grab zone) */}
+      <div className="absolute inset-x-0 top-0 h-2 min-h-[8px] cursor-ns-resize z-20 hover:bg-green-primary/10" style={{ marginTop: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top"); }} />
+      <div className="absolute inset-x-0 bottom-0 h-2 min-h-[8px] cursor-ns-resize z-20 hover:bg-green-primary/10" style={{ marginBottom: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom"); }} />
+      <div className="absolute inset-y-0 left-0 w-2 min-w-[8px] cursor-ew-resize z-20 hover:bg-green-primary/10" style={{ marginLeft: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-left"); }} />
+      <div className="absolute inset-y-0 right-0 w-2 min-w-[8px] cursor-ew-resize z-20 hover:bg-green-primary/10" style={{ marginRight: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-right"); }} />
+      {/* Corner handles (on top so they take precedence) */}
+      <div className="absolute top-0 right-0 w-4 h-4 cursor-nesw-resize z-30 hover:bg-green-primary/10 rounded-tl-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top-right"); }} />
+      <div className="absolute top-0 left-0 w-4 h-4 cursor-nwse-resize z-30 hover:bg-green-primary/10 rounded-tr-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top-left"); }} />
+      <div className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize z-30 hover:bg-green-primary/10 rounded-bl-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom-right"); }} />
+      <div className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize z-30 hover:bg-green-primary/10 rounded-br-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom-left"); }} />
     </div>
   );
 }

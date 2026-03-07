@@ -116,9 +116,13 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      partition: 'persist:persuaid',
     },
     title: 'Persuaid',
   });
+
+  // Start maximized (full screen) when entering the workspace / app
+  mainWindow.maximize();
 
   const DESKTOP_ENTRY = '/welcome';
 
@@ -149,10 +153,6 @@ function createWindow() {
         `);
       }
     });
-  }
-
-  if (!isPackaged) {
-    mainWindow.webContents.openDevTools();
   }
 
   mainWindow.on('closed', () => {

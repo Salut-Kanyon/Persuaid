@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useLayoutEffect, useRef, useEffect } from "react";
+import Link from "next/link";
 import { DraggableResizablePanel } from "./DraggableResizablePanel";
 import { TranscriptPanel } from "./panels/TranscriptPanel";
 import { AISuggestionsPanel } from "./panels/AISuggestionsPanel";
 import { ScriptPanel } from "./panels/ScriptPanel";
 import { NotesPanel } from "./panels/NotesPanel";
+import { LiveTranscription } from "./LiveTranscription";
+import { AISuggestionsFetcher } from "./AISuggestionsFetcher";
+import { cn } from "@/lib/utils";
 
 interface PanelPosition {
   x: number;
@@ -14,82 +18,151 @@ interface PanelPosition {
   height: number;
 }
 
-export function Workspace() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [panelPositions, setPanelPositions] = useState<Record<string, PanelPosition>>({
-    transcript: { x: 40, y: 40, width: 600, height: 500 },
-    aiSuggestions: { x: 680, y: 40, width: 400, height: 500 },
-    script: { x: 40, y: 580, width: 500, height: 300 },
-    notes: { x: 580, y: 580, width: 500, height: 300 },
-  });
+export type PanelId = "transcript" | "aiSuggestions" | "script" | "notes";
+
+export const WORKSPACE_PANELS: { id: PanelId; label: string }[] = [
+  { id: "transcript", label: "Live Transcript" },
+  { id: "aiSuggestions", label: "AI Suggestions" },
+  { id: "script", label: "Script" },
+  { id: "notes", label: "Notes" },
+];
+
+export const DEFAULT_PANEL_VISIBILITY: Record<PanelId, boolean> = { transcript: true, aiSuggestions: true, script: true, notes: true };
+
+function computeLayout(containerWidth: number, containerHeight: number) {
+  const pad = 16;
+  const gap = 16;
+  const w = Math.max(400, containerWidth - pad * 2);
+  const h = Math.max(300, containerHeight - pad * 2);
+  const topHeight = (h - gap) * 0.6;
+  const bottomHeight = (h - gap) * 0.4;
+  const leftWidth = (w - gap) * 0.5;
+  const rightWidth = (w - gap) * 0.5;
+
+  return {
+    transcript: { x: pad, y: pad, width: leftWidth, height: topHeight },
+    aiSuggestions: { x: pad + leftWidth + gap, y: pad, width: rightWidth, height: topHeight },
+    script: { x: pad, y: pad + topHeight + gap, width: leftWidth, height: bottomHeight },
+    notes: { x: pad + leftWidth + gap, y: pad + topHeight + gap, width: rightWidth, height: bottomHeight },
+  };
+}
+
+const DEFAULT_LAYOUT = computeLayout(1280, 800);
+
+function HidePanelButton({ onHide }: { onHide: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onHide(); }}
+      className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-colors text-text-dim/70 hover:text-text-primary"
+      title="Hide panel"
+    >
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+      </svg>
+    </button>
+  );
+}
+
+export function WorkspacePanelsControl({
+  panelVisibility,
+  setPanelVisibility,
+}: {
+  panelVisibility: Record<PanelId, boolean>;
+  setPanelVisibility: React.Dispatch<React.SetStateAction<Record<PanelId, boolean>>>;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const visibleCount = Object.values(panelVisibility).filter(Boolean).length;
 
   useEffect(() => {
-    // Calculate initial positions based on container size
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const containerWidth = rect.width;
-      const containerHeight = rect.height;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
 
-      // Transcript: Core live tool - larger, more prominent
-      const transcriptWidth = Math.min(700, Math.max(500, containerWidth * 0.52));
-      const transcriptHeight = Math.min(600, Math.max(450, containerHeight * 0.65));
-      
-      // AI Suggestions: Core live tool - prominent but slightly smaller
-      const aiWidth = Math.min(450, Math.max(350, containerWidth * 0.38));
-      const aiHeight = Math.min(600, Math.max(450, containerHeight * 0.65));
-      
-      // Script: Secondary support tool - smaller
-      const scriptWidth = Math.min(450, Math.max(320, containerWidth * 0.42));
-      const scriptHeight = Math.min(280, Math.max(220, containerHeight * 0.32));
-      
-      // Notes: Secondary support tool - smaller, lighter
-      const notesWidth = Math.min(450, Math.max(320, containerWidth * 0.42));
-      const notesHeight = Math.min(280, Math.max(220, containerHeight * 0.32));
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors",
+          "bg-background-surface/60 hover:bg-background-surface/80 border border-border/50 text-text-primary"
+        )}
+        title="Toggle panels"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+        Panels ({visibleCount}/4)
+      </button>
+      {open && (
+        <div className="absolute top-full right-0 mt-1.5 py-1.5 min-w-[180px] rounded-xl bg-background-elevated border border-border shadow-lg z-50">
+          {WORKSPACE_PANELS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setPanelVisibility((prev) => ({ ...prev, [id]: !prev[id] }))}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm text-text-primary hover:bg-background-surface/50 transition-colors"
+            >
+              <span className={cn("w-4 h-4 rounded border flex items-center justify-center flex-shrink-0", panelVisibility[id] ? "bg-green-primary/20 border-green-primary/50" : "border-border")}>
+                {panelVisibility[id] && <svg className="w-2.5 h-2.5 text-green-primary" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+              </span>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
-      setPanelPositions({
-        transcript: {
-          x: 32,
-          y: 32,
-          width: transcriptWidth,
-          height: transcriptHeight,
-        },
-        aiSuggestions: {
-          x: 32 + transcriptWidth + 24,
-          y: 32,
-          width: aiWidth,
-          height: aiHeight,
-        },
-        script: {
-          x: 32,
-          y: 32 + transcriptHeight + 24,
-          width: scriptWidth,
-          height: scriptHeight,
-        },
-        notes: {
-          x: 32 + scriptWidth + 24,
-          y: 32 + transcriptHeight + 24,
-          width: notesWidth,
-          height: notesHeight,
-        },
-      });
-    }
+interface WorkspaceProps {
+  panelVisibility: Record<PanelId, boolean>;
+  setPanelVisibility: React.Dispatch<React.SetStateAction<Record<PanelId, boolean>>>;
+}
+
+export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [panelPositions, setPanelPositions] = useState<Record<string, PanelPosition>>(DEFAULT_LAYOUT);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.width < 200 || rect.height < 200) return;
+    setPanelPositions(computeLayout(rect.width, rect.height));
   }, []);
 
   const handlePositionChange = (id: string, position: PanelPosition) => {
-    setPanelPositions((prev) => ({
-      ...prev,
-      [id]: position,
-    }));
+    setPanelPositions((prev) => ({ ...prev, [id]: position }));
   };
 
+  const setVisible = (id: PanelId, visible: boolean) => {
+    setPanelVisibility((prev) => ({ ...prev, [id]: visible }));
+  };
+
+  const visibleCount = Object.values(panelVisibility).filter(Boolean).length;
+
   return (
-    <div ref={containerRef} className="workspace-container relative h-full w-full bg-transparent overflow-hidden">
-      {/* Floating panels */}
+    <div ref={containerRef} className="workspace-container relative h-full w-full min-h-0 min-w-0 bg-transparent overflow-hidden border-b border-border">
+      <LiveTranscription />
+      <AISuggestionsFetcher />
+      {visibleCount === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <p className="text-text-muted text-sm">All panels hidden. Use <strong className="text-text-primary">Panels</strong> in the header to show one.</p>
+        </div>
+      )}
+
+      {panelVisibility.transcript && (
       <DraggableResizablePanel
         id="transcript"
-        defaultPosition={panelPositions.transcript}
-        minWidth={450}
-        minHeight={400}
+        position={panelPositions.transcript}
+        minWidth={280}
+        minHeight={200}
         onPositionChange={(pos) => handlePositionChange("transcript", pos)}
         className="bg-background-surface/28"
         header={
@@ -103,12 +176,13 @@ export function Workspace() {
         }
         actions={
           <>
-            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary group">
+            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary group" title="Download">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             </button>
-            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary">
+            <HidePanelButton onHide={() => setVisible("transcript", false)} />
+            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary" title="More">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
               </svg>
@@ -118,12 +192,14 @@ export function Workspace() {
       >
         <TranscriptPanel />
       </DraggableResizablePanel>
+      )}
 
+      {panelVisibility.aiSuggestions && (
       <DraggableResizablePanel
         id="aiSuggestions"
-        defaultPosition={panelPositions.aiSuggestions}
-        minWidth={320}
-        minHeight={400}
+        position={panelPositions.aiSuggestions}
+        minWidth={280}
+        minHeight={200}
         onPositionChange={(pos) => handlePositionChange("aiSuggestions", pos)}
         className="bg-background-surface/28"
         header={
@@ -137,35 +213,39 @@ export function Workspace() {
           </>
         }
         actions={
-          <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-            </svg>
-          </button>
+          <>
+            <HidePanelButton onHide={() => setVisible("aiSuggestions", false)} />
+            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary" title="More">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              </svg>
+            </button>
+          </>
         }
       >
         <AISuggestionsPanel />
       </DraggableResizablePanel>
+      )}
 
+      {panelVisibility.script && (
       <DraggableResizablePanel
         id="script"
-        defaultPosition={panelPositions.script}
-        minWidth={280}
-        minHeight={200}
+        position={panelPositions.script}
+        minWidth={240}
+        minHeight={160}
         onPositionChange={(pos) => handlePositionChange("script", pos)}
         className="bg-background-surface/20"
-        header={
-          <h2 className="text-sm font-medium text-text-primary tracking-tight">Script</h2>
-        }
+        header={<h2 className="text-sm font-medium text-text-primary tracking-tight">Script</h2>}
         actions={
           <>
-            <button className="px-4 py-2 text-xs font-medium text-green-primary/90 hover:bg-green-primary/8 rounded-2xl transition-all duration-300 flex items-center gap-2">
+            <Link href="/dashboard/scripts" className="px-4 py-2 text-xs font-medium text-green-primary/90 hover:bg-green-primary/8 rounded-2xl transition-all duration-300 flex items-center gap-2" title="Manage scripts">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               Edit
-            </button>
-            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary">
+            </Link>
+            <HidePanelButton onHide={() => setVisible("script", false)} />
+            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary" title="More">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
               </svg>
@@ -175,27 +255,37 @@ export function Workspace() {
       >
         <ScriptPanel />
       </DraggableResizablePanel>
+      )}
 
+      {panelVisibility.notes && (
       <DraggableResizablePanel
         id="notes"
-        defaultPosition={panelPositions.notes}
-        minWidth={280}
-        minHeight={200}
+        position={panelPositions.notes}
+        minWidth={240}
+        minHeight={160}
         onPositionChange={(pos) => handlePositionChange("notes", pos)}
         className="bg-background-surface/18"
-        header={
-          <h2 className="text-sm font-medium text-text-primary tracking-tight">Notes</h2>
-        }
+        header={<h2 className="text-sm font-medium text-text-primary tracking-tight">Notes</h2>}
         actions={
-          <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-            </svg>
-          </button>
+          <>
+            <Link href="/dashboard/notes" className="px-3 py-2 text-xs font-medium text-green-primary/90 hover:bg-green-primary/8 rounded-2xl transition-all duration-300 flex items-center gap-2" title="Manage notes">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Edit
+            </Link>
+            <HidePanelButton onHide={() => setVisible("notes", false)} />
+            <button className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary" title="More">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              </svg>
+            </button>
+          </>
         }
       >
         <NotesPanel />
       </DraggableResizablePanel>
+      )}
     </div>
   );
 }
