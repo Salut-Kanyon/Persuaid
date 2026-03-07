@@ -56,29 +56,19 @@ export function NotesPanel() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background-surface">
-      {/* Panel Header */}
-      <div className="h-14 px-5 border-b border-border/50 flex items-center justify-between bg-background-elevated">
-        <h2 className="text-sm font-bold text-text-primary tracking-tight">Notes</h2>
-        <button className="p-1.5 hover:bg-background-surface rounded-lg transition-colors text-text-dim hover:text-text-primary">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-          </svg>
-        </button>
-      </div>
-
+    <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Notes Content */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5">
         {notes.map((note) => (
           <div
             key={note.id}
-            className="flex items-start gap-3 group hover:bg-background-elevated/50 rounded-lg p-2 -m-2 transition-colors cursor-pointer"
+            className="flex items-start gap-3 group hover:bg-background-elevated/15 rounded-xl p-3 -m-3 transition-all duration-300 cursor-pointer"
             onClick={() => toggleNote(note.id)}
           >
-            <div className={`mt-1 w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+            <div className={`mt-0.5 w-4 h-4 rounded-xl border-2 flex items-center justify-center flex-shrink-0 transition-all duration-300 shadow-sm ${
               note.completed
-                ? "bg-green-primary/20 border-green-primary/40"
-                : "bg-background-elevated border-border/50 group-hover:border-green-primary/40"
+                ? "bg-green-primary/10 border-green-primary/18"
+                : "bg-background-elevated/30 border-border/18 group-hover:border-green-primary/18"
             }`}>
               {note.completed && (
                 <svg className="w-2.5 h-2.5 text-green-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -88,18 +78,18 @@ export function NotesPanel() {
             </div>
             <div className="flex-1 min-w-0">
               <p className={`text-sm leading-relaxed ${
-                note.completed ? "text-text-dim line-through" : "text-text-secondary"
+                note.completed ? "text-text-dim/60 line-through" : "text-text-secondary/85"
               }`}>
                 {note.text}
               </p>
-              <div className="flex flex-wrap gap-1.5 mt-2">
+              <div className="flex flex-wrap gap-1.5 mt-2.5">
                 {note.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-medium border ${
                       tag === "Interest"
-                        ? "bg-green-primary/10 text-green-accent border border-green-primary/20"
-                        : "bg-background-elevated text-text-muted border border-border/50"
+                        ? "bg-green-primary/6 text-green-accent/85 border-green-primary/12"
+                        : "bg-background-elevated/30 text-text-muted/75 border-border/15"
                     }`}
                   >
                     {tag}
@@ -112,15 +102,15 @@ export function NotesPanel() {
       </div>
 
       {/* Tags Section */}
-      <div className="px-5 py-4 border-t border-border/50 bg-background-elevated">
-        <div className="text-xs font-semibold text-text-dim uppercase tracking-wider mb-3">
+      <div className="px-4 py-3 border-t border-border/8 bg-background-elevated/15 backdrop-blur-xl">
+        <div className="text-xs font-medium text-text-dim/50 uppercase tracking-wider mb-3">
           Quick Tags
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {availableTags.map((tag) => (
             <button
               key={tag}
-              className="px-2.5 py-1 rounded-lg text-xs font-medium bg-background-surface border border-border/50 text-text-muted hover:border-green-primary/40 hover:text-green-accent transition-colors"
+              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-background-surface/30 border border-border/15 text-text-muted/75 hover:border-green-primary/15 hover:text-green-accent/90 hover:bg-background-surface/50 transition-all duration-300"
             >
               {tag}
             </button>

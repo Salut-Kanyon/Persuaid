@@ -68,58 +68,35 @@ export function TranscriptPanel() {
   }, []);
 
   return (
-    <div className="h-full flex flex-col bg-background-surface border-r border-border/50">
-      {/* Panel Header */}
-      <div className="h-14 px-5 border-b border-border/50 flex items-center justify-between bg-background-elevated/50 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-2.5 h-2.5 bg-green-primary rounded-full animate-pulse"></div>
-            <div className="absolute inset-0 w-2.5 h-2.5 bg-green-primary rounded-full animate-ping opacity-75"></div>
-          </div>
-          <h2 className="text-sm font-bold text-text-primary tracking-tight">Live Transcript</h2>
-        </div>
-        <div className="flex items-center gap-1">
-          <button className="p-1.5 hover:bg-background-surface rounded-lg transition-colors text-text-dim hover:text-green-accent group">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </button>
-          <button className="p-1.5 hover:bg-background-surface rounded-lg transition-colors text-text-dim hover:text-green-accent">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
+    <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+      <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
         {messages.map((message) => (
           <div
             key={message.id}
-            className={message.speaker === "user" ? "flex gap-4 group" : "flex gap-4 group"}
+            className="flex gap-4 group"
           >
             <div
               className={message.speaker === "user"
-                ? "w-10 h-10 rounded-lg bg-gradient-to-br from-green-primary/30 to-green-primary/10 border border-green-primary/20 flex items-center justify-center flex-shrink-0"
-                : "w-10 h-10 rounded-lg bg-background-elevated border border-border/50 flex items-center justify-center flex-shrink-0"
+                ? "w-12 h-12 rounded-3xl bg-gradient-to-br from-green-primary/20 to-green-primary/8 border border-green-primary/15 flex items-center justify-center flex-shrink-0 shadow-[0_4px_12px_rgba(16,185,129,0.15)]"
+                : "w-12 h-12 rounded-3xl bg-background-elevated/40 border border-border/20 flex items-center justify-center flex-shrink-0 shadow-sm"
               }
             >
               <span
                 className={message.speaker === "user"
-                  ? "text-green-primary text-xs font-bold"
-                  : "text-text-muted text-xs font-bold"
+                  ? "text-green-primary text-xs font-semibold"
+                  : "text-text-muted text-xs font-semibold"
                 }
               >
                 {message.initials}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2.5 mb-1.5">
-                <span className="text-xs font-semibold text-text-primary">{message.name}</span>
-                <span className="text-[10px] text-text-dim font-mono">{message.time}</span>
+              <div className="flex items-center gap-3 mb-2.5">
+                <span className="text-xs font-medium text-text-primary">{message.name}</span>
+                <span className="text-[10px] text-text-dim/60 font-mono tracking-wider">{message.time}</span>
               </div>
-              <p className="text-sm text-text-secondary leading-relaxed">{message.text}</p>
+              <p className="text-sm text-text-secondary/90 leading-relaxed">{message.text}</p>
             </div>
           </div>
         ))}
@@ -127,14 +104,14 @@ export function TranscriptPanel() {
         {/* Typing Indicator */}
         {isTyping && (
           <div className="flex gap-4">
-            <div className="w-10 h-10 rounded-lg bg-background-elevated border border-border/50 flex items-center justify-center flex-shrink-0">
-              <span className="text-text-muted text-xs font-bold">SC</span>
+            <div className="w-12 h-12 rounded-3xl bg-background-elevated/40 border border-border/20 flex items-center justify-center flex-shrink-0 shadow-sm">
+              <span className="text-text-muted text-xs font-semibold">SC</span>
             </div>
             <div className="flex-1">
-              <div className="flex gap-1.5 mt-6">
-                <div className="w-2 h-2 bg-text-dim rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-text-dim rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                <div className="w-2 h-2 bg-text-dim rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+              <div className="flex gap-1.5 mt-7">
+                <div className="w-2 h-2 bg-text-dim/60 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-text-dim/60 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+                <div className="w-2 h-2 bg-text-dim/60 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
               </div>
             </div>
           </div>
