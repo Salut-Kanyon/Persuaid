@@ -8,7 +8,8 @@ const DEEPGRAM_PARAMS = new URLSearchParams({
   punctuate: "true",
   smart_format: "true",
   interim_results: "true",
-  utterance_end_ms: "1000",
+  // Give callers a more natural pause before Deepgram decides an utterance has ended.
+  utterance_end_ms: "3000",
 });
 const DEEPGRAM_WS_URL = `wss://api.deepgram.com/v1/listen?${DEEPGRAM_PARAMS.toString()}`;
 const KEEPALIVE_INTERVAL_MS = 2000;
@@ -60,32 +61,50 @@ interface DeepgramMessage {
   results?: { channels?: Array<{ alternatives?: Array<{ transcript?: string }> }> };
 }
 
-function parseAndAppend(
-  raw: string,
-  appendTranscript: (seg: { speaker: "user"; text: string }) => void,
-  /** When true (packaged app via proxy), append interims so speech appears even if is_final isn't sent. */
-  appendInterim: boolean
-): void {
+interface ParsedDeepgramResult {
+  transcript: string;
+  /** True when Deepgram considers the utterance complete. */
+  isFinal: boolean;
+}
+
+function parseDeepgramMessage(raw: string): ParsedDeepgramResult | null {
   try {
     const data = JSON.parse(raw) as DeepgramMessage;
     const transcript =
       data.channel?.alternatives?.[0]?.transcript?.trim() ||
       data.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim();
-    if (!transcript) return;
+    if (!transcript) return null;
     const isFinal = data.speech_final ?? data.is_final ?? false;
-    if (isFinal || appendInterim) {
-      appendTranscript({ speaker: "user", text: transcript });
-    }
-  } catch (_) {}
+    return { transcript, isFinal };
+  } catch (_) {
+    return null;
+  }
 }
 
 export function LiveTranscription() {
-  const { isRecording, appendTranscript, setSessionId, setMicError, audioInputDeviceId } = useSession();
+  const { isRecording, appendTranscript, setSessionId, setMicError, audioInputDeviceId, recentSpeechRef, registerClearBuffer } =
+    useSession();
   const wsRef = useRef<WebSocket | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const keepaliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const connectionErrorShownRef = useRef(false);
+  /** Buffer for the current in-progress utterance (interim transcript). */
+  const phraseBufferRef = useRef<string>("");
+  /** Last finalized transcript text, to avoid duplicate appends from Deepgram. */
+  const lastFinalTextRef = useRef<string>("");
+  /** Timestamp of last finalized text, to only dedupe back-to-back repeats. */
+  const lastFinalAtRef = useRef<number | null>(null);
+
+  // Allow other parts of the app (e.g., Q&A) to clear the current phrase buffer.
+  useEffect(() => {
+    registerClearBuffer(() => {
+      phraseBufferRef.current = "";
+      recentSpeechRef.current = "";
+      lastFinalTextRef.current = "";
+      lastFinalAtRef.current = null;
+    });
+  }, [registerClearBuffer, recentSpeechRef]);
 
   useEffect(() => {
     if (!isRecording) {
@@ -109,6 +128,11 @@ export function LiveTranscription() {
         streamRef.current.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
       }
+      // Reset buffers when recording stops so a new call can reuse the same phrases.
+      phraseBufferRef.current = "";
+      recentSpeechRef.current = "";
+      lastFinalTextRef.current = "";
+      lastFinalAtRef.current = null;
       return;
     }
 
@@ -238,22 +262,59 @@ export function LiveTranscription() {
           }, KEEPALIVE_INTERVAL_MS);
         }
 
-        const usingProxy = !!proxyUrl;
+        const handleResultText = (raw: string) => {
+          const parsed = parseDeepgramMessage(raw);
+          if (!parsed) return;
+          const { transcript, isFinal } = parsed;
+
+          // Track interim transcript for the current utterance.
+          phraseBufferRef.current = transcript;
+          recentSpeechRef.current = transcript;
+
+          // Only append a new transcript row when the utterance is final.
+          // This avoids multiple partial/duplicate entries like:
+          // "Hello.", "My name is", "Hello. My name is".
+          if (!isFinal) {
+            // For proxy mode we rely on Deepgram still sending a final flag.
+            // If that ever isn't the case, we'll see no finalized rows rather than noisy duplicates.
+            return;
+          }
+
+          const finalText = transcript.trim();
+          if (!finalText) return;
+
+          const now = Date.now();
+          // Ignore only truly back-to-back duplicates (Deepgram sometimes resends the same final result).
+          if (lastFinalTextRef.current === finalText && lastFinalAtRef.current && now - lastFinalAtRef.current < 1500) {
+            return;
+          }
+
+          lastFinalTextRef.current = finalText;
+          lastFinalAtRef.current = now;
+          appendTranscript({ speaker: "user", text: finalText });
+
+          // Clear the interim buffers now that this utterance is committed.
+          phraseBufferRef.current = "";
+          recentSpeechRef.current = "";
+        };
+
         const handleMessage = (event: MessageEvent) => {
           if (!mounted) return;
           const d = event.data;
           if (typeof d === "string") {
-            parseAndAppend(d, appendTranscript, usingProxy);
+            handleResultText(d);
             return;
           }
           if (d instanceof Blob) {
-            d.text().then((raw) => {
-              if (mounted) parseAndAppend(raw, appendTranscript, usingProxy);
-            }).catch(() => {});
+            d.text()
+              .then((raw) => {
+                if (mounted) handleResultText(raw);
+              })
+              .catch(() => {});
             return;
           }
           if (d instanceof ArrayBuffer) {
-            parseAndAppend(new TextDecoder().decode(d), appendTranscript, usingProxy);
+            handleResultText(new TextDecoder().decode(d));
           }
         };
 

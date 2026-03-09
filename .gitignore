@@ -37,3 +37,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# notarized DMG too large for GitHub (100MB limit); host via Releases or CDN
+/public/downloads/*.dmg
+Persuaid-0.1.0-arm64-signed.dmg

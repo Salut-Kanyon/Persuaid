@@ -63,8 +63,9 @@ console.log('Electron startup:', {
 
 let mainWindow;
 
-const DESKTOP_ENTRY_PATH = '/welcome';
-const DESKTOP_ENTRY_FILE = 'welcome.html';
+// Desktop entry: open the in-app workspace (dashboard) instead of the marketing site.
+const DESKTOP_ENTRY_PATH = '/dashboard';
+const DESKTOP_ENTRY_FILE = 'dashboard.html';
 
 /** Serve static files from dir (Next.js export: /welcome -> welcome.html, etc.). Used when packaged so DMG loads reliably. */
 function createBundleServer(dir) {
@@ -309,7 +310,7 @@ function createWindow() {
 
   // In dev mode, load Next.js dev server so /api (token, suggestions) work. Run "npm run dev" in another terminal first.
   if (forceDevServer) {
-    const devUrl = 'http://localhost:3000/welcome';
+    const devUrl = 'http://localhost:3000/dashboard';
     console.log('Desktop dev: loading', devUrl, '(ensure npm run dev is running)');
     mainWindow.loadURL(devUrl);
     mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
