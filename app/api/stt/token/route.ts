@@ -3,10 +3,11 @@ import { NextResponse } from "next/server";
 const DEEPGRAM_GRANT_URL = "https://api.deepgram.com/v1/auth/grant";
 
 export async function GET() {
-  const key = process.env.DEEPGRAM_API_KEY;
+  const key = process.env.DEEPGRAM_API_KEY?.trim();
   if (!key) {
+    console.warn("STT token: DEEPGRAM_API_KEY is missing. Add it to .env.local and restart the dev server (npm run dev).");
     return NextResponse.json(
-      { error: "DEEPGRAM_API_KEY is not configured" },
+      { error: "DEEPGRAM_API_KEY is not configured. Add it to .env.local and restart the dev server." },
       { status: 503 }
     );
   }
@@ -15,7 +16,9 @@ export async function GET() {
       method: "POST",
       headers: {
         Authorization: `Token ${key}`,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({ ttl_seconds: 3600 }),
     });
     if (!res.ok) {
       const text = await res.text();

@@ -32,7 +32,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 Create a `.env.local` file in the project root. In addition to your existing Supabase and Stripe keys:
 
-- **`DEEPGRAM_API_KEY`** – For live speech-to-text in the dashboard. Get a key at [Deepgram](https://deepgram.com/). Use a key with **Member or Owner** role in the Deepgram Console; restricted keys cannot create streaming tokens. Required for real-time transcription when recording.
+- **`DEEPGRAM_API_KEY`** – For live speech-to-text in the dashboard. Get a key at [Deepgram](https://deepgram.com/). Use a key with **Member or Owner** role in the Deepgram Console; restricted keys cannot create streaming tokens. If the token works but the connection still fails, create a **new key** in the Deepgram Console (old keys can be restricted or revoked). Required for real-time transcription when recording.
 - **`OPENAI_API_KEY`** – For AI suggestions and “Take notes” from the transcript. Required for the AI Suggestions panel and the Take notes button.
 
 See `supabase/README.md` for database migrations (scripts, notes, sessions).

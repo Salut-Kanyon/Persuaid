@@ -199,7 +199,7 @@ export function LiveTranscription() {
             if (!mounted) return;
             stream.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
-            setMicError("Could not connect to transcription. Check your network.");
+            setMicError("Could not connect to transcription. If the token works but this keeps happening, try a new API key in the Deepgram Console (Member or Owner role; restricted keys cannot stream). Or check your network.");
             return;
           }
         }
@@ -275,7 +275,7 @@ export function LiveTranscription() {
             } else if (ev.code === 1011 && (reason.includes("NET") || reason.includes("timeout"))) {
               showConnectionError("Connection timed out. Check network and try again.");
             } else if (ev.code === 4401 || ev.code === 4403) {
-              showConnectionError("Authentication failed. Try again.");
+              showConnectionError("Token expired or invalid. Stop the call and start again to get a new token.");
             } else {
               showConnectionError("Connection closed. Try again.");
             }
