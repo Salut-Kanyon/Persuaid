@@ -51,6 +51,9 @@ interface SessionContextValue {
   setSelectedScriptId: (id: string | null) => void;
   scriptContext: string;
   setScriptContext: (s: string) => void;
+  /** Notes content from the Notes panel; used as context for follow-up suggestions. */
+  notesContext: string;
+  setNotesContext: (s: string) => void;
   sessionId: string | null;
   setSessionId: React.Dispatch<React.SetStateAction<string | null>>;
   /** Current speech buffer (what was last said). Updated by LiveTranscription. Read on Enter to submit Q&A. */
@@ -66,6 +69,16 @@ interface SessionContextValue {
   requestSuggestions: () => void;
   /** Increments when requestSuggestions() is called; used by AISuggestionsFetcher to trigger a fetch. */
   suggestionsRequestedAt: number;
+  /** Single-line follow-up (what to say next + questions). Set by FollowUpFetcher. */
+  followUpText: string;
+  setFollowUpText: (s: string | ((prev: string) => string)) => void;
+  /** Increments when user requests follow-up (Enter). Used by FollowUpFetcher. */
+  followUpRequestedAt: number;
+  /** Request a fast follow-up from current transcript (Enter in dashboard). */
+  requestFollowUp: () => void;
+  /** Which suggestion type to request: what_to_say (default), questions, or key_points. */
+  followUpFocus: "what_to_say" | "questions" | "key_points";
+  setFollowUpFocus: (f: "what_to_say" | "questions" | "key_points") => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -88,10 +101,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [isRecording, setRecording] = useState(false);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [scriptContext, setScriptContext] = useState("");
+  const [notesContext, setNotesContext] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
   const [audioInputDeviceId, setAudioInputDeviceIdState] = useState<string | null>(null);
   const [suggestionsRequestedAt, setSuggestionsRequestedAt] = useState(0);
+  const [followUpText, setFollowUpText] = useState("");
+  const [followUpRequestedAt, setFollowUpRequestedAt] = useState(0);
+  const [followUpFocus, setFollowUpFocus] = useState<"what_to_say" | "questions" | "key_points">("what_to_say");
   const recentSpeechRef = useRef("");
   const clearBufferRef = useRef<(() => void) | null>(null);
 
@@ -102,6 +119,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const requestSuggestions = useCallback(() => {
     setSuggestionsRequestedAt((t) => t + 1);
+  }, []);
+
+  const requestFollowUp = useCallback(() => {
+    setFollowUpRequestedAt((t) => t + 1);
   }, []);
 
   const setAudioInputDeviceId = useCallback((id: string | null) => {
@@ -165,6 +186,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setSelectedScriptId,
       scriptContext,
       setScriptContext,
+      notesContext,
+      setNotesContext,
       sessionId,
       setSessionId,
       recentSpeechRef,
@@ -174,6 +197,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setAudioInputDeviceId,
       requestSuggestions,
       suggestionsRequestedAt,
+      followUpText,
+      setFollowUpText,
+      followUpRequestedAt,
+      requestFollowUp,
+      followUpFocus,
+      setFollowUpFocus,
     }),
     [
       transcript,
@@ -184,6 +213,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       micError,
       selectedScriptId,
       scriptContext,
+      notesContext,
       sessionId,
       clearRecentSpeech,
       registerClearBuffer,
@@ -191,6 +221,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setAudioInputDeviceId,
       requestSuggestions,
       suggestionsRequestedAt,
+      followUpText,
+      followUpRequestedAt,
+      requestFollowUp,
+      followUpFocus,
     ]
   );
 

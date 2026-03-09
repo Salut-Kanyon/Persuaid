@@ -8,7 +8,7 @@ const LiveSession = dynamic(
   { ssr: false, loading: () => <div className="flex items-center justify-center h-full text-text-muted text-sm">Loading…</div> }
 );
 
-const DEFAULT_PANEL_VISIBILITY = { transcript: true, aiSuggestions: true, script: true, notes: true };
+const DEFAULT_PANEL_VISIBILITY = { followUp: true, transcript: true, notes: true };
 
 export default function DashboardPage() {
   const [panelVisibility, setPanelVisibility] = useState(DEFAULT_PANEL_VISIBILITY);
