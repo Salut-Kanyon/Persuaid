@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
 
@@ -12,24 +13,28 @@ function formatElapsed(seconds: number): string {
 }
 
 export function Header() {
-  const {
-    isRecording,
-    setRecording,
-    elapsedSeconds,
-    setElapsedSeconds,
-  } = useSession();
+  const { isRecording, setRecording } = useSession();
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
-    if (!isRecording) return;
-    const t = setInterval(() => {
-      setElapsedSeconds((n) => n + 1);
-    }, 1000);
+    if (!isRecording) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const t = setInterval(() => setElapsedSeconds((n) => n + 1), 1000);
     return () => clearInterval(t);
-  }, [isRecording, setElapsedSeconds]);
+  }, [isRecording]);
 
   return (
     <header className="h-14 bg-background-elevated/35 backdrop-blur-2xl border-b border-border/8 flex items-center justify-between px-5">
       <div className="flex items-center gap-4">
+        <Link
+          href="/"
+          className="text-sm font-medium text-text-muted hover:text-text-primary transition-colors"
+        >
+          ← Landing
+        </Link>
+        <div className="h-3.5 w-px bg-border/12" />
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2">
             <div className="relative">

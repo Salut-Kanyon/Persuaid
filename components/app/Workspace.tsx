@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useLayoutEffect, useRef, useEffect } from "react";
+import { useSession } from "@/components/app/contexts/SessionContext";
 import { DraggableResizablePanel } from "./DraggableResizablePanel";
 import { TranscriptPanel } from "./panels/TranscriptPanel";
 import { AISuggestionsPanel } from "./panels/AISuggestionsPanel";
@@ -9,6 +10,20 @@ import { NotesPanel } from "./panels/NotesPanel";
 import { LiveTranscription } from "./LiveTranscription";
 import { AISuggestionsFetcher } from "./AISuggestionsFetcher";
 import { cn } from "@/lib/utils";
+
+function GetSuggestionsButton() {
+  const { requestSuggestions, transcript } = useSession();
+  return (
+    <button
+      type="button"
+      onClick={() => requestSuggestions()}
+      disabled={transcript.length === 0}
+      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-primary/20 text-green-700 dark:text-green-400 hover:bg-green-primary/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      Get suggestions
+    </button>
+  );
+}
 
 interface PanelPosition {
   x: number;
@@ -326,7 +341,12 @@ export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProp
           </>
         }
         actions={
-          <MinimizeButton onMinimize={() => toggleMinimize("aiSuggestions")} />
+          <>
+            {!minimizedPanels.aiSuggestions && (
+              <GetSuggestionsButton />
+            )}
+            <MinimizeButton onMinimize={() => toggleMinimize("aiSuggestions")} />
+          </>
         }
       >
         <AISuggestionsPanel />

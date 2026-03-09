@@ -1,31 +1,39 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 
 export default function DownloadPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [isLocalhost, setIsLocalhost] = useState(false);
+
+  useEffect(() => {
+    setIsLocalhost(/localhost|127\.0\.0\.1/.test(window.location?.host ?? ""));
+  }, []);
 
   const handleDownload = async () => {
     setIsDownloading(true);
     setDownloadError(null);
-    
+
     try {
-      // DMG file path - served from public/downloads in production
       const dmgUrl = "/downloads/Persuaid.dmg";
-      
-      // First, check if file exists (optional - for better UX)
+
       try {
         const response = await fetch(dmgUrl, { method: "HEAD" });
-        if (!response.ok && response.status === 404) {
-          throw new Error("Download file not found");
+        if (response.status === 404) {
+          setDownloadError(
+            isLocalhost
+              ? "DMG not found. Run npm run desktop:build to generate it, then refresh this page."
+              : "Download is not available yet. Please try again later."
+          );
+          setIsDownloading(false);
+          return;
         }
-      } catch (err) {
-        // If HEAD fails, still try to download (might be CORS issue)
-        console.warn("Could not verify file existence, proceeding with download");
+      } catch {
+        // HEAD can fail (CORS etc.); still attempt download
       }
       
       // Create download link
@@ -201,7 +209,19 @@ export default function DownloadPage() {
                   <span>Open Persuaid from Applications and start your free trial</span>
                 </li>
               </ol>
+              <p className="mt-4 pt-4 border-t border-border text-text-muted text-xs">
+                If macOS says Persuaid &quot;is damaged&quot;, right‑click the app → <strong>Open</strong> → click <strong>Open</strong> in the dialog. That’s a security prompt for apps from the web; the app is safe.
+              </p>
             </motion.div>
+
+            {/* Dev note: same file customers get */}
+            {isLocalhost && (
+              <p className="text-xs text-text-dim/70 mt-6 max-w-md mx-auto">
+                Testing locally: the file above is the same build customers get. Run{" "}
+                <code className="bg-background-elevated px-1 rounded text-[10px]">npm run desktop:build</code> to
+                refresh the DMG, then download from this page to test.
+              </p>
+            )}
 
             {/* Trust indicators */}
             <motion.div

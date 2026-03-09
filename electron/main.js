@@ -30,6 +30,21 @@ const bundledOutExists = () => {
 const useBundledFrontend = !forceDevServer && (isPackaged || bundledOutExists());
 const OUT_DIR = isPackaged ? outDirPackaged : outDirUnpacked;
 
+// Load .env so API keys are available in main process (required for packaged app; optional for dev).
+// 1) App config folder (packaged app + optional dev): ~/Library/Application Support/Persuaid/.env
+const userDataDir = app.getPath('userData');
+const appEnvPath = path.join(userDataDir, '.env');
+if (fs.existsSync(appEnvPath)) {
+  require('dotenv').config({ path: appEnvPath });
+}
+// 2) Project .env.local (dev only; not present in packaged app)
+if (!isPackaged) {
+  const envLocalPath = path.join(__dirname, '..', '.env.local');
+  if (fs.existsSync(envLocalPath)) {
+    require('dotenv').config({ path: envLocalPath });
+  }
+}
+
 // Custom protocol so the app loads from the bundle (no localhost, no HTTP server).
 protocol.registerSchemesAsPrivileged([
   { scheme: APP_PROTOCOL, privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -53,14 +68,16 @@ const DESKTOP_ENTRY_FILE = 'welcome.html';
 
 /** Serve static files from dir (Next.js export: /welcome -> welcome.html, etc.). Used when packaged so DMG loads reliably. */
 function createBundleServer(dir) {
+  const rootDir = path.resolve(dir);
   return http.createServer((req, res) => {
     let urlPath = req.url.split('?')[0].split('#')[0];
     // Handle root path
     if (urlPath === '/' || urlPath === '') {
       urlPath = DESKTOP_ENTRY_PATH;
     }
-    
-    let filePath = path.join(dir, urlPath);
+    // Strip leading slash so path.join(rootDir, urlPath) stays under rootDir (e.g. /_next/static/... -> _next/static/...)
+    if (urlPath.startsWith('/')) urlPath = urlPath.slice(1);
+    let filePath = path.join(rootDir, urlPath);
     
     // If no extension, try .html or index.html
     if (!path.extname(filePath)) {
@@ -74,10 +91,8 @@ function createBundleServer(dir) {
     }
     
     const resolved = path.resolve(filePath);
-    const dirResolved = path.resolve(dir);
-    
     // Security check: ensure file is within the out directory
-    if (!resolved.startsWith(dirResolved)) {
+    if (!resolved.startsWith(rootDir)) {
       console.warn('Forbidden path:', urlPath, '→', resolved);
       res.writeHead(403).end('Forbidden');
       return;
@@ -165,7 +180,8 @@ function startSttProxy(apiKey) {
       });
       upstream.on('message', (data) => {
         if (clientWs.readyState === clientWs.OPEN) {
-          clientWs.send(Buffer.isBuffer(data) ? data.toString('utf8') : data);
+          const text = Buffer.isBuffer(data) ? data.toString('utf8') : (typeof data === 'string' ? data : String(data));
+          clientWs.send(text);
         }
       });
     });
@@ -242,10 +258,7 @@ function createWindow() {
   // Start maximized (full screen) when entering the workspace / app
   mainWindow.maximize();
   
-  // Open DevTools for debugging
-  if (!isPackaged) {
-    mainWindow.webContents.openDevTools();
-  }
+  // DevTools: open manually if needed (Cmd+Option+I). Auto-open can show noisy "Failed to fetch" from DevTools internals.
 
   function loadBundle() {
     const entryFile = path.join(OUT_DIR, DESKTOP_ENTRY_FILE);
@@ -273,17 +286,39 @@ function createWindow() {
     });
     bundleHttpServer.listen(BUNDLE_SERVER_PORT, '127.0.0.1', () => {
       console.log('Bundle server listening on', bundleUrl);
-      mainWindow.loadURL(bundleUrl);
-      mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+      const showBundleError = (msg) => {
+        mainWindow.loadURL('data:text/html,' + encodeURIComponent(`
+          <!DOCTYPE html><html><head><meta charset="utf-8"><title>Persuaid</title></head><body style="font-family:sans-serif;padding:2rem;max-width:480px;margin:2rem auto;color:#333;">
+          <h1>Could not load app</h1><p>${msg}</p><p>Try rebuilding with <code>npm run desktop:build</code>.</p>
+          </body></html>
+        `));
+      };
+      mainWindow.webContents.once('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
         console.error('Failed to load:', validatedURL, errorCode, errorDescription);
+        if (validatedURL === bundleUrl || validatedURL.startsWith('http://127.0.0.1:' + BUNDLE_SERVER_PORT)) {
+          showBundleError('The app bundle failed to load. (' + errorDescription + ')');
+        }
       });
       mainWindow.webContents.on('did-finish-load', () => {
         console.log('Page loaded successfully');
       });
+      // Small delay so the server is definitely accepting connections before the browser requests the page
+      setImmediate(() => mainWindow.loadURL(bundleUrl));
     });
   }
 
-  // Always use HTTP server for better reliability with Next.js static assets
+  // In dev mode, load Next.js dev server so /api (token, suggestions) work. Run "npm run dev" in another terminal first.
+  if (forceDevServer) {
+    const devUrl = 'http://localhost:3000/welcome';
+    console.log('Desktop dev: loading', devUrl, '(ensure npm run dev is running)');
+    mainWindow.loadURL(devUrl);
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+      if (errorCode !== -3) console.error('Failed to load:', validatedURL, errorCode, errorDescription);
+    });
+    return;
+  }
+
+  // Production / bundled: serve static export from out/
   loadBundle();
 
   mainWindow.on('closed', () => {

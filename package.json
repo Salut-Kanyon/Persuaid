@@ -11,13 +11,14 @@
     "start": "next start",
     "lint": "next lint",
     "desktop": "next build && electron .",
-    "desktop:dev": "DESKTOP_DEV=1 electron .",
+    "desktop:dev": "concurrently -k -n dev,electron -c blue,green \"npm run dev\" \"wait-on http://localhost:3000 && cross-env DESKTOP_DEV=1 electron .\"",
     "clean:desktop": "node scripts/clean-desktop.js",
     "desktop:size": "node scripts/desktop-size.js",
     "desktop:artifact": "node -e \"const fs=require('fs');const path=require('path');const d='dist';const f=fs.existsSync(d)?fs.readdirSync(d).filter(x=>x.endsWith('.dmg')).sort().reverse()[0]:null;console.log(f?path.join(d,f):'');\"",
     "clean:out-downloads": "node scripts/clean-out-downloads.js",
-    "desktop:build": "npm run clean:desktop && next build && npm run clean:out-downloads && electron-builder && node -e \"const fs=require('fs');const path=require('path');const distDir='dist';const dmgFiles=fs.readdirSync(distDir).filter(f=>f.endsWith('.dmg'));if(dmgFiles.length>0){const latest=dmgFiles.sort().reverse()[0];fs.copyFileSync(path.join(distDir,latest),'public/downloads/Persuaid.dmg');console.log('DMG copied to public/downloads/Persuaid.dmg');}else{console.log('No DMG file found in dist/');}\"",
-    "pack": "npm run clean:desktop && next build && electron-builder --dir"
+    "clean:out-duplicates": "node scripts/clean-out-duplicates.js",
+    "desktop:build": "npm run clean:desktop && next build && npm run clean:out-downloads && npm run clean:out-duplicates && electron-builder && node -e \"const fs=require('fs');const path=require('path');const distDir='dist';const dmgFiles=fs.readdirSync(distDir).filter(f=>f.endsWith('.dmg'));if(dmgFiles.length>0){const latest=dmgFiles.sort().reverse()[0];fs.copyFileSync(path.join(distDir,latest),'public/downloads/Persuaid.dmg');console.log('DMG copied to public/downloads/Persuaid.dmg');}else{console.log('No DMG file found in dist/');}\"",
+    "pack": "npm run clean:desktop && next build && npm run clean:out-downloads && npm run clean:out-duplicates && electron-builder --dir"
   },
   "build": {
     "appId": "com.persuaid.app",
@@ -53,6 +54,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
     "clsx": "^2.1.1",
+    "dotenv": "^16.4.5",
     "ws": "^8.18.0",
     "framer-motion": "^11.3.19",
     "next": "^14.2.5",
@@ -61,6 +63,8 @@
     "tailwind-merge": "^2.4.0"
   },
   "devDependencies": {
+    "concurrently": "^9.1.0",
+    "wait-on": "^8.0.1",
     "@types/ws": "^8.5.10",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",

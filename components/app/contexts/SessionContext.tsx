@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -46,8 +47,6 @@ interface SessionContextValue {
   /** Set when mic fails to start (permission or device). Cleared on success or when user stops recording. */
   micError: string | null;
   setMicError: (value: string | null) => void;
-  elapsedSeconds: number;
-  setElapsedSeconds: React.Dispatch<React.SetStateAction<number>>;
   selectedScriptId: string | null;
   setSelectedScriptId: (id: string | null) => void;
   scriptContext: string;
@@ -63,6 +62,10 @@ interface SessionContextValue {
   /** Selected audio input device ID for listening to call (e.g. Phone/Bluetooth). null = default device. Persisted in localStorage. */
   audioInputDeviceId: string | null;
   setAudioInputDeviceId: (id: string | null) => void;
+  /** Request AI suggestions from the current transcript (on-demand; called when user presses Enter or clicks Get suggestions). */
+  requestSuggestions: () => void;
+  /** Increments when requestSuggestions() is called; used by AISuggestionsFetcher to trigger a fetch. */
+  suggestionsRequestedAt: number;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -83,14 +86,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isRecording, setRecording] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [scriptContext, setScriptContext] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
-  const [audioInputDeviceId, setAudioInputDeviceIdState] = useState<string | null>(() => getStoredAudioInputId());
+  const [audioInputDeviceId, setAudioInputDeviceIdState] = useState<string | null>(null);
+  const [suggestionsRequestedAt, setSuggestionsRequestedAt] = useState(0);
   const recentSpeechRef = useRef("");
   const clearBufferRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    const stored = getStoredAudioInputId();
+    if (stored !== null) setAudioInputDeviceIdState(stored);
+  }, []);
+
+  const requestSuggestions = useCallback(() => {
+    setSuggestionsRequestedAt((t) => t + 1);
+  }, []);
 
   const setAudioInputDeviceId = useCallback((id: string | null) => {
     setAudioInputDeviceIdState(id);
@@ -119,16 +131,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }) => {
       const trimmed = segment.text?.trim();
       if (!trimmed) return;
-      setTranscript((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          speaker: segment.speaker ?? "user",
-          name: segment.name,
-          text: trimmed,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      setTranscript((prev) => {
+        if (prev.length > 0 && prev[prev.length - 1].text === trimmed) return prev;
+        return [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            speaker: segment.speaker ?? "user",
+            name: segment.name,
+            text: trimmed,
+            timestamp: new Date().toISOString(),
+          },
+        ];
+      });
     },
     []
   );
@@ -146,8 +161,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setRecording,
       micError,
       setMicError,
-      elapsedSeconds,
-      setElapsedSeconds,
       selectedScriptId,
       setSelectedScriptId,
       scriptContext,
@@ -159,6 +172,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       registerClearBuffer,
       audioInputDeviceId,
       setAudioInputDeviceId,
+      requestSuggestions,
+      suggestionsRequestedAt,
     }),
     [
       transcript,
@@ -167,7 +182,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       suggestions,
       isRecording,
       micError,
-      elapsedSeconds,
       selectedScriptId,
       scriptContext,
       sessionId,
@@ -175,6 +189,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       registerClearBuffer,
       audioInputDeviceId,
       setAudioInputDeviceId,
+      requestSuggestions,
+      suggestionsRequestedAt,
     ]
   );
 
