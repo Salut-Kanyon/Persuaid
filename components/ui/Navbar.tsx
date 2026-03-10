@@ -37,7 +37,7 @@ export function Navbar() {
               alt="Persuaid"
               className="w-4 h-4 flex-shrink-0 object-contain"
             />
-            <span>Get started</span>
+            <span>Try for Free</span>
           </a>
         </div>
       )}
@@ -72,12 +72,6 @@ export function Navbar() {
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-primary group-hover:w-full transition-all duration-300"></span>
                 </a>
               ))}
-              <a
-                href="/sign-in"
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border border-green-primary/60 bg-green-primary/10 text-green-accent hover:bg-green-primary/20 transition-colors duration-300"
-              >
-                Get started
-              </a>
             </div>
 
             {/* Mobile menu button */}
@@ -129,17 +123,6 @@ export function Navbar() {
                   {link.label}
                 </a>
               ))}
-              <a
-                href="/sign-in"
-                className="flex items-center justify-center gap-2 px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 border border-green-primary/60 bg-black text-white hover:bg-gray-900 hover:border-green-primary/80 hover:shadow-xl shadow-lg w-full"
-              >
-                <img
-                  src="/PersuaidLogo.png"
-                  alt="Persuaid"
-                  className="w-4 h-4 flex-shrink-0 object-contain"
-                />
-                <span>Get started</span>
-              </a>
             </div>
           </div>
         </div>
