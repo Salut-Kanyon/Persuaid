@@ -35,16 +35,24 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-base sm:text-lg text-text-muted mb-8 max-w-2xl mx-auto leading-relaxed font-light"
+              className="text-base sm:text-lg text-text-muted mb-3 max-w-2xl mx-auto leading-relaxed font-light"
             >
-              Our AI listens to your sales calls in real time and suggests exactly what to say to move the deal forward.
+              AI listens to your call and suggests what to say next—and questions to ask—in real time.
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.25 }}
+              className="text-sm text-text-dim mb-8 max-w-xl mx-auto"
+            >
+              For SDRs, AEs, and founders who run their own demos.
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex justify-center mb-8"
+              className="flex flex-col items-center gap-3 mb-8"
             >
               <a
                 href="/download"
@@ -56,6 +64,12 @@ export function Hero() {
                   className="w-5 h-5 flex-shrink-0 object-contain group-hover:scale-110 transition-transform duration-300"
                 />
                 <span className="text-lg">Download</span>
+              </a>
+              <a
+                href="#product"
+                className="text-sm text-text-dim hover:text-green-accent transition-colors duration-200"
+              >
+                See it in action →
               </a>
             </motion.div>
           </motion.div>

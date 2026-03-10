@@ -4,7 +4,7 @@ export function Footer() {
   const footerLinks = {
     Product: [
       { label: "Features", href: "#features" },
-      { label: "Pricing", href: "#pricing" },
+      { label: "Pricing", href: "/pricing" },
       { label: "Integrations", href: "#" },
     ],
     Company: [
@@ -45,7 +45,7 @@ export function Footer() {
               conversation.
             </p>
             <CTAButton variant="primary" href="/download">
-              Get Started
+              Start free trial
             </CTAButton>
           </div>
 

@@ -20,6 +20,7 @@ export function Navbar() {
   const navLinks = [
     { label: "Pricing", href: "/pricing" },
     { label: "Dashboard", href: "/dashboard" },
+    { label: "Home", href: "/" },
   ];
 
   return (
@@ -59,8 +60,8 @@ export function Navbar() {
               </a>
             </div>
 
-            {/* Desktop Navigation - moved to right */}
-            <div className="hidden md:flex md:items-center md:space-x-8 md:ml-auto">
+            {/* Desktop Navigation - links + CTA */}
+            <div className="hidden md:flex md:items-center md:gap-8 md:ml-auto">
               {navLinks.map((link) => (
                 <a
                   key={link.label}
@@ -71,6 +72,12 @@ export function Navbar() {
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-primary group-hover:w-full transition-all duration-300"></span>
                 </a>
               ))}
+              <a
+                href="/download"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border border-green-primary/60 bg-green-primary/10 text-green-accent hover:bg-green-primary/20 transition-colors duration-300"
+              >
+                Start free trial
+              </a>
             </div>
 
             {/* Mobile menu button */}

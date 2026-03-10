@@ -45,8 +45,7 @@ export default function PricingPage() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="text-xl sm:text-2xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light"
           >
-            Choose the plan that fits your team. All plans include a 14-day
-            free trial. No credit card required.
+            Start free. Upgrade when you're ready. All plans include a 14-day free trial. No credit card required.
           </motion.p>
         </motion.div>
 
@@ -64,9 +63,9 @@ export default function PricingPage() {
             features={[
               "Unlimited calls",
               "Live transcript",
-              "AI suggestions",
-              "Basic scripts",
-              "Notes & tags",
+              "What to say / Questions / Key points",
+              "Notes + AI rewrite",
+              "Save transcript",
               "Email support",
             ]}
             cta="Start Free Trial"
@@ -77,8 +76,8 @@ export default function PricingPage() {
             description="For teams and growing sales orgs"
             features={[
               "Everything in Starter",
-              "Advanced AI coaching",
-              "Custom scripts",
+              "Scripts & talking points",
+              "Notes as context for AI",
               "Team collaboration",
               "Analytics & insights",
               "Priority support",
@@ -115,6 +114,11 @@ export default function PricingPage() {
           </h2>
           <div className="space-y-6">
             {[
+              {
+                question: "How does the free trial work?",
+                answer:
+                  "Start with a 14-day free trial—no credit card required. You get full access to the plan you choose. If you don't cancel before the trial ends, we'll charge you for the first month. You can cancel anytime from your account.",
+              },
               {
                 question: "Can I change plans later?",
                 answer:
@@ -160,14 +164,22 @@ export default function PricingPage() {
           className="text-center mt-20"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-text-primary mb-6">
-            Ready to get started?
+            Start your free trial
           </h2>
           <p className="text-text-muted mb-8 text-lg">
-            Start your free trial today. No credit card required.
+            No credit card required. Download and try Persuaid on your next call.
           </p>
-          <CTAButton href="/download" variant="primary" size="large">
-            Start Free Trial
-          </CTAButton>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <CTAButton href="/download" variant="primary" size="large">
+              Start Free Trial
+            </CTAButton>
+            <a
+              href="/"
+              className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-xl border border-border/50 text-text-secondary hover:bg-background-surface hover:text-text-primary transition-colors"
+            >
+              Back to home
+            </a>
+          </div>
         </motion.div>
       </Section>
 

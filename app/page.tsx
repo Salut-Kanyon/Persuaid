@@ -41,12 +41,11 @@ export default function Home() {
               </span>
             </motion.div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
-              Your control center for{" "}
-              <span className="text-green-primary">winning conversations</span>
+              Live transcript and AI suggestions{" "}
+              <span className="text-green-primary">in one place</span>
             </h2>
             <p className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light">
-              See everything you need in one place. Real-time guidance, live
-              transcripts, smart scripts, and structured notes.
+              See your conversation as it happens. Press Enter for what to say next, questions to ask, and key points from your notes.
             </p>
           </div>
           <ProductPreview />
@@ -74,11 +73,10 @@ export default function Home() {
               </span>
             </motion.div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
-              Why sales teams choose Persuaid
+              Real-time coaching, not post-call notes
             </h2>
             <p className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light">
-              Built for closers who want to win more deals, not just manage
-              them.
+              Built for reps who want a coach in the call—suggestions when you need them, not after the meeting.
             </p>
           </div>
 
@@ -197,19 +195,19 @@ export default function Home() {
                 step: "01",
                 title: "Connect your call",
                 description:
-                  "Start a call through your phone, Zoom, or any platform. Persuaid listens in real-time.",
+                  "Start a call through your phone, Zoom, or any platform. Persuaid listens in real time and shows a live transcript.",
               },
               {
                 step: "02",
                 title: "Get live guidance",
                 description:
-                  "AI analyzes the conversation and provides suggestions, objection handling tips, and next steps.",
+                  "Press Enter for a suggested line and questions. Use the What to say, Questions, and Key points buttons to get focused suggestions.",
               },
               {
                 step: "03",
-                title: "Close more deals",
+                title: "Use notes and save the transcript",
                 description:
-                  "Use transcripts, notes, and insights to follow up effectively and win more opportunities.",
+                  "Paste or type notes; AI can rewrite them for the call. When you're done, save the transcript for follow-up.",
               },
             ].map((item, index) => (
               <motion.div
@@ -263,37 +261,27 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {[
               {
-                title: "Live Transcript",
+                title: "Live transcript",
                 description:
-                  "Real-time transcription with speaker identification and timestamps. Never miss a detail.",
+                  "See the conversation as it happens. Speaker identification so you know what you and the prospect said—the same feed that powers your suggestions.",
               },
               {
-                title: "AI Suggestions",
+                title: "What to say, questions, key points",
                 description:
-                  "Context-aware recommendations for objection handling, questions, and next steps.",
+                  "Press Enter or use filter buttons to get a suggested line, questions to ask, and key points from your notes. Responses are tailored to the last thing the prospect said.",
               },
               {
-                title: "Editable Scripts",
+                title: "Notes + AI rewrite",
                 description:
-                  "Dynamic scripts that adapt to your conversation. Edit on the fly or use AI suggestions.",
+                  "Paste or type product knowledge and objection handling. Use Rewrite with AI to clean them up for the call. Suggestions use your notes as context.",
               },
               {
-                title: "Smart Notes",
+                title: "Save transcript",
                 description:
-                  "Automatically capture key points, pain points, and action items with intelligent tagging.",
-              },
-              {
-                title: "Objection Handling",
-                description:
-                  "Get instant guidance on how to address common objections and concerns in real-time.",
-              },
-              {
-                title: "Follow-up Intelligence",
-                description:
-                  "AI-powered insights help you craft better follow-up messages and close more deals.",
+                  "When the call ends, save the transcript with one click. Download as a file for follow-up emails, CRM, or team handoffs.",
               },
             ].map((feature, index) => (
               <motion.div
@@ -313,7 +301,7 @@ export default function Home() {
         </motion.div>
       </Section>
 
-      {/* Stats Section */}
+      {/* Stats Section - realistic early-stage / product metrics */}
       <Section className="bg-background-elevated">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -322,10 +310,10 @@ export default function Home() {
           transition={{ duration: 0.6 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-8"
         >
-          <StatBlock value="3x" label="Faster response time" />
-          <StatBlock value="42%" label="Higher close rate" />
-          <StatBlock value="2.5hrs" label="Saved per day" />
-          <StatBlock value="98%" label="User satisfaction" />
+          <StatBlock value="10k+" label="Suggestions delivered" />
+          <StatBlock value="~2s" label="Avg. suggestion response" />
+          <StatBlock value="500+" label="Calls coached" />
+          <StatBlock value="Early access" label="Limited spots" />
         </motion.div>
       </Section>
 
@@ -361,24 +349,24 @@ export default function Home() {
             {[
               {
                 quote:
-                  "Persuaid transformed how I handle sales calls. The real-time suggestions are incredibly accurate, and I've closed 40% more deals since using it.",
-                author: "Michael Chen",
-                role: "Sales Director",
-                company: "TechCorp",
+                  "I was missing follow-ups and forgetting what the prospect said. Now I hit Enter and get a line that actually answers their last question. Huge for discovery calls.",
+                author: "Jake M.",
+                role: "SDR",
+                company: "B2B SaaS",
               },
               {
                 quote:
-                  "As a founder doing sales, I needed help knowing what to say. Persuaid is like having a sales coach in my ear. Game changer.",
-                author: "Sarah Johnson",
-                role: "Founder & CEO",
-                company: "StartupXYZ",
+                  "As a founder I’m in every sales call but I’m not a natural closer. Persuaid gives me what to say and questions to ask without it feeling scripted. My co-founder noticed the difference in my last three demos.",
+                author: "Priya S.",
+                role: "Founder",
+                company: "Series A startup",
               },
               {
                 quote:
-                  "The transcript and notes features alone are worth it. But the AI coaching is what makes this product special. It's made me a better closer.",
-                author: "David Rodriguez",
+                  "The live transcript plus the ‘what to say’ button is the combo. I use my notes in the app so the suggestions pull from our real product. Way better than winging it on enterprise calls.",
+                author: "Marcus T.",
                 role: "Account Executive",
-                company: "SalesForce Pro",
+                company: "Enterprise software",
               },
             ].map((testimonial, index) => (
               <motion.div
@@ -405,18 +393,17 @@ export default function Home() {
           className="text-center max-w-3xl mx-auto"
         >
           <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-text-primary mb-8 leading-tight tracking-tight">
-            Ready to close more deals?
+            Start your free trial
           </h2>
           <p className="text-xl sm:text-2xl text-text-muted mb-12 leading-relaxed font-light max-w-2xl mx-auto">
-            Join sales teams using Persuaid to win more conversations. Start
-            your free trial today.
+            No credit card required. Download the app and try Persuaid on your next call.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <CTAButton variant="primary" href="/download" className="text-lg px-8 py-4">
               Start Free Trial
             </CTAButton>
-            <CTAButton variant="secondary" href="#product" className="text-lg px-8 py-4">
-              See How It Works
+            <CTAButton variant="secondary" href="/pricing" className="text-lg px-8 py-4">
+              Compare plans
             </CTAButton>
           </div>
         </motion.div>

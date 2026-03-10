@@ -5,6 +5,13 @@ import { supabase } from "@/lib/supabase/client";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { cn } from "@/lib/utils";
 
+interface SavedNote {
+  id: string;
+  title: string | null;
+  content: string;
+  updated_at: string;
+}
+
 export function NotesPanel() {
   const { setNotesContext } = useSession();
   const [currentNote, setCurrentNote] = useState("");
@@ -12,6 +19,9 @@ export function NotesPanel() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [rewriting, setRewriting] = useState(false);
   const [rewriteError, setRewriteError] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [savedNotes, setSavedNotes] = useState<SavedNote[]>([]);
+  const [importLoading, setImportLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -83,9 +93,29 @@ export function NotesPanel() {
     e.target.value = "";
   };
 
+  const openImport = async () => {
+    setImportOpen(true);
+    setImportLoading(true);
+    const { data } = await supabase
+      .from("notes")
+      .select("id, title, content, updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(50);
+    setSavedNotes((data as SavedNote[]) ?? []);
+    setImportLoading(false);
+  };
+
+  const importNote = (note: SavedNote) => {
+    const toAppend = note.content?.trim() || "";
+    if (toAppend) {
+      setCurrentNote((prev) => (prev.trim() ? prev + "\n\n" + toAppend : toAppend));
+    }
+    setImportOpen(false);
+  };
+
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
-      <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border/30">
+      <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border/30 flex-wrap">
         <input
           ref={fileInputRef}
           type="file"
@@ -99,6 +129,13 @@ export function NotesPanel() {
           className="px-3 py-1.5 text-xs font-medium rounded-lg bg-background-surface/60 border border-border/50 text-text-primary hover:bg-background-surface transition-colors"
         >
           Load from file
+        </button>
+        <button
+          type="button"
+          onClick={openImport}
+          className="px-3 py-1.5 text-xs font-medium rounded-lg bg-background-surface/60 border border-border/50 text-text-primary hover:bg-background-surface transition-colors"
+        >
+          Import from my notes
         </button>
         <button
           type="button"
@@ -116,6 +153,38 @@ export function NotesPanel() {
       {rewriteError && (
         <div className="flex-shrink-0 px-4 py-1.5 text-xs text-red-500 dark:text-red-400">
           {rewriteError}
+        </div>
+      )}
+      {importOpen && (
+        <div className="flex-shrink-0 px-4 py-2 border-b border-border/30 bg-background-surface/40">
+          <p className="text-xs text-text-muted mb-2">Choose a note to append to current notes:</p>
+          {importLoading ? (
+            <p className="text-xs text-text-dim">Loading…</p>
+          ) : savedNotes.length === 0 ? (
+            <p className="text-xs text-text-dim">No saved notes. Save notes from the Notes page in the sidebar.</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+              {savedNotes.map((note) => (
+                <button
+                  key={note.id}
+                  type="button"
+                  onClick={() => importNote(note)}
+                  className="px-2.5 py-1.5 text-xs rounded-lg bg-background-elevated/60 border border-border/50 text-text-primary hover:bg-green-primary/15 hover:border-green-primary/30 transition-colors text-left max-w-full truncate"
+                  title={note.title || note.content?.slice(0, 100) || "Untitled"}
+                >
+                  {note.title || note.content?.slice(0, 40) || "Untitled"}
+                  {!note.title && (note.content?.length ?? 0) > 40 ? "…" : ""}
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setImportOpen(false)}
+            className="mt-2 text-xs text-text-dim hover:text-text-primary"
+          >
+            Close
+          </button>
         </div>
       )}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

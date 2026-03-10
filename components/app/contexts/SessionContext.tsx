@@ -79,15 +79,24 @@ interface SessionContextValue {
   /** Which suggestion type to request: what_to_say (default), questions, or key_points. */
   followUpFocus: "what_to_say" | "questions" | "key_points";
   setFollowUpFocus: (f: "what_to_say" | "questions" | "key_points") => void;
+  /** Name shown in header as "Call with [name]". Empty when not in call; set when recording (e.g. Prospect). */
+  callParticipantName: string;
+  setCallParticipantName: (s: string) => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
 const AUDIO_INPUT_STORAGE_KEY = "persuaid_audio_input_id";
+const AUDIO_INPUT_MIGRATION_KEY = "persuaid_audio_input_migrated_v1";
 
 function getStoredAudioInputId(): string | null {
   if (typeof window === "undefined") return null;
   try {
+    if (!localStorage.getItem(AUDIO_INPUT_MIGRATION_KEY)) {
+      localStorage.removeItem(AUDIO_INPUT_STORAGE_KEY);
+      localStorage.setItem(AUDIO_INPUT_MIGRATION_KEY, "1");
+      return null;
+    }
     const id = localStorage.getItem(AUDIO_INPUT_STORAGE_KEY);
     return id === "" ? null : id;
   } catch {
@@ -109,6 +118,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [followUpText, setFollowUpText] = useState("");
   const [followUpRequestedAt, setFollowUpRequestedAt] = useState(0);
   const [followUpFocus, setFollowUpFocus] = useState<"what_to_say" | "questions" | "key_points">("what_to_say");
+  const [callParticipantName, setCallParticipantName] = useState("");
   const recentSpeechRef = useRef("");
   const clearBufferRef = useRef<(() => void) | null>(null);
 
@@ -116,6 +126,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const stored = getStoredAudioInputId();
     if (stored !== null) setAudioInputDeviceIdState(stored);
   }, []);
+
+  useEffect(() => {
+    if (!isRecording) setCallParticipantName("");
+  }, [isRecording]);
 
   const requestSuggestions = useCallback(() => {
     setSuggestionsRequestedAt((t) => t + 1);
@@ -203,6 +217,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       requestFollowUp,
       followUpFocus,
       setFollowUpFocus,
+      callParticipantName,
+      setCallParticipantName,
     }),
     [
       transcript,
@@ -225,6 +241,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       followUpRequestedAt,
       requestFollowUp,
       followUpFocus,
+      callParticipantName,
     ]
   );
 
