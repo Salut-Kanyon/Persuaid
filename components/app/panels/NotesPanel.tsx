@@ -120,6 +120,16 @@ export function NotesPanel() {
     fileInputRef.current?.click();
   };
 
+  const handleClear = () => {
+    setCurrentNote("");
+    setNotesContext("");
+    try {
+      localStorage.setItem("persuaid_notes_draft_v1", "");
+    } catch {
+      // ignore
+    }
+  };
+
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -281,14 +291,25 @@ export function NotesPanel() {
               {saveMessage}
             </div>
           )}
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving || !currentNote.trim()}
-            className="w-full px-4 py-2.5 rounded-xl bg-green-primary/20 text-green-accent border border-green-primary/30 text-sm font-medium hover:bg-green-primary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {saving ? "Saving…" : "Save"}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleClear}
+              disabled={!currentNote.trim()}
+              className="px-3 py-2 text-sm font-medium text-text-muted hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Clear draft"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || !currentNote.trim()}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-green-primary/20 text-green-accent border border-green-primary/30 text-sm font-medium hover:bg-green-primary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

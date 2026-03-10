@@ -18,6 +18,18 @@ const navigation = [
     ),
   },
   {
+    name: "AI Coach",
+    href: "/dashboard/analyze",
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2v1.5M6 6h12a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2z" />
+        <circle cx="9.5" cy="11" r="1.25" />
+        <circle cx="14.5" cy="11" r="1.25" />
+        <path d="M9.5 15.5q2.5 2 5 0" />
+      </svg>
+    ),
+  },
+  {
     name: "Scripts",
     href: "/dashboard/scripts",
     icon: (
@@ -32,15 +44,6 @@ const navigation = [
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-      </svg>
-    ),
-  },
-  {
-    name: "Analytics",
-    href: "/dashboard/analytics",
-    icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
       </svg>
     ),
   },
@@ -99,18 +102,21 @@ export function Sidebar() {
 
   return (
     <aside className="w-52 bg-background-elevated/35 backdrop-blur-2xl border-r border-border/8 flex flex-col">
-      {/* Logo */}
+      {/* Logo — click to go to landing */}
       <div className="px-4 pt-4 pb-2">
-        <div className="flex items-end gap-0">
+        <Link
+          href="/"
+          className="flex items-end gap-0 group"
+        >
           <img
             src="/PersuaidLogo.png"
             alt="Persuaid"
-            className="w-8 h-8 flex-shrink-0 object-contain translate-y-1"
+            className="w-8 h-8 flex-shrink-0 object-contain translate-y-1 group-hover:opacity-90 transition-opacity"
           />
-          <span className="text-lg font-semibold text-text-primary tracking-tight -ml-1 translate-y-3">
+          <span className="text-lg font-semibold text-text-primary tracking-tight -ml-1 translate-y-3 group-hover:text-green-accent transition-colors">
             ersuaid
           </span>
-        </div>
+        </Link>
       </div>
       {/* Navigation */}
       <nav className="flex-1 px-2.5 py-4 space-y-1">

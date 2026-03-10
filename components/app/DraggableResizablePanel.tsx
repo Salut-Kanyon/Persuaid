@@ -121,8 +121,8 @@ export function DraggableResizablePanel({
         }
         if (isResizing.includes("bottom")) h = Math.max(minHeight, Math.min(pos.height + dY, maxY - pos.y));
         if (isResizing.includes("top")) {
-          const c = Math.max(-(pos.height - minHeight), Math.min(dY, pos.y - inset));
-          h = pos.height + c;
+          const c = Math.max(inset - pos.y, Math.min(dY, pos.height - minHeight));
+          h = pos.height - c;
           y = pos.y + c;
         }
         x = Math.max(inset, Math.min(x, maxX - minWidth));

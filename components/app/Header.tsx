@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
 
@@ -49,13 +48,6 @@ export function Header() {
   return (
     <header className="h-14 bg-background-elevated/35 backdrop-blur-2xl border-b border-border/8 flex items-center justify-between px-5">
       <div className="flex items-center gap-4 flex-wrap">
-        <Link
-          href="/"
-          className="text-sm font-medium text-text-muted hover:text-text-primary transition-colors"
-        >
-          ← Landing
-        </Link>
-        <div className="h-3.5 w-px bg-border/12" />
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2">
             <div className="relative">

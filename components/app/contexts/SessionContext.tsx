@@ -116,6 +116,7 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 
 const AUDIO_INPUT_STORAGE_KEY = "persuaid_audio_input_id";
 const AUDIO_INPUT_MIGRATION_KEY = "persuaid_audio_input_migrated_v1";
+const DIARIZATION_ME_STORAGE_KEY = "persuaid_diarization_me_speaker_id";
 
 function getStoredAudioInputId(): string | null {
   if (typeof window === "undefined") return null;
@@ -127,6 +128,18 @@ function getStoredAudioInputId(): string | null {
     }
     const id = localStorage.getItem(AUDIO_INPUT_STORAGE_KEY);
     return id === "" ? null : id;
+  } catch {
+    return null;
+  }
+}
+
+function getStoredDiarizationMeSpeakerId(): number | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const s = localStorage.getItem(DIARIZATION_ME_STORAGE_KEY);
+    if (s === null || s === "") return null;
+    const n = Number(s);
+    return Number.isInteger(n) && n >= 0 ? n : null;
   } catch {
     return null;
   }
@@ -151,13 +164,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [interimTranscript, setInterimTranscript] = useState("");
   const [interimSpeakerId, setInterimSpeakerId] = useState<number | null>(null);
   const [diarizationSpeakerIds, setDiarizationSpeakerIds] = useState<number[]>([]);
-  const [diarizationMeSpeakerId, setDiarizationMeSpeakerId] = useState<number | null>(null);
+  const [diarizationMeSpeakerId, setDiarizationMeSpeakerIdState] = useState<number | null>(null);
   const recentSpeechRef = useRef("");
   const clearBufferRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const stored = getStoredAudioInputId();
     if (stored !== null) setAudioInputDeviceIdState(stored);
+  }, []);
+
+  useEffect(() => {
+    const stored = getStoredDiarizationMeSpeakerId();
+    if (stored !== null) setDiarizationMeSpeakerIdState(stored);
   }, []);
 
   useEffect(() => {
@@ -168,10 +186,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setInterimTranscript("");
       setInterimSpeakerId(null);
       setDiarizationSpeakerIds([]);
-      setDiarizationMeSpeakerId(null);
       setDealContext({});
     }
   }, [isRecording]);
+
+  const setDiarizationMeSpeakerId = useCallback((id: number | null) => {
+    setDiarizationMeSpeakerIdState(id);
+    try {
+      if (typeof window !== "undefined") {
+        if (id === null) localStorage.removeItem(DIARIZATION_ME_STORAGE_KEY);
+        else localStorage.setItem(DIARIZATION_ME_STORAGE_KEY, String(id));
+      }
+    } catch (_) {}
+  }, []);
 
   const requestSuggestions = useCallback(() => {
     setSuggestionsRequestedAt((t) => t + 1);

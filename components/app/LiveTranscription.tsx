@@ -8,11 +8,13 @@ function buildDeepgramParams(sampleRate: number): URLSearchParams {
   const params = new URLSearchParams({
     encoding: "linear16",
     sample_rate: String(sampleRate),
+    model: "nova-2",
     punctuate: "true",
     smart_format: "true",
     interim_results: "true",
     utterance_end_ms: "3000",
     diarize: "true",
+    utterances: "true",
   });
   return params;
 }
@@ -108,7 +110,13 @@ interface ParsedDeepgramResult {
   speakerId?: number;
 }
 
-function parseDeepgramMessage(raw: string): ParsedDeepgramResult | null {
+/**
+ * Parse a Deepgram message. When diarization is on, each word can have a speaker.
+ * We split the segment by speaker so overlapping speech or mid-utterance speaker
+ * changes produce separate transcript entries with the correct label (instead of
+ * labeling the whole segment by the first word's speaker only).
+ */
+function parseDeepgramMessage(raw: string): ParsedDeepgramResult | ParsedDeepgramResult[] | null {
   try {
     const data = JSON.parse(raw) as DeepgramMessage;
     const alt =
@@ -117,6 +125,44 @@ function parseDeepgramMessage(raw: string): ParsedDeepgramResult | null {
     const transcript = alt?.transcript?.trim() || "";
     const isFinal = data.speech_final ?? data.is_final ?? false;
     if (!transcript) return null;
+
+    const words = alt?.words;
+    if (Array.isArray(words) && words.length > 0) {
+      const hasMultipleSpeakers = words.some(
+        (w, i) => i > 0 && typeof w?.speaker === "number" && w.speaker !== words[0]?.speaker
+      );
+      if (hasMultipleSpeakers) {
+        const segments: ParsedDeepgramResult[] = [];
+        let run: { speaker: number; texts: string[] } = {
+          speaker: typeof words[0]?.speaker === "number" ? words[0].speaker : 0,
+          texts: [words[0]?.punctuated_word ?? words[0]?.word ?? ""],
+        };
+        for (let i = 1; i < words.length; i++) {
+          const w = words[i];
+          const sp = typeof w?.speaker === "number" ? w.speaker : run.speaker;
+          const text = w?.punctuated_word ?? w?.word ?? "";
+          if (sp === run.speaker) {
+            run.texts.push(text);
+          } else {
+            segments.push({
+              transcript: run.texts.join(" ").trim(),
+              isFinal,
+              speakerId: run.speaker,
+            });
+            run = { speaker: sp, texts: [text] };
+          }
+        }
+        if (run.texts.length > 0) {
+          segments.push({
+            transcript: run.texts.join(" ").trim(),
+            isFinal,
+            speakerId: run.speaker,
+          });
+        }
+        return segments.filter((s) => s.transcript.length > 0);
+      }
+    }
+
     const speakerId =
       typeof alt?.words?.[0]?.speaker === "number" ? alt.words![0].speaker : undefined;
     return { transcript, isFinal, speakerId };
@@ -387,9 +433,13 @@ export function LiveTranscription() {
             }
             return;
           }
-          const { transcript, isFinal, speakerId } = parsed;
+
+          const segments = Array.isArray(parsed) ? parsed : [parsed];
+          const first = segments[0];
+          const transcript = first.transcript;
+          const isFinal = first.isFinal;
           try {
-            console.log("[STT] Transcript chunk:", (transcript || "").slice(0, 120), "final=", isFinal);
+            console.log("[STT] Transcript chunk:", (transcript || "").slice(0, 120), "final=", isFinal, "segments=", segments.length);
           } catch {
             // ignore
           }
@@ -397,38 +447,46 @@ export function LiveTranscription() {
           phraseBufferRef.current = transcript;
           recentSpeechRef.current = transcript;
           setInterimTranscript(transcript);
-          setInterimSpeakerId(typeof speakerId === "number" ? speakerId : null);
-          if (typeof speakerId === "number") {
-            setDiarizationSpeakerIds((prev) =>
-              prev.includes(speakerId) ? prev : [...prev, speakerId].sort((a, b) => a - b)
-            );
-          }
+          setInterimSpeakerId(typeof first.speakerId === "number" ? first.speakerId : null);
+          setDiarizationSpeakerIds((prev) => {
+            const next = new Set(prev);
+            segments.forEach((s) => {
+              if (typeof s.speakerId === "number") next.add(s.speakerId!);
+            });
+            return next.size === prev.length && prev.every((id) => next.has(id)) ? prev : [...next].sort((a, b) => a - b);
+          });
 
           if (!isFinal) return;
 
-          const finalText = transcript.trim();
-          if (!finalText) {
+          const combinedFinal = segments.map((s) => s.transcript).join(" ").trim();
+          if (combinedFinal.length === 0) {
             setInterimTranscript("");
             return;
           }
 
           const now = Date.now();
-          if (lastFinalTextRef.current === finalText && lastFinalAtRef.current && now - lastFinalAtRef.current < 1500) {
+          if (lastFinalTextRef.current === combinedFinal && lastFinalAtRef.current && now - lastFinalAtRef.current < 1500) {
             setInterimTranscript("");
             return;
           }
 
-          lastFinalTextRef.current = finalText;
+          lastFinalTextRef.current = combinedFinal;
           lastFinalAtRef.current = now;
-          const mappedSpeaker =
-            typeof speakerId === "number"
-              ? (diarizationMeSpeakerId === null
-                ? (speakerId === 0 ? "user" : "prospect")
-                : (speakerId === diarizationMeSpeakerId ? "user" : "prospect"))
-              : "user";
-          appendTranscript({ speaker: mappedSpeaker, text: finalText });
+
+          for (const seg of segments) {
+            const finalText = seg.transcript.trim();
+            if (!finalText) continue;
+            const speakerId = seg.speakerId;
+            const mappedSpeaker =
+              typeof speakerId === "number"
+                ? (diarizationMeSpeakerId === null
+                  ? (speakerId === 0 ? "user" : "prospect")
+                  : (speakerId === diarizationMeSpeakerId ? "user" : "prospect"))
+                : "user";
+            appendTranscript({ speaker: mappedSpeaker, text: finalText });
+          }
           try {
-            console.log("[STT] Transcript update (appended):", finalText.slice(0, 80));
+            console.log("[STT] Transcript update (appended):", combinedFinal.slice(0, 80));
           } catch {
             // ignore
           }
