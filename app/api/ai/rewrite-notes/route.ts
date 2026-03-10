@@ -11,7 +11,8 @@ export async function POST(req: NextRequest) {
       { status: 503 }
     );
   }
-  let body: { content?: string };
+  type RewriteStyle = "clean_bullets" | "headings" | "checklist" | "paragraph";
+  let body: { content?: string; style?: RewriteStyle };
   try {
     body = await req.json();
   } catch {
@@ -21,12 +22,30 @@ export async function POST(req: NextRequest) {
   if (!content) {
     return NextResponse.json({ error: "No content to rewrite" }, { status: 400 });
   }
+  const style = body.style ?? "headings";
+
+  const styleRules: Record<RewriteStyle, string> = {
+    clean_bullets:
+      "Format as short, scannable bullets. Use ONLY hyphen bullets (\"- \"). No asterisks. No markdown emphasis.",
+    headings:
+      "Format with short section headings (plain text, no markdown) followed by hyphen bullets. No asterisks. No markdown emphasis.",
+    checklist:
+      "Format as a checklist using \"[ ] \" for actionable items and hyphen bullets for reference points. No asterisks. No markdown emphasis.",
+    paragraph:
+      "Format as 1–2 short paragraphs plus 3–6 hyphen bullets for key points. No asterisks. No markdown emphasis.",
+  };
 
   const systemPrompt = `You are a sales enablement expert. Rewrite the user's notes so they are clearer and more useful for a sales call. Improve:
 - Product knowledge: make features and benefits easy to recall and explain.
 - Objection handling: turn rough notes into clear rebuttals or talking points.
 - Structure: use short bullets or sections so the rep can scan quickly during a call.
-Keep the same general content; do not add fake details. Output only the rewritten notes, no preamble.`;
+Keep the same general content; do not add fake details.
+
+Output rules:
+- Output only the rewritten notes, no preamble.
+- Do not use asterisks (*) for bullets. Prefer hyphen bullets.
+- Do not use markdown bold/italics.
+- ${styleRules[style]}`;
   const userPrompt = `Rewrite these notes for a sales rep:\n\n${content.slice(0, 4000)}`;
 
   try {

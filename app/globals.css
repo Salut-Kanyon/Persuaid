@@ -7,6 +7,29 @@
     --font-inter: 'Inter', system-ui, sans-serif;
   }
 
+  /* Theme tokens (used by Tailwind color vars after refactor). */
+  :root {
+    --bg-near-black: #0a0a0a;
+    --bg-elevated: #111111;
+    --bg-surface: #1a1a1a;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-muted: #9ca3af;
+    --text-dim: #6b7280;
+    --border: rgba(255, 255, 255, 0.1);
+  }
+
+  .theme-light {
+    --bg-near-black: #f7f7f8;
+    --bg-elevated: #ffffff;
+    --bg-surface: #ffffff;
+    --text-primary: #0b1220;
+    --text-secondary: #1f2937;
+    --text-muted: #4b5563;
+    --text-dim: #6b7280;
+    --border: rgba(15, 23, 42, 0.12);
+  }
+
   * {
     @apply border-border;
   }
@@ -20,6 +43,21 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Ensure form controls match the app theme instead of browser defaults. */
+  input,
+  textarea,
+  select {
+    background-color: var(--bg-elevated);
+    color: var(--text-primary);
+  }
+
+  /* Motion quality: applied via documentElement.dataset.motion */
+  html[data-motion="low"] * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 
   h1, h2, h3, h4, h5, h6 {

@@ -55,7 +55,7 @@ export function Hero() {
               className="flex flex-col items-center gap-3 mb-8"
             >
               <a
-                href="/download"
+                href="/sign-in"
                 className="group flex items-center gap-3 px-8 py-3.5 text-base font-semibold rounded-2xl transition-all duration-300 border-2 border-green-primary/70 bg-black text-white hover:bg-gray-900 hover:border-green-primary hover:shadow-2xl hover:shadow-green-primary/20 shadow-lg transform hover:scale-105 active:scale-100"
               >
                 <img
@@ -63,7 +63,7 @@ export function Hero() {
                   alt="Persuaid"
                   className="w-5 h-5 flex-shrink-0 object-contain group-hover:scale-110 transition-transform duration-300"
                 />
-                <span className="text-lg">Download</span>
+                <span className="text-lg">Get started</span>
               </a>
               <a
                 href="#product"

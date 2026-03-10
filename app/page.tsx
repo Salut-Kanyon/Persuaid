@@ -396,11 +396,11 @@ export default function Home() {
             Start your free trial
           </h2>
           <p className="text-xl sm:text-2xl text-text-muted mb-12 leading-relaxed font-light max-w-2xl mx-auto">
-            No credit card required. Download the app and try Persuaid on your next call.
+            No credit card required. Sign in or create an account to get started.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <CTAButton variant="primary" href="/download" className="text-lg px-8 py-4">
-              Start Free Trial
+            <CTAButton variant="primary" href="/sign-in" className="text-lg px-8 py-4">
+              Get started
             </CTAButton>
             <CTAButton variant="secondary" href="/pricing" className="text-lg px-8 py-4">
               Compare plans

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { cn } from "@/lib/utils";
+import { loadSettings } from "@/lib/settings";
 
 interface SavedNote {
   id: string;
@@ -19,15 +20,40 @@ export function NotesPanel() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [rewriting, setRewriting] = useState(false);
   const [rewriteError, setRewriteError] = useState<string | null>(null);
+  const [rewriteStyle, setRewriteStyle] = useState<"headings" | "clean_bullets" | "checklist" | "paragraph">("headings");
   const [importOpen, setImportOpen] = useState(false);
   const [savedNotes, setSavedNotes] = useState<SavedNote[]>([]);
   const [importLoading, setImportLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Draft autosave (local only) controlled by Settings.
+  useEffect(() => {
+    try {
+      const s = loadSettings();
+      if (!s.autoSaveEnabled) return;
+      const raw = localStorage.getItem("persuaid_notes_draft_v1");
+      if (raw && !currentNote.trim()) setCurrentNote(raw);
+    } catch {
+      // ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const t = setTimeout(() => setNotesContext(currentNote), 400);
     return () => clearTimeout(t);
   }, [currentNote, setNotesContext]);
+
+  useEffect(() => {
+    try {
+      const s = loadSettings();
+      if (!s.autoSaveEnabled) return;
+      const t = setTimeout(() => localStorage.setItem("persuaid_notes_draft_v1", currentNote), 500);
+      return () => clearTimeout(t);
+    } catch {
+      return;
+    }
+  }, [currentNote]);
 
   const handleSave = async () => {
     const content = currentNote.trim();
@@ -62,7 +88,7 @@ export function NotesPanel() {
       const res = await fetch("/api/ai/rewrite-notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, style: rewriteStyle }),
       });
       const data = (await res.json()) as { text?: string; error?: string };
       if (res.ok && typeof data.text === "string") {
@@ -119,7 +145,7 @@ export function NotesPanel() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".txt,text/plain"
+          accept=".txt,.md,text/plain,text/markdown,text/*"
           className="hidden"
           onChange={onFileChange}
         />
@@ -137,6 +163,19 @@ export function NotesPanel() {
         >
           Import from my notes
         </button>
+        <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background-surface/40 border border-border/40 text-xs text-text-muted">
+          Style
+          <select
+            value={rewriteStyle}
+            onChange={(e) => setRewriteStyle(e.target.value as typeof rewriteStyle)}
+            className="rounded-md border border-border/60 bg-background-elevated/60 px-2 py-1 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-green-primary/40"
+          >
+            <option value="headings">Headings</option>
+            <option value="clean_bullets">Clean bullets</option>
+            <option value="checklist">Checklist</option>
+            <option value="paragraph">Paragraph</option>
+          </select>
+        </label>
         <button
           type="button"
           onClick={handleRewrite}

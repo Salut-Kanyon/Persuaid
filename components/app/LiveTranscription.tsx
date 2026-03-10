@@ -2,18 +2,19 @@
 
 import { useEffect, useRef } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
-
 // v1/listen with raw PCM so we get real transcripts (WebM from MediaRecorder often returns empty on v1).
 const PCM_SAMPLE_RATE = 16000;
 function buildDeepgramParams(sampleRate: number): URLSearchParams {
-  return new URLSearchParams({
+  const params = new URLSearchParams({
     encoding: "linear16",
     sample_rate: String(sampleRate),
     punctuate: "true",
     smart_format: "true",
     interim_results: "true",
     utterance_end_ms: "3000",
+    diarize: "true",
   });
+  return params;
 }
 const KEEPALIVE_INTERVAL_MS = 2000;
 
@@ -93,36 +94,51 @@ function connectWebSocket(url: string, protocols?: string[]): Promise<WebSocket>
 // v1 response: transcript + speech_final/is_final for end of utterance. type can be "Results" or unset.
 interface DeepgramMessage {
   type?: string;
-  channel?: { alternatives?: Array<{ transcript?: string }> };
+  channel?: { alternatives?: Array<{ transcript?: string; words?: Array<{ word?: string; punctuated_word?: string; speaker?: number }> }> };
   speech_final?: boolean;
   is_final?: boolean;
-  results?: { channels?: Array<{ alternatives?: Array<{ transcript?: string }> }> };
+  results?: { channels?: Array<{ alternatives?: Array<{ transcript?: string; words?: Array<{ word?: string; punctuated_word?: string; speaker?: number }> }> }> };
 }
 
 interface ParsedDeepgramResult {
   transcript: string;
   /** True when Deepgram considers the utterance complete. */
   isFinal: boolean;
+  /** Diarized speaker id when available (e.g. 0/1). */
+  speakerId?: number;
 }
 
 function parseDeepgramMessage(raw: string): ParsedDeepgramResult | null {
   try {
     const data = JSON.parse(raw) as DeepgramMessage;
-    const transcript =
-      data.channel?.alternatives?.[0]?.transcript?.trim() ||
-      data.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim() ||
-      "";
+    const alt =
+      data.channel?.alternatives?.[0] ||
+      data.results?.channels?.[0]?.alternatives?.[0];
+    const transcript = alt?.transcript?.trim() || "";
     const isFinal = data.speech_final ?? data.is_final ?? false;
     if (!transcript) return null;
-    return { transcript, isFinal };
+    const speakerId =
+      typeof alt?.words?.[0]?.speaker === "number" ? alt.words![0].speaker : undefined;
+    return { transcript, isFinal, speakerId };
   } catch {
     return null;
   }
 }
 
 export function LiveTranscription() {
-  const { isRecording, appendTranscript, setSessionId, setMicError, audioInputDeviceId, recentSpeechRef, registerClearBuffer, setInterimTranscript } =
-    useSession();
+  const {
+    isRecording,
+    appendTranscript,
+    setSessionId,
+    setMicError,
+    audioInputDeviceId,
+    recentSpeechRef,
+    registerClearBuffer,
+    setInterimTranscript,
+    setInterimSpeakerId,
+    diarizationMeSpeakerId,
+    setDiarizationSpeakerIds,
+  } = useSession();
   const wsRef = useRef<WebSocket | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const pcmProcessorRef = useRef<ScriptProcessorNode | null>(null);
@@ -371,7 +387,7 @@ export function LiveTranscription() {
             }
             return;
           }
-          const { transcript, isFinal } = parsed;
+          const { transcript, isFinal, speakerId } = parsed;
           try {
             console.log("[STT] Transcript chunk:", (transcript || "").slice(0, 120), "final=", isFinal);
           } catch {
@@ -381,6 +397,12 @@ export function LiveTranscription() {
           phraseBufferRef.current = transcript;
           recentSpeechRef.current = transcript;
           setInterimTranscript(transcript);
+          setInterimSpeakerId(typeof speakerId === "number" ? speakerId : null);
+          if (typeof speakerId === "number") {
+            setDiarizationSpeakerIds((prev) =>
+              prev.includes(speakerId) ? prev : [...prev, speakerId].sort((a, b) => a - b)
+            );
+          }
 
           if (!isFinal) return;
 
@@ -398,7 +420,13 @@ export function LiveTranscription() {
 
           lastFinalTextRef.current = finalText;
           lastFinalAtRef.current = now;
-          appendTranscript({ speaker: "user", text: finalText });
+          const mappedSpeaker =
+            typeof speakerId === "number"
+              ? (diarizationMeSpeakerId === null
+                ? (speakerId === 0 ? "user" : "prospect")
+                : (speakerId === diarizationMeSpeakerId ? "user" : "prospect"))
+              : "user";
+          appendTranscript({ speaker: mappedSpeaker, text: finalText });
           try {
             console.log("[STT] Transcript update (appended):", finalText.slice(0, 80));
           } catch {
@@ -408,6 +436,7 @@ export function LiveTranscription() {
           phraseBufferRef.current = "";
           recentSpeechRef.current = "";
           setInterimTranscript("");
+          setInterimSpeakerId(null);
         };
 
         const handleMessage = (event: MessageEvent) => {

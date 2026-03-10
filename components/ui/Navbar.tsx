@@ -29,7 +29,7 @@ export function Navbar() {
       {showDownloadButton && (
         <div className="fixed top-4 right-4 z-50 hidden md:block animate-in fade-in slide-in-from-top-2">
           <a
-            href="/download"
+            href="/sign-in"
             className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 border border-green-primary/60 bg-black text-white hover:bg-gray-900 hover:border-green-primary/80 hover:shadow-xl shadow-lg"
           >
             <img
@@ -37,7 +37,7 @@ export function Navbar() {
               alt="Persuaid"
               className="w-4 h-4 flex-shrink-0 object-contain"
             />
-            <span>Download</span>
+            <span>Get started</span>
           </a>
         </div>
       )}
@@ -73,10 +73,10 @@ export function Navbar() {
                 </a>
               ))}
               <a
-                href="/download"
+                href="/sign-in"
                 className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border border-green-primary/60 bg-green-primary/10 text-green-accent hover:bg-green-primary/20 transition-colors duration-300"
               >
-                Start free trial
+                Get started
               </a>
             </div>
 
@@ -130,7 +130,7 @@ export function Navbar() {
                 </a>
               ))}
               <a
-                href="/download"
+                href="/sign-in"
                 className="flex items-center justify-center gap-2 px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 border border-green-primary/60 bg-black text-white hover:bg-gray-900 hover:border-green-primary/80 hover:shadow-xl shadow-lg w-full"
               >
                 <img
@@ -138,7 +138,7 @@ export function Navbar() {
                   alt="Persuaid"
                   className="w-4 h-4 flex-shrink-0 object-contain"
                 />
-                <span>Download</span>
+                <span>Get started</span>
               </a>
             </div>
           </div>

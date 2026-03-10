@@ -10,11 +10,11 @@ const config: Config = {
     extend: {
       colors: {
         background: {
-          DEFAULT: "#000000",
-          "near-black": "#0a0a0a",
-          elevated: "#111111",
-          surface: "#1a1a1a",
-          "surface-elevated": "#222222",
+          DEFAULT: "var(--bg-near-black)",
+          "near-black": "var(--bg-near-black)",
+          elevated: "var(--bg-elevated)",
+          surface: "var(--bg-surface)",
+          "surface-elevated": "color-mix(in srgb, var(--bg-surface) 85%, #000 15%)",
         },
         green: {
           primary: "#10b981",
@@ -27,13 +27,13 @@ const config: Config = {
           "glow-strong": "rgba(16, 185, 129, 0.2)",
         },
         text: {
-          primary: "#f9fafb",
-          secondary: "#d1d5db",
-          muted: "#9ca3af",
-          dim: "#6b7280",
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
+          dim: "var(--text-dim)",
         },
         border: {
-          DEFAULT: "rgba(255, 255, 255, 0.1)",
+          DEFAULT: "var(--border)",
           green: "rgba(16, 185, 129, 0.2)",
         },
       },

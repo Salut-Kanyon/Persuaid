@@ -84,6 +84,15 @@ interface SessionContextValue {
   /** Interim (in-progress) transcript from Deepgram; shown in live transcript panel for debugging. */
   interimTranscript: string;
   setInterimTranscript: (s: string) => void;
+  /** Interim speaker label (0/1/etc) when diarization is available; null when unknown or single-speaker. */
+  interimSpeakerId: number | null;
+  setInterimSpeakerId: (n: number | null) => void;
+  /** Observed diarization speaker IDs from STT stream (e.g. [0,1]). */
+  diarizationSpeakerIds: number[];
+  setDiarizationSpeakerIds: (ids: number[] | ((prev: number[]) => number[])) => void;
+  /** Which diarized speaker is "me" (Rep). Null = unknown; default mapping used. */
+  diarizationMeSpeakerId: number | null;
+  setDiarizationMeSpeakerId: (id: number | null) => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -122,6 +131,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [followUpMode, setFollowUpMode] = useState<"answer" | "follow_up_question">("answer");
   const [callParticipantName, setCallParticipantName] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
+  const [interimSpeakerId, setInterimSpeakerId] = useState<number | null>(null);
+  const [diarizationSpeakerIds, setDiarizationSpeakerIds] = useState<number[]>([]);
+  const [diarizationMeSpeakerId, setDiarizationMeSpeakerId] = useState<number | null>(null);
   const recentSpeechRef = useRef("");
   const clearBufferRef = useRef<(() => void) | null>(null);
 
@@ -132,6 +144,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isRecording) setCallParticipantName("");
+  }, [isRecording]);
+  useEffect(() => {
+    if (!isRecording) {
+      setInterimTranscript("");
+      setInterimSpeakerId(null);
+      setDiarizationSpeakerIds([]);
+      setDiarizationMeSpeakerId(null);
+    }
   }, [isRecording]);
 
   const requestSuggestions = useCallback(() => {
@@ -224,6 +244,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setCallParticipantName,
       interimTranscript,
       setInterimTranscript,
+      interimSpeakerId,
+      setInterimSpeakerId,
+      diarizationSpeakerIds,
+      setDiarizationSpeakerIds,
+      diarizationMeSpeakerId,
+      setDiarizationMeSpeakerId,
     }),
     [
       transcript,
@@ -248,6 +274,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       followUpRequestedAt,
       requestFollowUp,
       followUpMode,
+      interimSpeakerId,
+      diarizationSpeakerIds,
+      diarizationMeSpeakerId,
     ]
   );
 

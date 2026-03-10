@@ -51,6 +51,14 @@ function newSection(): ScriptSection {
   return { id: crypto.randomUUID(), title: "New section", items: [""] };
 }
 
+function splitTalkingPoints(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => l.replace(/^[-*•]\s+/, "")); // normalize bullets
+}
+
 export default function ScriptsPage() {
   const [scripts, setScripts] = useState<Script[]>([]);
   const [loading, setLoading] = useState(true);
@@ -186,6 +194,24 @@ export default function ScriptsPage() {
             }
           : sec
       )
+    );
+  };
+
+  const handlePasteTalkingPoints = (sectionIndex: number, itemIndex: number, pastedText: string) => {
+    const points = splitTalkingPoints(pastedText);
+    if (points.length <= 1) {
+      setItem(sectionIndex, itemIndex, points[0] ?? pastedText);
+      return;
+    }
+    setFormSections((s) =>
+      s.map((sec, i) => {
+        if (i !== sectionIndex) return sec;
+        const items = [...(sec.items || [])];
+        items[itemIndex] = points[0] ?? "";
+        const rest = points.slice(1);
+        items.splice(itemIndex + 1, 0, ...rest);
+        return { ...sec, items };
+      })
     );
   };
 
@@ -444,6 +470,12 @@ export default function ScriptsPage() {
                               type="text"
                               value={item}
                               onChange={(e) => setItem(sIdx, iIdx, e.target.value)}
+                              onPaste={(e) => {
+                                const text = e.clipboardData.getData("text/plain");
+                                if (!text.includes("\n")) return;
+                                e.preventDefault();
+                                handlePasteTalkingPoints(sIdx, iIdx, text);
+                              }}
                               placeholder="Talking point"
                               className="flex-1 px-3 py-1.5 rounded-lg bg-background-elevated/30 border border-border/50 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-green-primary/30"
                             />
