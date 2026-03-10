@@ -23,7 +23,9 @@ export default function WelcomePage() {
           if (session) router.replace("/dashboard");
         }
       })
-      .catch(stopChecking)
+      .catch(() => {
+        stopChecking();
+      })
       .finally(stopChecking);
     // If getSession hangs (e.g. desktop app, network), show welcome after 2.5s
     const t = setTimeout(stopChecking, 2500);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
@@ -13,19 +13,9 @@ function formatElapsed(seconds: number): string {
 }
 
 export function Header() {
-  const {
-    isRecording,
-    setRecording,
-    audioInputDeviceId,
-    setAudioInputDeviceId,
-    callParticipantName,
-    setCallParticipantName,
-  } = useSession();
+  const { isRecording, setRecording, audioInputDeviceId, setAudioInputDeviceId } = useSession();
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
-  const [editingName, setEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState("");
-  const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isRecording) {
@@ -35,10 +25,6 @@ export function Header() {
     const t = setInterval(() => setElapsedSeconds((n) => n + 1), 1000);
     return () => clearInterval(t);
   }, [isRecording]);
-
-  useEffect(() => {
-    if (isRecording && !callParticipantName) setCallParticipantName("Prospect");
-  }, [isRecording, callParticipantName, setCallParticipantName]);
 
   useEffect(() => {
     let mounted = true;
@@ -58,18 +44,6 @@ export function Header() {
       setRecording(false);
       setTimeout(() => setRecording(true), 200);
     }
-  };
-
-  const startEditName = () => {
-    setNameInput(callParticipantName);
-    setEditingName(true);
-    setTimeout(() => nameInputRef.current?.focus(), 0);
-  };
-
-  const saveEditName = () => {
-    const trimmed = nameInput.trim();
-    setCallParticipantName(trimmed || "Prospect");
-    setEditingName(false);
   };
 
   return (
@@ -106,35 +80,6 @@ export function Header() {
             {formatElapsed(elapsedSeconds)}
           </span>
         </div>
-        <div className="h-3.5 w-px bg-border/12" />
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-text-dim/60">Call with</span>
-          {isRecording ? (
-            editingName ? (
-              <input
-                ref={nameInputRef}
-                type="text"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                onBlur={saveEditName}
-                onKeyDown={(e) => e.key === "Enter" && saveEditName()}
-                className="w-28 px-2 py-0.5 text-sm font-medium rounded bg-background-surface border border-border text-text-primary focus:outline-none focus:ring-1 focus:ring-green-primary/40"
-                placeholder="Name"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={startEditName}
-                className="text-sm font-medium text-text-primary hover:underline"
-              >
-                {callParticipantName || "Prospect"}
-              </button>
-            )
-          ) : (
-            <span className="text-sm text-text-dim/70">—</span>
-          )}
-        </div>
-        <div className="h-3.5 w-px bg-border/12 hidden sm:block" />
         <div className="hidden sm:flex items-center gap-2">
           <label htmlFor="header-audio-input" className="text-xs text-text-dim/80 whitespace-nowrap">
             Listen from:

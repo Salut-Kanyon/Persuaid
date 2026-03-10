@@ -3,21 +3,28 @@
 import { useEffect, useRef } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
 
-// v1 listen. In Electron (packed app), use in-app proxy so no Next.js API needed. In browser, use token from /api/stt/token.
-const DEEPGRAM_PARAMS = new URLSearchParams({
-  punctuate: "true",
-  smart_format: "true",
-  interim_results: "true",
-  // Give callers a more natural pause before Deepgram decides an utterance has ended.
-  utterance_end_ms: "3000",
-});
-const DEEPGRAM_WS_URL = `wss://api.deepgram.com/v1/listen?${DEEPGRAM_PARAMS.toString()}`;
+// v1/listen with raw PCM so we get real transcripts (WebM from MediaRecorder often returns empty on v1).
+const PCM_SAMPLE_RATE = 16000;
+function buildDeepgramParams(sampleRate: number): URLSearchParams {
+  return new URLSearchParams({
+    encoding: "linear16",
+    sample_rate: String(sampleRate),
+    punctuate: "true",
+    smart_format: "true",
+    interim_results: "true",
+    utterance_end_ms: "3000",
+  });
+}
 const KEEPALIVE_INTERVAL_MS = 2000;
 
 function getSttProxyUrl(): string {
-  // When loading from Next.js dev server (localhost:3000), use token path so /api/stt/token works. Use proxy only for packed app.
+  // Next.js dev server (localhost:3000): use token path so /api/stt/token works.
   if (typeof window !== "undefined" && window.location?.origin?.includes("localhost:3000")) {
     return "";
+  }
+  // Packaged Electron app: static bundle served from http://127.0.0.1:2999 → always use in-app proxy on 2998.
+  if (typeof window !== "undefined" && window.location?.origin?.startsWith("http://127.0.0.1:2999")) {
+    return "ws://127.0.0.1:2998";
   }
   if (typeof window !== "undefined" && (window as unknown as { persuaid?: { sttProxyUrl?: string } }).persuaid?.sttProxyUrl) {
     return (window as unknown as { persuaid: { sttProxyUrl: string } }).persuaid.sttProxyUrl.replace(/\/$/, "");
@@ -27,26 +34,57 @@ function getSttProxyUrl(): string {
 
 function connectWebSocket(url: string, protocols?: string[]): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
+    try {
+      // eslint-disable-next-line no-console
+      console.log("[STT] Connecting WebSocket to", url, protocols ?? []);
+    } catch {
+      // ignore logging errors in environments without console
+    }
     const timeout = setTimeout(() => {
       try {
+        // eslint-disable-next-line no-console
+        console.error("[STT] WebSocket timeout for", url);
         socket.close();
       } catch (_) {}
       reject(new Error("WebSocket timeout"));
     }, 15000);
     const socket = new WebSocket(url, protocols);
     socket.onopen = () => {
+      try {
+        // eslint-disable-next-line no-console
+        console.log("[STT] WebSocket open:", url);
+      } catch {
+        // ignore
+      }
       clearTimeout(timeout);
       resolve(socket);
     };
     socket.onerror = () => {
       clearTimeout(timeout);
       try {
+        // eslint-disable-next-line no-console
+        console.error("[STT] WebSocket error for", url);
         socket.close();
       } catch (_) {}
       reject(new Error("WebSocket failed"));
     };
     socket.onclose = (ev) => {
       clearTimeout(timeout);
+      try {
+        // eslint-disable-next-line no-console
+        console.log(
+          "[STT] WebSocket closed",
+          url,
+          "code=",
+          ev.code,
+          "reason=",
+          ev.reason,
+          "clean=",
+          ev.wasClean,
+        );
+      } catch {
+        // ignore
+      }
       if (ev.code !== 1000 && ev.code !== 1005) reject(new Error("WebSocket closed"));
     };
   });
@@ -72,22 +110,25 @@ function parseDeepgramMessage(raw: string): ParsedDeepgramResult | null {
     const data = JSON.parse(raw) as DeepgramMessage;
     const transcript =
       data.channel?.alternatives?.[0]?.transcript?.trim() ||
-      data.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim();
-    if (!transcript) return null;
+      data.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim() ||
+      "";
     const isFinal = data.speech_final ?? data.is_final ?? false;
+    if (!transcript) return null;
     return { transcript, isFinal };
-  } catch (_) {
+  } catch {
     return null;
   }
 }
 
 export function LiveTranscription() {
-  const { isRecording, appendTranscript, setSessionId, setMicError, audioInputDeviceId, recentSpeechRef, registerClearBuffer } =
+  const { isRecording, appendTranscript, setSessionId, setMicError, audioInputDeviceId, recentSpeechRef, registerClearBuffer, setInterimTranscript } =
     useSession();
   const wsRef = useRef<WebSocket | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const pcmProcessorRef = useRef<ScriptProcessorNode | null>(null);
   const keepaliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rmsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const connectionErrorShownRef = useRef(false);
   /** Buffer for the current in-progress utterance (interim transcript). */
   const phraseBufferRef = useRef<string>("");
@@ -103,8 +144,9 @@ export function LiveTranscription() {
       recentSpeechRef.current = "";
       lastFinalTextRef.current = "";
       lastFinalAtRef.current = null;
+      setInterimTranscript("");
     });
-  }, [registerClearBuffer, recentSpeechRef]);
+  }, [registerClearBuffer, recentSpeechRef, setInterimTranscript]);
 
   useEffect(() => {
     if (!isRecording) {
@@ -120,9 +162,25 @@ export function LiveTranscription() {
         clearInterval(keepaliveRef.current);
         keepaliveRef.current = null;
       }
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-        mediaRecorderRef.current.stop();
-        mediaRecorderRef.current = null;
+      if (rmsIntervalRef.current) {
+        clearInterval(rmsIntervalRef.current);
+        rmsIntervalRef.current = null;
+      }
+      if (pcmProcessorRef.current) {
+        try {
+          pcmProcessorRef.current.disconnect();
+        } catch {
+          // ignore
+        }
+        pcmProcessorRef.current = null;
+      }
+      if (audioContextRef.current) {
+        try {
+          audioContextRef.current.close();
+        } catch {
+          // ignore
+        }
+        audioContextRef.current = null;
       }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
@@ -133,6 +191,7 @@ export function LiveTranscription() {
       recentSpeechRef.current = "";
       lastFinalTextRef.current = "";
       lastFinalAtRef.current = null;
+      setInterimTranscript("");
       return;
     }
 
@@ -167,7 +226,18 @@ export function LiveTranscription() {
           return;
         }
         streamRef.current = stream;
-        stream.getTracks().forEach((track) => {
+        stream.getAudioTracks().forEach((track, i) => {
+          try {
+            console.log("[STT] Audio track", i, ":", {
+              label: track.label,
+              id: track.id?.slice(0, 20),
+              enabled: track.enabled,
+              muted: track.muted,
+              readyState: track.readyState,
+            });
+          } catch {
+            // ignore
+          }
           track.onended = () => {
             if (mounted && streamRef.current) {
               setMicError("Input device stopped. Select another device in Listen from or click Try again.");
@@ -175,8 +245,27 @@ export function LiveTranscription() {
           };
         });
 
-        const query = DEEPGRAM_PARAMS.toString();
+        // Create context first so we use its actual sample rate in the WebSocket URL (browser may not grant 16kHz).
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const ctx = new AudioContextClass({ sampleRate: PCM_SAMPLE_RATE });
+        audioContextRef.current = ctx;
+        const actualSampleRate = ctx.sampleRate;
+        const query = buildDeepgramParams(actualSampleRate).toString();
+
         const proxyUrl = getSttProxyUrl();
+        try {
+          // eslint-disable-next-line no-console
+          console.log(
+            "[STT] Mode:",
+            proxyUrl ? "proxy" : "token",
+            "origin:",
+            typeof window !== "undefined" ? window.location?.origin : "n/a",
+            "proxyUrl:",
+            proxyUrl || "(none)",
+          );
+        } catch {
+          // ignore
+        }
 
         let ws: WebSocket;
 
@@ -218,7 +307,7 @@ export function LiveTranscription() {
             return;
           }
           try {
-            ws = await connectWebSocket(DEEPGRAM_WS_URL, ["bearer", access_token]);
+            ws = await connectWebSocket(`wss://api.deepgram.com/v1/listen?${query}`, ["bearer", access_token]);
           } catch {
             if (!mounted) return;
             stream.getTracks().forEach((t) => t.stop());
@@ -230,31 +319,35 @@ export function LiveTranscription() {
         if (!mounted) return;
         wsRef.current = ws;
 
-        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-          ? "audio/webm;codecs=opus"
-          : MediaRecorder.isTypeSupported("audio/webm")
-            ? "audio/webm"
-            : "";
-        const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-        mediaRecorderRef.current = mediaRecorder;
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0 && wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(e.data);
-          }
-        };
-        mediaRecorder.onerror = () => {
-          if (mounted) setMicError("Recording error. Try another device in Listen from or use Default.");
-        };
-
         const showConnectionError = (detail: string) => {
           if (!mounted || connectionErrorShownRef.current) return;
           connectionErrorShownRef.current = true;
           setMicError(`Transcription connection failed. ${detail}`);
         };
 
+        // Capture raw PCM at context sample rate and send as linear16 (v1/listen returns real transcripts).
+        const src = ctx.createMediaStreamSource(stream);
+        const bufferLength = 4096;
+        const processor = ctx.createScriptProcessor(bufferLength, 1, 1);
+        pcmProcessorRef.current = processor;
+        processor.onaudioprocess = (e: AudioProcessingEvent) => {
+          if (!mounted || wsRef.current?.readyState !== WebSocket.OPEN) return;
+          const input = e.inputBuffer.getChannelData(0);
+          const pcm = new Int16Array(input.length);
+          for (let i = 0; i < input.length; i++) {
+            const s = Math.max(-1, Math.min(1, input[i]));
+            pcm[i] = s < 0 ? s * 32768 : s * 32767;
+          }
+          wsRef.current.send(pcm.buffer);
+        };
+        src.connect(processor);
+        const silentGain = ctx.createGain();
+        silentGain.gain.value = 0;
+        processor.connect(silentGain);
+        silentGain.connect(ctx.destination);
+
         if (mounted) {
           setSessionId((id) => id || crypto.randomUUID());
-          mediaRecorder.start(250);
           keepaliveRef.current = setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) {
               ws.send(JSON.stringify({ type: "KeepAlive" }));
@@ -263,39 +356,58 @@ export function LiveTranscription() {
         }
 
         const handleResultText = (raw: string) => {
+          try {
+            console.log("[STT] Raw Deepgram message:", raw);
+          } catch {
+            // ignore
+          }
           const parsed = parseDeepgramMessage(raw);
-          if (!parsed) return;
+          if (!parsed) {
+            try {
+              JSON.parse(raw);
+              console.log("[STT] Could not parse message (empty transcript):", raw.slice(0, 200));
+            } catch {
+              console.log("[STT] Could not parse message (invalid JSON or missing fields):", raw.slice(0, 200));
+            }
+            return;
+          }
           const { transcript, isFinal } = parsed;
+          try {
+            console.log("[STT] Transcript chunk:", (transcript || "").slice(0, 120), "final=", isFinal);
+          } catch {
+            // ignore
+          }
 
-          // Track interim transcript for the current utterance.
           phraseBufferRef.current = transcript;
           recentSpeechRef.current = transcript;
+          setInterimTranscript(transcript);
 
-          // Only append a new transcript row when the utterance is final.
-          // This avoids multiple partial/duplicate entries like:
-          // "Hello.", "My name is", "Hello. My name is".
-          if (!isFinal) {
-            // For proxy mode we rely on Deepgram still sending a final flag.
-            // If that ever isn't the case, we'll see no finalized rows rather than noisy duplicates.
+          if (!isFinal) return;
+
+          const finalText = transcript.trim();
+          if (!finalText) {
+            setInterimTranscript("");
             return;
           }
 
-          const finalText = transcript.trim();
-          if (!finalText) return;
-
           const now = Date.now();
-          // Ignore only truly back-to-back duplicates (Deepgram sometimes resends the same final result).
           if (lastFinalTextRef.current === finalText && lastFinalAtRef.current && now - lastFinalAtRef.current < 1500) {
+            setInterimTranscript("");
             return;
           }
 
           lastFinalTextRef.current = finalText;
           lastFinalAtRef.current = now;
           appendTranscript({ speaker: "user", text: finalText });
+          try {
+            console.log("[STT] Transcript update (appended):", finalText.slice(0, 80));
+          } catch {
+            // ignore
+          }
 
-          // Clear the interim buffers now that this utterance is committed.
           phraseBufferRef.current = "";
           recentSpeechRef.current = "";
+          setInterimTranscript("");
         };
 
         const handleMessage = (event: MessageEvent) => {
@@ -323,8 +435,13 @@ export function LiveTranscription() {
             clearInterval(keepaliveRef.current);
             keepaliveRef.current = null;
           }
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-            mediaRecorderRef.current.stop();
+          if (pcmProcessorRef.current) {
+            try {
+              pcmProcessorRef.current.disconnect();
+            } catch {
+              // ignore
+            }
+            pcmProcessorRef.current = null;
           }
           if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
           if (!mounted) return;
@@ -377,7 +494,7 @@ export function LiveTranscription() {
     return () => {
       mounted = false;
     };
-  }, [isRecording, audioInputDeviceId, appendTranscript, setSessionId, setMicError]);
+  }, [isRecording, audioInputDeviceId, appendTranscript, setSessionId, setMicError, setInterimTranscript]);
 
   return null;
 }

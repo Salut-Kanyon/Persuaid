@@ -1,37 +1,18 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { cn } from "@/lib/utils";
 
-function formatTranscriptForSave(messages: { speaker: string; text: string }[]): string {
-  return messages
-    .map((m) => `${m.speaker === "prospect" ? "Prospect" : "Rep"}: ${m.text}`)
-    .join("\n");
-}
-
-/** Parses ## Section headers and returns [{ title, body }]. */
-function parseStructuredSections(text: string): { title: string; body: string }[] {
-  if (!text.includes("## ")) return [];
-  const raw = text.split(/##\s+/);
-  return raw
-    .map((block) => {
-      const firstLine = block.indexOf("\n");
-      const title = firstLine === -1 ? block.trim() : block.slice(0, firstLine).trim();
-      const body = firstLine === -1 ? "" : block.slice(firstLine + 1).trim();
-      return { title, body };
-    })
-    .filter((s) => s.title.length > 0);
-}
-
-const FOCUS_OPTIONS: { id: "what_to_say" | "questions" | "key_points"; label: string }[] = [
-  { id: "what_to_say", label: "What to say" },
-  { id: "questions", label: "Questions to ask" },
-  { id: "key_points", label: "Key points" },
-];
-
 export function FollowUpPanel() {
-  const { transcript, followUpText, requestFollowUp, followUpFocus, setFollowUpFocus } = useSession();
+  const { transcript, followUpText, setFollowUpText, requestFollowUp } = useSession();
+  const [chatInput, setChatInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [followUpText]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -39,97 +20,115 @@ export function FollowUpPanel() {
       const target = e.target as HTMLElement;
       if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
       e.preventDefault();
-      requestFollowUp();
+      requestFollowUp("answer");
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [requestFollowUp]);
 
-  const handleFilterClick = useCallback(
-    (focus: "what_to_say" | "questions" | "key_points") => {
-      setFollowUpFocus(focus);
-      requestFollowUp();
-    },
-    [setFollowUpFocus, requestFollowUp]
-  );
-
-  const handleSaveTranscript = useCallback(() => {
-    if (transcript.length === 0) return;
-    const text = formatTranscriptForSave(transcript);
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `transcript-${new Date().toISOString().slice(0, 10)}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [transcript]);
+  const handleSend = useCallback(async () => {
+    const text = chatInput.trim();
+    if (!text) {
+      requestFollowUp("answer");
+      return;
+    }
+    setChatInput("");
+    setSending(true);
+    setFollowUpText("…");
+    try {
+      const res = await fetch("/api/ai/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = (await res.json()) as { answer?: string; error?: string };
+      if (res.ok && typeof data.answer === "string") {
+        setFollowUpText(data.answer);
+      } else {
+        setFollowUpText(data.error || "Something went wrong. Try again.");
+      }
+    } catch {
+      setFollowUpText("Request failed. Try again.");
+    } finally {
+      setSending(false);
+    }
+  }, [chatInput, setFollowUpText, requestFollowUp]);
 
   const hasTranscript = transcript.length > 0;
-  const sections = followUpText && followUpText !== "…" ? parseStructuredSections(followUpText) : [];
-  const showStructured = sections.length > 0;
+  const hasResponse = followUpText && followUpText !== "…";
+  const isLoading = followUpText === "…" || sending;
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-4">
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          {FOCUS_OPTIONS.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => handleFilterClick(id)}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                followUpFocus === id
-                  ? "bg-green-primary/25 text-green-800 dark:text-green-300 border border-green-primary/40"
-                  : "bg-background-surface/60 border border-border/50 text-text-primary hover:bg-background-surface"
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <p className="text-sm text-text-muted mb-2">
-          Press <kbd className="px-1.5 py-0.5 rounded bg-background-elevated border border-border/50 font-mono text-xs">Enter</kbd> for <span className="text-text-primary">{FOCUS_OPTIONS.find((o) => o.id === followUpFocus)?.label ?? "suggestions"}</span>. Uses your notes and script.
-        </p>
-        <div
-          className={cn(
-            "flex-1 min-h-[120px] rounded-xl border overflow-y-auto",
-            "bg-background-elevated/40 border-border/30 text-text-primary",
-            followUpText === "…" && "animate-pulse"
-          )}
-        >
-          {followUpText === "…" ? (
-            <div className="p-4 text-sm text-text-dim">Getting suggestions…</div>
-          ) : showStructured ? (
-            <div className="p-4 space-y-4 text-sm">
-              {sections.map(({ title, body }) => (
-                <section key={title}>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-text-dim/90 mb-1.5 border-b border-border/30 pb-1">
-                    {title}
-                  </h3>
-                  <div className="whitespace-pre-wrap text-text-primary leading-relaxed">{body}</div>
-                </section>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4 text-sm whitespace-pre-wrap">
-              {followUpText || (hasTranscript ? "Press Enter for a follow-up." : "Start the call and press Enter when you need suggestions.")}
-            </div>
-          )}
-        </div>
+      {/* Main content: next line to say (or chat answer) */}
+      <div
+        ref={scrollRef}
+        className={cn(
+          "flex-1 min-h-0 overflow-y-auto p-4",
+          "flex flex-col gap-3"
+        )}
+      >
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-text-dim">
+            <span className="inline-flex gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-primary/70 animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-2 h-2 rounded-full bg-green-primary/70 animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-2 h-2 rounded-full bg-green-primary/70 animate-bounce" />
+            </span>
+            <span>Thinking…</span>
+          </div>
+        ) : hasResponse ? (
+          <div className="rounded-xl bg-background-elevated/50 border border-border/30 p-4 text-sm">
+            <p className="text-text-primary leading-relaxed whitespace-pre-wrap">{followUpText}</p>
+          </div>
+        ) : (
+          <div className="rounded-xl bg-background-elevated/40 border border-border/20 p-4 text-sm text-text-dim/80">
+            {hasTranscript
+              ? "Press Enter to get an answer to the customer's question. Use the Follow-up button for a question to ask them."
+              : "Start the call, then press Enter for an answer or use Follow-up for a question to ask."}
+          </div>
+        )}
       </div>
-      {hasTranscript && (
-        <div className="flex-shrink-0 px-4 pb-4">
+
+      {/* Chat bar + Follow-up button */}
+      <div className="flex-shrink-0 border-t border-border/30 bg-background-surface/50 p-3 space-y-2">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+            placeholder="Ask a question (Send), or press Enter for answer to customer…"
+            className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm bg-background-elevated/60 border border-border/50 text-text-primary placeholder:text-text-dim/50 focus:outline-none focus:ring-1 focus:ring-green-primary/40"
+            disabled={sending}
+          />
           <button
             type="button"
-            onClick={handleSaveTranscript}
-            className="w-full px-4 py-2.5 rounded-xl bg-background-surface/60 border border-border/50 text-sm font-medium text-text-primary hover:bg-background-surface transition-colors"
+            onClick={handleSend}
+            disabled={sending}
+            className={cn(
+              "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0",
+              "bg-green-primary/20 text-green-700 dark:text-green-300 border border-green-primary/30",
+              "hover:bg-green-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
           >
-            Save transcript
+            {sending ? "…" : "Send"}
+          </button>
+          <button
+            type="button"
+            onClick={() => requestFollowUp("follow_up_question")}
+            disabled={isLoading || !hasTranscript}
+            className={cn(
+              "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0",
+              "bg-background-elevated/80 text-text-primary border border-border/50",
+              "hover:bg-background-surface hover:border-border disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+            title="Generate a follow-up question to ask the customer"
+          >
+            Follow-up
           </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

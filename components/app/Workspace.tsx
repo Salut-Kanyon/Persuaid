@@ -33,8 +33,9 @@ function computeLayout(containerWidth: number, containerHeight: number) {
   const h = Math.max(300, containerHeight - pad * 2);
   const leftWidth = (w - gap) * 0.5;
   const rightWidth = (w - gap) * 0.5;
-  const topH = (h - gap) * 0.5;
-  const bottomH = (h - gap) * 0.5;
+  const totalLeft = h - gap;
+  const topH = totalLeft * 0.62;
+  const bottomH = totalLeft * 0.38;
   return {
     followUp: { x: pad, y: pad, width: leftWidth, height: topH },
     transcript: { x: pad, y: pad + topH + gap, width: leftWidth, height: bottomH },

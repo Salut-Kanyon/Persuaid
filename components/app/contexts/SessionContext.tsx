@@ -69,19 +69,21 @@ interface SessionContextValue {
   requestSuggestions: () => void;
   /** Increments when requestSuggestions() is called; used by AISuggestionsFetcher to trigger a fetch. */
   suggestionsRequestedAt: number;
-  /** Single-line follow-up (what to say next + questions). Set by FollowUpFetcher. */
+  /** Exact next line to say (call copilot) or answer from chat. Set by FollowUpFetcher or Send. */
   followUpText: string;
   setFollowUpText: (s: string | ((prev: string) => string)) => void;
   /** Increments when user requests follow-up (Enter). Used by FollowUpFetcher. */
   followUpRequestedAt: number;
-  /** Request a fast follow-up from current transcript (Enter in dashboard). */
-  requestFollowUp: () => void;
-  /** Which suggestion type to request: what_to_say (default), questions, or key_points. */
-  followUpFocus: "what_to_say" | "questions" | "key_points";
-  setFollowUpFocus: (f: "what_to_say" | "questions" | "key_points") => void;
+  /** Request follow-up: "answer" = what to say (Enter), "follow_up_question" = question to ask (button). */
+  requestFollowUp: (mode?: "answer" | "follow_up_question") => void;
+  /** Current mode for the last/next follow-up request. */
+  followUpMode: "answer" | "follow_up_question";
   /** Name shown in header as "Call with [name]". Empty when not in call; set when recording (e.g. Prospect). */
   callParticipantName: string;
   setCallParticipantName: (s: string) => void;
+  /** Interim (in-progress) transcript from Deepgram; shown in live transcript panel for debugging. */
+  interimTranscript: string;
+  setInterimTranscript: (s: string) => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -117,8 +119,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [suggestionsRequestedAt, setSuggestionsRequestedAt] = useState(0);
   const [followUpText, setFollowUpText] = useState("");
   const [followUpRequestedAt, setFollowUpRequestedAt] = useState(0);
-  const [followUpFocus, setFollowUpFocus] = useState<"what_to_say" | "questions" | "key_points">("what_to_say");
+  const [followUpMode, setFollowUpMode] = useState<"answer" | "follow_up_question">("answer");
   const [callParticipantName, setCallParticipantName] = useState("");
+  const [interimTranscript, setInterimTranscript] = useState("");
   const recentSpeechRef = useRef("");
   const clearBufferRef = useRef<(() => void) | null>(null);
 
@@ -135,7 +138,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setSuggestionsRequestedAt((t) => t + 1);
   }, []);
 
-  const requestFollowUp = useCallback(() => {
+  const requestFollowUp = useCallback((mode: "answer" | "follow_up_question" = "answer") => {
+    setFollowUpMode(mode);
     setFollowUpRequestedAt((t) => t + 1);
   }, []);
 
@@ -215,13 +219,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setFollowUpText,
       followUpRequestedAt,
       requestFollowUp,
-      followUpFocus,
-      setFollowUpFocus,
+      followUpMode,
       callParticipantName,
       setCallParticipantName,
+      interimTranscript,
+      setInterimTranscript,
     }),
     [
       transcript,
+      interimTranscript,
+      callParticipantName,
       appendTranscript,
       clearTranscript,
       suggestions,
@@ -240,8 +247,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       followUpText,
       followUpRequestedAt,
       requestFollowUp,
-      followUpFocus,
-      callParticipantName,
+      followUpMode,
     ]
   );
 

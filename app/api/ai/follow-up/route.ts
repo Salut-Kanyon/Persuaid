@@ -13,7 +13,7 @@ function buildConversation(transcript: TranscriptMessage[]): string {
     .join("\n");
 }
 
-/** Last N messages as a short block so the model can't miss what was just said. */
+/** Last N messages so the model sees what was just said. */
 function getLastExchange(transcript: TranscriptMessage[], n = 6): string {
   const last = transcript.slice(-n);
   return last
@@ -21,7 +21,9 @@ function getLastExchange(transcript: TranscriptMessage[], n = 6): string {
     .join("\n");
 }
 
-/** Uses transcript, script, and notes to return structured follow-up suggestions with depth. */
+type FollowUpMode = "answer" | "follow_up_question";
+
+/** mode=answer → exact sentence to answer the customer. mode=follow_up_question → one question for the rep to ask. */
 export async function POST(req: NextRequest) {
   const key = process.env.OPENAI_API_KEY;
   if (!key) {
@@ -30,12 +32,11 @@ export async function POST(req: NextRequest) {
       { status: 503 }
     );
   }
-  type Focus = "what_to_say" | "questions" | "key_points";
   let body: {
     transcript?: TranscriptMessage[];
     scriptContext?: string;
     notesContext?: string;
-    focus?: Focus;
+    mode?: FollowUpMode;
   };
   try {
     body = await req.json();
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
   const transcript = body.transcript ?? [];
   const scriptContext = body.scriptContext ?? "";
   const notesContext = (body.notesContext ?? "").trim();
-  const focus = body.focus ?? "what_to_say";
+  const mode: FollowUpMode = body.mode === "follow_up_question" ? "follow_up_question" : "answer";
   const conversation = buildConversation(transcript);
   if (!conversation.trim()) {
     return NextResponse.json({ text: "Say something so I can suggest what to say next." });
@@ -56,44 +57,49 @@ export async function POST(req: NextRequest) {
     .filter((m) => m.speaker === "prospect")
     .slice(-1)[0]?.text?.trim() ?? "";
 
-  const focusOnly = focus !== "what_to_say";
-  const systemPrompt = focusOnly
-    ? (focus === "questions"
-      ? `You are a professional sales coach. Given the live conversation and the rep's notes, suggest ONLY questions to ask next. Reply with the section header "## Questions to ask" then 2–3 strong questions. Be specific; reference the prospect's words. No other sections.`
-      : `You are a professional sales coach. Given the live conversation and the rep's notes, suggest ONLY key points to hit. Reply with the section header "## Key points to hit" then 2–4 bullet points from their notes/script that fit this moment (benefits, differentiators, proof). No other sections.`)
-    : `You are a professional sales coach for a live call. Your job is to suggest what the rep should say RIGHT NOW in response to what just happened.
+  const systemPrompt =
+    mode === "follow_up_question"
+      ? `You are a real-time sales call assistant. The rep needs one short follow-up question to ask the customer to move the conversation forward.
 
-CRITICAL: Read the conversation and identify the LAST thing the prospect said (their question, objection, or statement). The "What to say" section MUST directly answer that question or address that point. Do not give generic advice or repeat something the rep already said. Each suggestion must be specific to this moment—if they asked about price, address price; if they raised a concern, address that concern. Think step by step: what did the prospect just say? What would a strong rep say in direct response?
+Use the live transcript and the rep's notes only as context. Your output must be exactly one short question the rep can ask out loud—nothing else.
 
-Reply using exactly these section headers (copy as-is). Be specific and actionable.
+Rules:
+- Output ONLY one natural, conversational question (e.g. "Do you currently have any coverage through work or a previous policy?").
+- The question should help uncover the customer's situation and move the conversation forward.
+- No bullet points, headings, markdown, or explanations.
+- Do not output an answer to the customer; output only a question for the rep to ask.`
+      : `You are a real-time sales knowledge assistant for a rep on a live call. Your job is to give the rep the exact sentence(s) to say to ANSWER the customer's question or respond to what they just said.
 
-## What to say
-(1–2 sentences the rep can say next that directly answer or respond to the prospect's last question or statement. Natural, direct, no filler.)
+Use the notes panel as product knowledge. The rep is stuck and needs to answer clearly—not generic small talk.
 
-## Questions to ask
-(2–3 follow-up questions that make sense right after that response.)
-
-## Key points to hit
-(Bullet points from notes/script that fit this moment—benefits, proof, differentiators.)
-
-## If they push back
-(One short line for a likely objection or hesitation based on what they just said.)`;
+Rules:
+- Directly answer the prospect's last question or statement. Do not give a vague reply like "I'd like to learn more about your needs."
+- Use the notes as product knowledge so the answer is specific and accurate.
+- Output 1–2 short sentences maximum, in natural spoken sales language.
+- No bullet points, headings, markdown, or explanations.
+- Do not sound generic or vague. Prioritize answering the customer's question clearly.`;
 
   const parts: string[] = [
-    `Full conversation so far:\n${conversation.slice(-1200)}`,
+    `Conversation so far:\n${conversation.slice(-1200)}`,
   ];
   if (lastProspectMessage) {
-    parts.push(`LAST THING THE PROSPECT SAID (you must respond to this):\n"${lastProspectMessage}"`);
+    parts.push(`Last thing the prospect said:\n"${lastProspectMessage}"`);
   }
   parts.push(`Most recent exchange:\n${lastExchange}`);
   if (scriptContext) {
-    parts.push(`Script / talking points:\n${scriptContext.slice(0, 400)}`);
+    parts.push(`Script / talking points (context only):\n${scriptContext.slice(0, 400)}`);
   }
   if (notesContext) {
-    parts.push(`Rep's notes (product knowledge, objections, etc.):\n${notesContext.slice(0, 800)}`);
+    parts.push(`Rep's notes (product knowledge):\n${notesContext.slice(0, 800)}`);
+  }
+  if (mode === "follow_up_question") {
+    parts.push(`What is one good follow-up question the rep should ask next? Reply with only that question.`);
+  } else {
+    parts.push(`What is the exact sentence the rep should say to answer the customer? Reply with only that line.`);
   }
   const userPrompt = parts.join("\n\n");
-  const maxTokens = focusOnly ? 180 : 480;
+
+  const maxTokens = mode === "follow_up_question" ? 80 : 150;
 
   try {
     const res = await fetch(OPENAI_URL, {
@@ -109,7 +115,7 @@ Reply using exactly these section headers (copy as-is). Be specific and actionab
           { role: "user", content: userPrompt },
         ],
         max_tokens: maxTokens,
-        temperature: focusOnly ? 0.4 : 0.55,
+        temperature: 0.5,
       }),
     });
     if (!res.ok) {
@@ -121,8 +127,13 @@ Reply using exactly these section headers (copy as-is). Be specific and actionab
       );
     }
     const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const text = data.choices?.[0]?.message?.content?.trim() ?? "";
-    return NextResponse.json({ text: text || "Press Enter again after more conversation." });
+    let text = data.choices?.[0]?.message?.content?.trim() ?? "";
+    text = text.replace(/^##\s*[^\n]*\n?/gm, "").trim();
+    const fallback =
+      mode === "follow_up_question"
+        ? "Press the button again after more conversation."
+        : "Press Enter again after more conversation.";
+    return NextResponse.json({ text: text || fallback });
   } catch (e) {
     console.error("Follow-up API error:", e);
     return NextResponse.json(

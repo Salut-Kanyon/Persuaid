@@ -5,9 +5,9 @@ import { useSession } from "@/components/app/contexts/SessionContext";
 
 const MAX_MESSAGES = 25;
 
-/** Fetches a single follow-up (what to say next + questions) when user presses Enter. */
+/** Fetches follow-up: mode "answer" (Enter) = what to say; "follow_up_question" (button) = question to ask. */
 export function FollowUpFetcher() {
-  const { transcript, scriptContext, notesContext, setFollowUpText, followUpRequestedAt, followUpFocus } = useSession();
+  const { transcript, scriptContext, notesContext, setFollowUpText, followUpRequestedAt, followUpMode } = useSession();
   const prevRequestedAtRef = useRef(0);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export function FollowUpFetcher() {
             transcript: recent,
             scriptContext: scriptContext || undefined,
             notesContext: notesContext || undefined,
-            focus: followUpFocus,
+            mode: followUpMode,
           }),
         });
         const data = (await res.json()) as { text?: string; error?: string };
@@ -43,7 +43,7 @@ export function FollowUpFetcher() {
         setFollowUpText("Request failed. Try again.");
       }
     })();
-  }, [followUpRequestedAt, transcript, scriptContext, notesContext, followUpFocus, setFollowUpText]);
+  }, [followUpRequestedAt, transcript, scriptContext, notesContext, followUpMode, setFollowUpText]);
 
   return null;
 }

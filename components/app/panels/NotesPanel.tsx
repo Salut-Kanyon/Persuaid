@@ -142,12 +142,19 @@ export function NotesPanel() {
           onClick={handleRewrite}
           disabled={rewriting || !currentNote.trim()}
           className={cn(
-            "px-3 py-1.5 text-xs font-medium rounded-lg transition-colors",
+            "px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5",
             "bg-green-primary/20 text-green-700 dark:text-green-400 border border-green-primary/30",
             "hover:bg-green-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
           )}
         >
-          {rewriting ? "Rewriting…" : "Rewrite with AI"}
+          {rewriting ? (
+            <>
+              <span className="inline-block size-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" aria-hidden />
+              <span>Rewriting…</span>
+            </>
+          ) : (
+            "Rewrite with AI"
+          )}
         </button>
       </div>
       {rewriteError && (

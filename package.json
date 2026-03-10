@@ -18,7 +18,9 @@
     "clean:out-downloads": "node scripts/clean-out-downloads.js",
     "clean:out-duplicates": "node scripts/clean-out-duplicates.js",
     "desktop:build": "npm run clean:desktop && next build && npm run clean:out-downloads && npm run clean:out-duplicates && electron-builder && node -e \"const fs=require('fs');const path=require('path');const distDir='dist';const dmgFiles=fs.readdirSync(distDir).filter(f=>f.endsWith('.dmg'));if(dmgFiles.length>0){const latest=dmgFiles.sort().reverse()[0];fs.copyFileSync(path.join(distDir,latest),'public/downloads/Persuaid.dmg');console.log('DMG copied to public/downloads/Persuaid.dmg');}else{console.log('No DMG file found in dist/');}\"",
-    "pack": "npm run clean:desktop && next build && npm run clean:out-downloads && npm run clean:out-duplicates && electron-builder --dir"
+    "pack": "npm run clean:desktop && next build && npm run clean:out-downloads && npm run clean:out-duplicates && electron-builder --dir",
+    "desktop:run": "dist/mac-arm64/Persuaid.app/Contents/MacOS/Persuaid",
+    "desktop:logs": "./scripts/run-desktop-and-logs.sh"
   },
   "build": {
     "appId": "com.persuaid.app",

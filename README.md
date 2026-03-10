@@ -42,7 +42,7 @@ See `supabase/README.md` for database migrations (scripts, notes, sessions).
 When building the desktop app or DMG (`npm run desktop:build` or `npm run pack`), the app loads the **static export** (no Next.js server). So:
 
 - **Env vars:** Ensure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are in `.env.local` when you run `next build`; they are baked into the static files so the DMG can talk to Supabase.
-- **Supabase redirect URLs:** If you use OAuth or redirect-based auth, add your app origin to **Redirect URLs** in Supabase (Authentication → URL Configuration). The desktop app loads from `app://persuaid` (no localhost).
+- **Supabase redirect URLs:** Add `http://127.0.0.1:2999` and `http://127.0.0.1:2999/**` to **Redirect URLs** in Supabase (Authentication → URL Configuration). The desktop app serves its UI from this origin; without it, token refresh fails and users get signed out shortly after login.
 - The desktop app always loads from the bundle – no localhost. **`npm run desktop`** and the DMG both run the same bundled app. For hot reload use **`npm run desktop:dev`** (with **`npm run dev`** in another terminal).
 - **DMG size:** The clean step also removes **`public/downloads/*.dmg`** (and other installers) before `next build`. Otherwise the Next.js export would put the previous DMG into `out/`, and the new DMG would package it — so the file would grow every build. After a build, the new DMG is copied to `public/downloads/Persuaid.dmg` for the website.
 - **Cloud upload:** Upload only the built DMG, not the repo or `node_modules`. Paths: **`dist/*.dmg`** (or **`public/downloads/Persuaid.dmg`** after `desktop:build`). In CI, use **`npm run desktop:artifact`** to print the DMG path (e.g. `dist/Persuaid-0.1.0.dmg`).
@@ -53,10 +53,12 @@ Live transcription (Q&A: speak, press Enter for an AI answer) needs microphone a
 
 - **In the browser** (http://localhost:3000 with `npm run dev`): use the **STT WebSocket proxy** so the connection works: run **`npm run stt:proxy`** in another terminal, add **`NEXT_PUBLIC_STT_WS_PROXY=ws://localhost:3001`** to `.env.local`, restart dev, then try again.
 - **With `npm run desktop:dev`** (and `npm run dev` in another terminal): same as browser; proxy recommended.
-- **In the standalone DMG**: the app runs an **in-app STT proxy** so transcription works without a separate process. You must provide your Deepgram API key once:
-  - **macOS:** Create a file named **`.env`** in **`~/Library/Application Support/Persuaid/`** with one line: **`DEEPGRAM_API_KEY=your_key_here`** (no quotes). Restart the app. If that folder doesn’t exist, run Persuaid once so it’s created, then add the file.
-  - **Windows:** Same idea: create **`.env`** in `%APPDATA%\Persuaid\` with **`DEEPGRAM_API_KEY=your_key_here`**.
-  - After that, open the dashboard in the DMG and use Q&A (mic listens; press Enter to get an answer) as usual.
+- **In the standalone DMG**: the app runs an **in-app STT proxy** so transcription works without a separate process. You must provide your API keys in a **`.env`** file:
+  - **macOS:** Create **`~/Library/Application Support/Persuaid/.env`** (run the app once if the folder doesn’t exist). Add:
+    - **`DEEPGRAM_API_KEY=your_key_here`** – for live transcription (mic + “Press Enter”).
+    - **`OPENAI_API_KEY=sk-your_key_here`** – for “What to say” / “Questions to ask” / “Key points” (follow-up AI). Without this, you’ll see “Request failed. Try again.”
+  - **Windows:** Same path: **`%APPDATA%\Persuaid\.env`** with the same keys.
+  - Restart the app after editing `.env`. Then open the dashboard and use Q&A (mic + Enter) and follow-up suggestions as usual.
 - **Mic permission:** On macOS, if you see “Microphone access denied”, open **System Settings → Privacy & Security → Microphone** and allow **Persuaid** (or **Electron** when running unpacked). If you launch from a terminal, the **terminal** may be prompted instead; run the built **Persuaid.app** from Finder so Persuaid gets the prompt.
 
 ## Project Structure
