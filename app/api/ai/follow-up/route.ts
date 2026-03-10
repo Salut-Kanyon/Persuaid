@@ -1,0 +1,209 @@
+import { NextRequest, NextResponse } from "next/server";
+
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+
+interface TranscriptMessage {
+  speaker?: string;
+  text: string;
+}
+
+function buildConversation(transcript: TranscriptMessage[]): string {
+  return transcript
+    .map((m) => `${m.speaker === "prospect" ? "Prospect" : "Rep"}: ${m.text}`)
+    .join("\n");
+}
+
+/** Last N messages so the model sees what was just said. */
+function getLastExchange(transcript: TranscriptMessage[], n = 6): string {
+  const last = transcript.slice(-n);
+  return last
+    .map((m) => `${m.speaker === "prospect" ? "Prospect" : "Rep"}: ${m.text}`)
+    .join("\n");
+}
+
+type FollowUpMode = "answer" | "follow_up_question";
+
+/** mode=answer → exact sentence to answer the customer. mode=follow_up_question → one question for the rep to ask. */
+export async function POST(req: NextRequest) {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) {
+    return NextResponse.json(
+      { error: "OPENAI_API_KEY is not configured" },
+      { status: 503 }
+    );
+  }
+  let body: {
+    transcript?: TranscriptMessage[];
+    scriptContext?: string;
+    notesContext?: string;
+    dealContext?: Record<string, string>;
+    mode?: FollowUpMode;
+  };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const transcript = body.transcript ?? [];
+  const scriptContext = body.scriptContext ?? "";
+  const notesContext = (body.notesContext ?? "").trim();
+  const dealContext = body.dealContext ?? {};
+  const mode: FollowUpMode = body.mode === "follow_up_question" ? "follow_up_question" : "answer";
+  const conversation = buildConversation(transcript);
+  if (!conversation.trim()) {
+    return NextResponse.json({ text: "Say something so I can suggest what to say next." });
+  }
+
+  const lastExchange = getLastExchange(transcript);
+  const lastProspectMessage = transcript
+    .filter((m) => m.speaker === "prospect")
+    .slice(-1)[0]?.text?.trim() ?? "";
+
+  const baseSystemPrompt = `You are Persuaid, a real-time sales copilot helping a rep during a live sales call.
+
+Your job is to give the rep the exact next words to say out loud in the moment, not generic coaching or analysis.
+
+Before you respond, silently infer what the last prospect message is most like:
+- product question
+- pricing question
+- objection
+- competitor comparison
+- hesitation
+- buying signal
+- confusion
+- unclear transcript (for messy or incomplete text)
+
+Prioritize context in this order:
+1) The last thing the prospect said.
+2) The most recent exchange.
+3) The rep's notes panel as product knowledge and objection-handling canon.
+4) Any script / talking points.
+5) The broader transcript.
+
+Always:
+- Speak in natural, confident, spoken sales language (what the rep would actually say next).
+- Prefer plainspoken, natural sales language over polished assistant language.
+- Stay concise (1–2 short sentences or one short question).
+- Do NOT output bullet points, headings, markdown, or multiple options.
+- Do NOT explain your reasoning, coach the rep, or talk about "the transcript" or "the prospect's intent".
+- Every response must either answer the question, handle the objection, move the conversation forward, or safely clarify what the prospect meant.
+
+Voice: Avoid phrases like "I'd love to understand", "let's explore", "help guide you", "uncover your needs", "based on your situation". Prefer phrases like "that's a fair question", "the main thing is", "usually what people do is", "in most cases", "what that really means is". Do not begin with generic filler unless it is very brief and followed immediately by the answer.
+
+Confidence: Use confident but natural sales language. Prefer "usually what people do is", "the main thing is", "most people in your situation", "typically what happens is". Avoid uncertain phrasing like "it might help to", "you could consider", "perhaps".
+
+Humanizing: When appropriate, start with a short phrase then the answer: "That's a great question.", "That's actually pretty common.", "A lot of people ask that.", "That's a fair concern." Keep it short and follow immediately with the answer.
+
+Momentum: When appropriate, end the response with a small forward-moving question or transition so the conversation keeps moving. Natural, not pushy. Examples: "Do you currently have any coverage in place today?" "Is that something you've looked into before?" "How are you currently handling that right now?"
+
+Objections: When the prospect raises an objection, use: (1) Acknowledge the concern briefly, (2) Reframe or give helpful perspective, (3) Continue naturally. Example: "That's a fair concern. Most people actually find the monthly cost is lower than they expected. Usually what we do is start with something simple and adjust from there."
+
+Treat the notes panel as authoritative product knowledge when it is relevant. Prefer using details from the notes over generic assumptions, and do not invent specific facts that are not supported by the notes.`;
+
+  const systemPrompt =
+    mode === "follow_up_question"
+      ? `${baseSystemPrompt}
+
+You are currently in FOLLOW-UP QUESTION mode.
+
+Your goal is to give the rep ONE strong follow-up question to ask the prospect that moves the sale forward.
+
+Rules specific to this mode:
+- Output ONLY one natural, conversational question the rep can ask out loud.
+- Choose a question that logically follows the last thing the prospect said.
+- Prefer questions that uncover pain, urgency, budget, decision process, current setup, or hidden objections.
+- Do not answer the prospect directly; output only the question.
+- No bullet points, headings, markdown, explanations, or multiple questions.`
+      : `${baseSystemPrompt}
+
+You are currently in ANSWER mode.
+
+Your goal is to give the rep the exact short line or two they should say next to respond to the prospect.
+
+Rules specific to this mode:
+- When the prospect's last message is a direct question or objection, the first sentence must directly answer or address it immediately. Do not begin with generic filler (e.g. "I'd love to learn more about your situation so I can help guide you") unless it is very brief and followed immediately by the answer. Good: "That's a fair question. Employer coverage is usually limited and often doesn't follow you if you leave the job." Bad: "I'd love to learn more about your situation so I can help guide you."
+- When the prospect raises an objection, use Acknowledge → Reframe → Continue (brief acknowledge, then reframe or add perspective, then continue naturally). When appropriate, end your response with a short forward-moving question (Momentum) so the rep keeps control and can qualify—e.g. "Do you currently have any coverage through work right now?"
+- Directly answer or respond to the prospect's last message using the intent you inferred.
+- Use the notes panel as product knowledge so the answer is specific and accurate when the notes are relevant.
+- Output 1–3 short sentences when needed (e.g. answer + optional momentum question). Stay in natural spoken sales language.
+- If the prospect's last message is clearly confused or the transcript is garbled / ambiguous so you cannot tell what they are asking, do NOT guess. Instead, output one short clarifying line that politely checks what they mean (for example, asking if they are asking more about pricing or how the product works).
+- Do not output bullet points, headings, markdown, explanations, or coaching.`;
+
+  const parts: string[] = [
+    `Conversation so far:\n${conversation.slice(-1200)}`,
+  ];
+  if (lastProspectMessage) {
+    parts.push(`Last thing the prospect said:\n"${lastProspectMessage}"`);
+  }
+  parts.push(`Most recent exchange:\n${lastExchange}`);
+  if (scriptContext) {
+    parts.push(`Script / talking points (context only):\n${scriptContext.slice(0, 400)}`);
+  }
+  if (notesContext) {
+    parts.push(`Rep's notes (product knowledge):\n${notesContext.slice(0, 800)}`);
+  }
+  const dealContextEntries = Object.entries(dealContext).filter(([, v]) => typeof v === "string" && v.trim());
+  if (dealContextEntries.length > 0) {
+    const dealSummary = dealContextEntries
+      .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`)
+      .join(". ");
+    parts.push(`Deal context (what we know so far about this prospect/call): ${dealSummary}`);
+    parts.push(
+      `Use the deal context above when it helps: reference the prospect's company, timeline, current solution, pain, or decision maker to make the reply more relevant (e.g. "Since you're already using Salesforce…", "Given you're looking at next quarter…").`
+    );
+  }
+  parts.push(
+    `For your internal reasoning only (do NOT mention this out loud), first decide which intent category best matches the prospect's last message: product question, pricing question, objection, competitor comparison, hesitation, buying signal, confusion, or unclear transcript. Then, based on the current mode and that intent, craft exactly one concise spoken response as instructed.`
+  );
+  if (mode === "follow_up_question") {
+    parts.push(`What is one good follow-up question the rep should ask next? Reply with only that question.`);
+  } else {
+    parts.push(`What is the exact sentence the rep should say to answer the customer? Reply with only that line.`);
+  }
+  const userPrompt = parts.join("\n\n");
+
+  const maxTokens = mode === "follow_up_question" ? 80 : 200;
+
+  try {
+    const res = await fetch(OPENAI_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: maxTokens,
+        temperature: 0.5,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("OpenAI follow-up error:", res.status, err);
+      return NextResponse.json(
+        { error: "AI follow-up failed" },
+        { status: 502 }
+      );
+    }
+    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    let text = data.choices?.[0]?.message?.content?.trim() ?? "";
+    // Strip any accidental markdown headings or leading list markers.
+    text = text.replace(/^##\s*[^\n]*\n?/gm, "").trim();
+    text = text.replace(/^[\-\u2022]\s*/, "").trim();
+    const fallback =
+      mode === "follow_up_question"
+        ? "Press the button again after more conversation."
+        : "Press Enter again after more conversation.";
+    return NextResponse.json({ text: text || fallback });
+  } catch (e) {
+    console.error("Follow-up API error:", e);
+    return NextResponse.json(
+      { error: "AI follow-up failed" },
+      { status: 500 }
+    );
+  }
+}

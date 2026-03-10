@@ -1,0 +1,8 @@
+# Don't pack these into the app (files/asar only get electron/ + package.json; out is extraResources only)
+node_modules
+.next
+.git
+dist
+*.md
+.env*
+!.env.example

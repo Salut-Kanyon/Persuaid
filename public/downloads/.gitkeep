@@ -1,0 +1,29 @@
+# Downloads Directory
+
+This directory contains the Persuaid.dmg file for production downloads.
+
+## Building and Deploying the DMG
+
+1. **Build the DMG file:**
+   ```bash
+   npm run desktop:build
+   ```
+   This will:
+   - Build the Next.js app
+   - Build the Electron app and create the DMG
+   - Automatically copy the DMG to `public/downloads/Persuaid.dmg`
+
+2. **The DMG file will be available at:**
+   - Local: `http://localhost:3000/downloads/Persuaid.dmg`
+   - Production: `https://your-domain.com/downloads/Persuaid.dmg`
+
+3. **For Vercel deployment:**
+   - The DMG file in `public/downloads/` will be deployed automatically
+   - Users can download it from the `/download` page
+   - Make sure to commit the DMG file to git (or use a CI/CD pipeline to build it)
+
+## Note
+The DMG file is large (~50-100MB typically). Consider:
+- Using Git LFS for the DMG file
+- Or building the DMG in CI/CD and uploading to a CDN
+- Or hosting the DMG on a separate file hosting service

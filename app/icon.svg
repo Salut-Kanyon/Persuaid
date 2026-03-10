@@ -1,0 +1,22 @@
+<svg
+  viewBox="0 0 40 40"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <rect
+    width="40"
+    height="40"
+    rx="10"
+    fill="rgba(40, 201, 141, 0.15)"
+    stroke="rgba(40, 201, 141, 0.3)"
+    stroke-width="1.25"
+  />
+  <path
+    d="M15 11v18M15 11h5.5a5.5 5.5 0 1 1 0 11H15"
+    stroke="#1BB874"
+    stroke-width="2.25"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
+
