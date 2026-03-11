@@ -39,10 +39,15 @@ export async function GET() {
         { status: 502 }
       );
     }
-    return NextResponse.json({
+    // Response shape for Deepgram WebSocket auth: frontend uses Sec-WebSocket-Protocol: bearer, <jwt>
+    const payload = {
       access_token: data.access_token,
-      expires_in: data.expires_in ?? 30,
-    });
+      expires_in: data.expires_in ?? 3600,
+    };
+    if (process.env.NODE_ENV === "development") {
+      console.log("[STT token] Granted: token length", payload.access_token.length, "expires_in", payload.expires_in);
+    }
+    return NextResponse.json(payload);
   } catch (e) {
     console.error("STT token error:", e);
     return NextResponse.json(

@@ -13,21 +13,8 @@ interface SavedNote {
   updated_at: string;
 }
 
-const DEAL_CONTEXT_LABELS: Record<string, string> = {
-  company: "Prospect company",
-  industry: "Industry",
-  current_solution: "Current solution",
-  pain_point: "Pain point",
-  budget: "Budget signal",
-  timeline: "Timeline",
-  decision_maker: "Decision maker",
-  competitors: "Competitors",
-  team_size: "Team size",
-  use_case: "Use case",
-};
-
 export function NotesPanel() {
-  const { setNotesContext, dealContext } = useSession();
+  const { setNotesContext } = useSession();
   const [currentNote, setCurrentNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -162,29 +149,8 @@ export function NotesPanel() {
     setImportOpen(false);
   };
 
-  const dealEntries = Object.entries(dealContext).filter(([, v]) => typeof v === "string" && v.trim());
-  const hasDealContext = dealEntries.length > 0;
-
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
-      {/* Deal Context section - auto-updated from transcript */}
-      <div className="flex-shrink-0 border-b border-border/30 bg-background-elevated/30">
-        <h3 className="px-4 py-2 text-xs font-semibold text-text-muted uppercase tracking-wider">Deal Context</h3>
-        <div className="px-4 pb-3">
-          {hasDealContext ? (
-            <dl className="space-y-1.5">
-              {dealEntries.map(([key, value]) => (
-                <div key={key}>
-                  <dt className="text-xs text-text-dim">{DEAL_CONTEXT_LABELS[key] ?? key}</dt>
-                  <dd className="text-sm text-text-primary leading-snug">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : (
-            <p className="text-xs text-text-dim">Deal context will update as the call continues.</p>
-          )}
-        </div>
-      </div>
       <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border/30 flex-wrap">
         <input
           ref={fileInputRef}
@@ -278,6 +244,10 @@ export function NotesPanel() {
         </div>
       )}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-shrink-0 px-4 pt-3 pb-1 flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium text-green-600 dark:text-green-400">Product Knowledge notes</span>
+          <span className="text-xs text-green-600/90 dark:text-green-400/90">— Connected to the AI assistant, tailored to your case.</span>
+        </div>
         <textarea
           value={currentNote}
           onChange={(e) => setCurrentNote(e.target.value)}

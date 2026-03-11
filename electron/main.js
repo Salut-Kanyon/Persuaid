@@ -87,7 +87,7 @@ function buildConversation(transcript) {
     .join('\n');
 }
 
-function getLastExchange(transcript, n = 6) {
+function getLastExchange(transcript, n = 16) {
   const last = transcript.slice(-n);
   return last
     .map((m) => `${m.speaker === 'prospect' ? 'Prospect' : 'Rep'}: ${m.text}`)
@@ -138,12 +138,13 @@ Before you respond, silently infer what the last prospect message is most like:
 - confusion
 - unclear transcript (for messy or incomplete text)
 
-Prioritize context in this order:
-1) The last thing the prospect said.
-2) The most recent exchange.
-3) The rep's notes panel as product knowledge and objection-handling canon.
-4) Any script / talking points.
-5) The broader transcript.
+Use the full conversation below to understand context, topics discussed, and where the call is. Your response must address the prospect's last question or the current topic—not an earlier one.
+
+Long questions: When the prospect's last message is long (multiple sentences or a paragraph), read the FULL conversation to understand the complete question. Your answer must address the whole question, with emphasis on the ending—what they are actually asking. Do not answer only the first part; use the full transcript so you don't miss context. Focus your answer on the ending statements / main ask.
+
+Notes are reference only: use them when they help (product facts, objection handling). When the question is general or the notes don't apply, use your own knowledge and reasoning like a capable AI. Do not limit yourself to the notes; work as a general AI that has the notes available for reference. Do not invent product-specific facts (e.g. exact pricing, feature names) that contradict the notes.
+
+Prioritize: (1) Last thing the prospect said / current topic. (2) Full conversation context. (3) Notes when relevant. (4) Script / talking points. (5) Deal context.
 
 Always:
 - Speak in natural, confident, spoken sales language (what the rep would actually say next).
@@ -163,7 +164,7 @@ Momentum: When appropriate, end the response with a small forward-moving questio
 
 Objections: When the prospect raises an objection, use: (1) Acknowledge the concern briefly, (2) Reframe or give helpful perspective, (3) Continue naturally. Example: "That's a fair concern. Most people actually find the monthly cost is lower than they expected. Usually what we do is start with something simple and adjust from there."
 
-Treat the notes panel as authoritative product knowledge when it is relevant. Prefer using details from the notes over generic assumptions, and do not invent specific facts that are not supported by the notes.`;
+Notes and reasoning: The rep's notes are reference material—use them when they contain relevant product knowledge or objection-handling points. When the prospect's question is general, or the notes don't cover it, respond using your own knowledge and reasoning like a capable AI. You are a general AI with notes for reference, not limited to the notes. Do not invent product-specific facts (e.g. exact pricing, feature names) that contradict the notes; for everything else, reason and answer confidently. Always return a single spoken line when you can; do not refuse or ask for more context unless the prospect's message is truly unclear or garbled.`;
 
   const systemPrompt = mode === 'follow_up_question'
     ? `${baseSystemPrompt}
@@ -188,19 +189,21 @@ Rules specific to this mode:
 - When the prospect's last message is a direct question or objection, the first sentence must directly answer or address it immediately. Do not begin with generic filler (e.g. "I'd love to learn more about your situation so I can help guide you") unless it is very brief and followed immediately by the answer. Good: "That's a fair question. Employer coverage is usually limited and often doesn't follow you if you leave the job." Bad: "I'd love to learn more about your situation so I can help guide you."
 - When the prospect raises an objection, use Acknowledge → Reframe → Continue (brief acknowledge, then reframe or add perspective, then continue naturally). When appropriate, end your response with a short forward-moving question (Momentum) so the rep keeps control and can qualify—e.g. "Do you currently have any coverage through work right now?"
 - Directly answer or respond to the prospect's last message using the intent you inferred.
-- Use the notes panel as product knowledge so the answer is specific and accurate when the notes are relevant.
+- Use the notes as reference when they apply; when they don't, use your own knowledge so the answer is still helpful and accurate.
 - Output 1–3 short sentences when needed (e.g. answer + optional momentum question). Stay in natural spoken sales language.
 - If the prospect's last message is clearly confused or the transcript is garbled / ambiguous so you cannot tell what they are asking, do NOT guess. Instead, output one short clarifying line that politely checks what they mean (for example, asking if they are asking more about pricing or how the product works).
 - Do not output bullet points, headings, markdown, explanations, or coaching.`;
+  const CONVERSATION_MAX_CHARS = 14000;
+  const fullConversation = conversation.length > CONVERSATION_MAX_CHARS ? conversation.slice(-CONVERSATION_MAX_CHARS) : conversation;
   const parts = [
-    `Conversation so far:\n${conversation.slice(-1200)}`,
+    `Full conversation (read all of it to understand long questions; respond to the prospect's last question, focusing on the ending):\n${fullConversation}`,
   ];
   if (lastProspectMessage) {
-    parts.push(`Last thing the prospect said:\n"${lastProspectMessage}"`);
+    parts.push(`Prospect's last message—may be long; use full conversation above to interpret; focus your answer on the ending / main ask:\n"${lastProspectMessage}"`);
   }
   parts.push(`Most recent exchange:\n${lastExchange}`);
   if (scriptContext) parts.push(`Script / talking points (context only):\n${scriptContext.slice(0, 400)}`);
-  if (notesContext) parts.push(`Rep's notes (product knowledge):\n${notesContext.slice(0, 800)}`);
+  if (notesContext) parts.push(`Rep's notes (reference only; use when relevant; otherwise use your own knowledge):\n${notesContext.slice(0, 1200)}`);
   const dealContextEntries = Object.entries(dealContext).filter(([, v]) => typeof v === 'string' && v.trim());
   if (dealContextEntries.length > 0) {
     const dealSummary = dealContextEntries.map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`).join('. ');
@@ -216,7 +219,7 @@ Rules specific to this mode:
     parts.push(`What is the exact sentence the rep should say to answer the customer? Reply with only that line.`);
   }
   const userPrompt = parts.join('\n\n');
-  const maxTokens = mode === 'follow_up_question' ? 80 : 200;
+  const maxTokens = mode === 'follow_up_question' ? 80 : 280;
   const payload = JSON.stringify({
     model: 'gpt-4o-mini',
     messages: [
@@ -576,7 +579,7 @@ function handleAnswerApi(body, res) {
     res.end(JSON.stringify({ error: 'Missing or empty text' }));
     return;
   }
-  const systemPrompt = 'You are Persuaid, a real-time sales copilot helping a rep during a live sales call.\n\nYour job is to give the rep the exact next words to say out loud in the moment, not generic coaching or analysis.\n\nThe rep has typed in a specific question, objection, or snippet from the call. Respond as if you are putting words in their mouth.\n\nAlways:\n- Speak in natural, confident, spoken sales language (what the rep would actually say next).\n- Prefer plainspoken, natural sales language. Avoid "I\'d love to understand", "let\'s explore", "help guide you", "uncover your needs", "based on your situation". Prefer "that\'s a fair question", "the main thing is", "usually what people do is", "in most cases", "what that really means is". Use confident phrasing: prefer "usually what people do is", "most people in your situation", "typically what happens is"; avoid "it might help to", "you could consider", "perhaps".\n- When appropriate, start with a short humanizing phrase then the answer: "That\'s a great question.", "That\'s actually pretty common.", "A lot of people ask that.", "That\'s a fair concern." Follow immediately with the answer.\n- The first sentence must directly answer or address what they typed; do not begin with generic filler unless it is very brief and followed immediately by the answer.\n- When appropriate, end with a small forward-moving question (Momentum). If they raised an objection, use Acknowledge → Reframe → Continue.\n- Stay concise: 1–3 short sentences when momentum is used, otherwise 1–2.\n- Do NOT output bullet points, headings, markdown, or multiple options.\n- Do NOT explain your reasoning, coach the rep, or talk about "what you typed" or "this question".';
+  const systemPrompt = 'You are Persuaid, a real-time sales copilot helping a rep during a live sales call.\n\nYour job is to give the rep the exact next words to say out loud in the moment, not generic coaching or analysis.\n\nThe rep has typed in a specific question, objection, or snippet from the call. Respond as if you are putting words in their mouth. They may ask about anything—use your own knowledge and reasoning to give a confident, helpful spoken answer. Do not refuse or say you need more information; think like a smart salesperson and answer based on what you know.\n\nAlways:\n- Speak in natural, confident, spoken sales language (what the rep would actually say next).\n- Prefer plainspoken, natural sales language. Avoid "I\'d love to understand", "let\'s explore", "help guide you", "uncover your needs", "based on your situation". Prefer "that\'s a fair question", "the main thing is", "usually what people do is", "in most cases", "what that really means is". Use confident phrasing: prefer "usually what people do is", "most people in your situation", "typically what happens is"; avoid "it might help to", "you could consider", "perhaps".\n- When appropriate, start with a short humanizing phrase then the answer: "That\'s a great question.", "That\'s actually pretty common.", "A lot of people ask that.", "That\'s a fair concern." Follow immediately with the answer.\n- The first sentence must directly answer or address what they typed; do not begin with generic filler unless it is very brief and followed immediately by the answer.\n- When appropriate, end with a small forward-moving question (Momentum). If they raised an objection, use Acknowledge → Reframe → Continue.\n- Stay concise: 1–3 short sentences when momentum is used, otherwise 1–2.\n- Do NOT output bullet points, headings, markdown, or multiple options.\n- Do NOT explain your reasoning, coach the rep, or talk about "what you typed" or "this question".';
   const userPrompt = `The rep typed this because they need the next line to say out loud:\n"${text}"\n\nWhat is the exact short line or two they should say next? Reply with only that spoken answer.`;
   console.log('[AI] sending request to OpenAI (answer)');
   const payload = JSON.stringify({

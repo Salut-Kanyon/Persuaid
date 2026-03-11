@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
 
-const MAX_MESSAGES = 25;
+/** Send enough of the transcript so the AI sees long questions and full context (paragraph-style). */
+const MAX_MESSAGES = 150;
 
 /** Fetches follow-up: mode "answer" (Enter) = what to say; "follow_up_question" (button) = question to ask. */
 export function FollowUpFetcher() {

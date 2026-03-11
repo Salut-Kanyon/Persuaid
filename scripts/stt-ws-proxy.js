@@ -12,7 +12,7 @@
 const http = require("http");
 const { WebSocketServer } = require("ws");
 
-const PORT = Number(process.env.STT_PROXY_PORT) || 3001;
+const PORT = Number(process.env.STT_PROXY_PORT) || 2998;
 const DEEPGRAM_ORIGIN = "wss://api.deepgram.com";
 
 function loadEnvLocal() {
@@ -42,10 +42,25 @@ wss.on("connection", (clientWs, req) => {
   const query = req.url?.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
   const deepgramUrl = `${DEEPGRAM_ORIGIN}${path}${query}`;
 
-  const upstream = new (require("ws"))(deepgramUrl, {
+  console.log("[STT proxy] Connecting to Deepgram:", deepgramUrl);
+
+  const WebSocketClient = require("ws");
+  const upstream = new WebSocketClient(deepgramUrl, {
     headers: {
       Authorization: `Token ${apiKey}`,
     },
+  });
+
+  upstream.on("unexpected-response", (req, res) => {
+    let body = "";
+    res.on("data", (chunk) => { body += (chunk && chunk.toString) ? chunk.toString() : String(chunk); });
+    res.on("end", () => {
+      const dgError = res.headers["dg-error"] || "(no dg-error header)";
+      const dgRequestId = res.headers["dg-request-id"] || "(none)";
+      console.error("[STT proxy] Deepgram unexpected response:", res.statusCode, res.statusMessage);
+      console.error("[STT proxy] dg-error:", dgError, "dg-request-id:", dgRequestId);
+      console.error("[STT proxy] body:", body || "(empty)");
+    });
   });
 
   const pendingFromClient = [];
@@ -94,8 +109,8 @@ wss.on("connection", (clientWs, req) => {
 });
 
 server.listen(PORT, "127.0.0.1", () => {
-  console.log(`STT WebSocket proxy listening on ws://localhost:${PORT}`);
-  console.log("Ensure NEXT_PUBLIC_STT_WS_PROXY=ws://localhost:" + PORT + " in .env.local (use ws:// not http://).");
+  console.log(`STT WebSocket proxy listening on ws://127.0.0.1:${PORT}`);
+  console.log("Localhost dev uses this proxy by default. DEEPGRAM_API_KEY is loaded from .env.local.");
 });
 
 server.on("error", (err) => {

@@ -12,7 +12,8 @@ function buildDeepgramParams(sampleRate: number): URLSearchParams {
     punctuate: "true",
     smart_format: "true",
     interim_results: "true",
-    utterance_end_ms: "3000",
+    utterance_end_ms: "5000",
+    endpointing: "800",
     diarize: "true",
     utterances: "true",
   });
@@ -21,17 +22,23 @@ function buildDeepgramParams(sampleRate: number): URLSearchParams {
 const KEEPALIVE_INTERVAL_MS = 2000;
 
 function getSttProxyUrl(): string {
-  // Next.js dev server (localhost:3000): use token path so /api/stt/token works.
-  if (typeof window !== "undefined" && window.location?.origin?.includes("localhost:3000")) {
-    return "";
+  // 1. If NEXT_PUBLIC_STT_PROXY_URL exists, use that
+  const envProxy = typeof process !== "undefined" ? (process.env.NEXT_PUBLIC_STT_PROXY_URL ?? "").trim() : "";
+  if (envProxy) {
+    return envProxy.replace(/\/$/, "");
   }
-  // Packaged Electron app: static bundle served from http://127.0.0.1:2999 → always use in-app proxy on 2998.
+  // 2. Packaged Electron app: origin http://127.0.0.1:2999 → use in-app proxy on 2998
   if (typeof window !== "undefined" && window.location?.origin?.startsWith("http://127.0.0.1:2999")) {
     return "ws://127.0.0.1:2998";
   }
-  if (typeof window !== "undefined" && (window as unknown as { persuaid?: { sttProxyUrl?: string } }).persuaid?.sttProxyUrl) {
-    return (window as unknown as { persuaid: { sttProxyUrl: string } }).persuaid.sttProxyUrl.replace(/\/$/, "");
+  // 3. Localhost dev: use local STT proxy by default (no direct Deepgram token mode)
+  if (typeof window !== "undefined") {
+    const host = window.location?.hostname ?? "";
+    if (host === "localhost" || host === "127.0.0.1") {
+      return "ws://127.0.0.1:2998";
+    }
   }
+  // 4. Fallback only: token mode (production web deploy, no proxy available)
   return "";
 }
 
@@ -198,19 +205,30 @@ export function LiveTranscription() {
   const lastFinalTextRef = useRef<string>("");
   /** Timestamp of last finalized text, to only dedupe back-to-back repeats. */
   const lastFinalAtRef = useRef<number | null>(null);
+  /** When no final is received, commit interim to transcript after this delay so shown text is saved. */
+  const commitInterimTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Speaker id for current interim (used when committing on timeout). */
+  const lastInterimSpeakerIdRef = useRef<number | null>(null);
 
   // Allow other parts of the app (e.g., Q&A) to clear the current phrase buffer.
   useEffect(() => {
     registerClearBuffer(() => {
+      if (commitInterimTimeoutRef.current) {
+        clearTimeout(commitInterimTimeoutRef.current);
+        commitInterimTimeoutRef.current = null;
+      }
       phraseBufferRef.current = "";
       recentSpeechRef.current = "";
       lastFinalTextRef.current = "";
       lastFinalAtRef.current = null;
+      lastInterimSpeakerIdRef.current = null;
       setInterimTranscript("");
     });
   }, [registerClearBuffer, recentSpeechRef, setInterimTranscript]);
 
   useEffect(() => {
+    // Debug: confirm effect runs and isRecording state
+    console.log("[STT] LiveTranscription effect fired. isRecording =", isRecording);
     if (!isRecording) {
       setMicError(null);
       if (wsRef.current) {
@@ -282,6 +300,16 @@ export function LiveTranscription() {
         let stream = await navigator.mediaDevices
           .getUserMedia({ audio: audioConstraints })
           .catch(() => navigator.mediaDevices.getUserMedia({ audio: true }));
+        console.log("[STT] gotUserMedia ok, stream:", stream);
+        console.log(
+          "[STT] audio tracks:",
+          stream.getAudioTracks().map((t) => ({
+            label: t.label,
+            enabled: t.enabled,
+            muted: t.muted,
+            readyState: t.readyState,
+          }))
+        );
         setMicError(null);
         if (!mounted) {
           stream.getTracks().forEach((t) => t.stop());
@@ -311,75 +339,105 @@ export function LiveTranscription() {
         const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         const ctx = new AudioContextClass({ sampleRate: PCM_SAMPLE_RATE });
         audioContextRef.current = ctx;
+        console.log("[STT] ctx.sampleRate =", ctx.sampleRate);
+        console.log("[STT] AudioContext state before resume:", ctx.state);
+        // Browsers often start AudioContext suspended; audio won't flow until resumed. This fixes "talking but nothing captured".
+        if (ctx.state === "suspended") {
+          await ctx.resume();
+        }
+        console.log("[STT] AudioContext state after resume:", ctx.state);
+        if (!mounted) return;
         const actualSampleRate = ctx.sampleRate;
         const query = buildDeepgramParams(actualSampleRate).toString();
 
         const proxyUrl = getSttProxyUrl();
-        try {
-          // eslint-disable-next-line no-console
-          console.log(
-            "[STT] Mode:",
-            proxyUrl ? "proxy" : "token",
-            "origin:",
-            typeof window !== "undefined" ? window.location?.origin : "n/a",
-            "proxyUrl:",
-            proxyUrl || "(none)",
-          );
-        } catch {
-          // ignore
-        }
+        const useProxy = !!proxyUrl;
+        const sttMode = useProxy ? "proxy" : "token";
+        const wsUrl = useProxy ? `${proxyUrl}/v1/listen?${query}` : `wss://api.deepgram.com/v1/listen?${query}`;
+        const isDev = typeof window !== "undefined" && (window.location?.hostname === "localhost" || window.location?.hostname === "127.0.0.1");
+        console.log(
+          "[STT] Selected STT mode:",
+          sttMode,
+          "| WebSocket URL:",
+          wsUrl,
+          "| Proxy mode:",
+          useProxy,
+          "| Token mode:",
+          !useProxy,
+        );
 
         let ws: WebSocket;
 
         if (proxyUrl) {
-          // Desktop app: use in-app proxy (Electron main process). Key in ~/Library/Application Support/Persuaid/.env
+          // Localhost dev or packaged Electron: use local STT proxy. Key in .env.local or app config.
           try {
-            ws = await connectWebSocket(`${proxyUrl}/v1/listen?${query}`);
+            ws = await connectWebSocket(wsUrl);
           } catch {
             if (!mounted) return;
             stream.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
-            setMicError("Could not connect to transcription. The installed app doesn't use .env.local. Put DEEPGRAM_API_KEY in a .env file in the app's config folder (e.g. macOS: ~/Library/Application Support/Persuaid/.env), then restart.");
+            setMicError(
+              "Could not connect to STT proxy. Run: node scripts/stt-ws-proxy.js (ensure DEEPGRAM_API_KEY is in .env.local). For packaged app, add DEEPGRAM_API_KEY to the app config folder."
+            );
             return;
           }
         } else {
           // Browser (or desktop:dev on localhost:3000): use token from Next.js API
-          const tokenRes = await fetch("/api/stt/token", { cache: "no-store" });
-          if (!mounted) return;
-          if (!tokenRes.ok) {
-            stream.getTracks().forEach((t) => t.stop());
-            streamRef.current = null;
-            let msg = "Transcription service error.";
-            if (tokenRes.status === 503) msg = "Add DEEPGRAM_API_KEY to .env.local and restart.";
-            else {
-              try {
-                const body = (await tokenRes.json()) as { error?: string };
-                if (body?.error) msg = body.error;
-              } catch (_) {}
+          const connectWithToken = async (): Promise<WebSocket> => {
+            const tokenRes = await fetch("/api/stt/token", { cache: "no-store" });
+            if (!mounted) throw new Error("unmounted");
+            if (isDev) {
+              console.log("[STT] Token fetch:", tokenRes.ok ? "OK" : "FAILED", "status:", tokenRes.status);
             }
-            setMicError(msg);
-            return;
-          }
-          const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string };
-          const access_token = tokenData.access_token ?? null;
-          if (!access_token || !mounted) {
-            stream.getTracks().forEach((t) => t.stop());
-            streamRef.current = null;
-            setMicError(tokenData.error ?? "No token returned.");
-            return;
-          }
+            if (!tokenRes.ok) {
+              const body = await tokenRes.json().catch(() => ({})) as { error?: string };
+              const msg =
+                tokenRes.status === 503
+                  ? "Add DEEPGRAM_API_KEY to .env.local and restart the dev server."
+                  : (body?.error ?? "Transcription service error.");
+              throw new Error(msg);
+            }
+            const tokenData = (await tokenRes.json()) as { access_token?: string; expires_in?: number; error?: string };
+            const access_token = tokenData.access_token?.trim() ?? null;
+            if (isDev) {
+              console.log("[STT] Token response shape: access_token:", !!access_token, "length:", access_token?.length ?? 0, "expires_in:", tokenData.expires_in ?? "n/a");
+            }
+            if (!access_token) throw new Error(tokenData.error ?? "No token returned.");
+            // Deepgram temporary tokens (from /auth/grant) use Sec-WebSocket-Protocol: bearer, <jwt>
+            const url = `wss://api.deepgram.com/v1/listen?${query}`;
+            const protocols = ["bearer", access_token];
+            console.log("[STT] Token mode: connecting to", url, "protocols: bearer + token (length", access_token.length, ")");
+            return connectWebSocket(url, protocols);
+          };
+
           try {
-            ws = await connectWebSocket(`wss://api.deepgram.com/v1/listen?${query}`, ["bearer", access_token]);
-          } catch {
+            ws = await connectWithToken();
+          } catch (e) {
             if (!mounted) return;
-            stream.getTracks().forEach((t) => t.stop());
-            streamRef.current = null;
-            setMicError("Could not connect to transcription. If the token works but this keeps happening, try a new API key in the Deepgram Console (Member or Owner role; restricted keys cannot stream). Or check your network.");
-            return;
+            const errMsg = e instanceof Error ? e.message : "";
+            if (errMsg && !errMsg.includes("WebSocket") && !errMsg.includes("unmounted")) {
+              stream.getTracks().forEach((t) => t.stop());
+              streamRef.current = null;
+              setMicError(errMsg);
+              return;
+            }
+            // First failure: retry once with a fresh token (handshake/1006 can be transient)
+            try {
+              ws = await connectWithToken();
+            } catch (retryErr) {
+              if (!mounted) return;
+              stream.getTracks().forEach((t) => t.stop());
+              streamRef.current = null;
+              setMicError(
+                "Could not connect to Deepgram. Check: (1) DEEPGRAM_API_KEY in .env.local is correct and has Member or Owner role (restricted keys cannot stream), (2) try in an incognito window to rule out extensions, (3) restart the dev server (npm run dev)."
+              );
+              return;
+            }
           }
         }
         if (!mounted) return;
         wsRef.current = ws;
+        console.log("[STT] websocket open");
 
         const showConnectionError = (detail: string) => {
           if (!mounted || connectionErrorShownRef.current) return;
@@ -388,11 +446,16 @@ export function LiveTranscription() {
         };
 
         // Capture raw PCM at context sample rate and send as linear16 (v1/listen returns real transcripts).
+        // Smaller buffer (1024) = ~64ms chunks = faster capture and send = fewer dropped first words.
         const src = ctx.createMediaStreamSource(stream);
-        const bufferLength = 4096;
+        const bufferLength = 1024;
         const processor = ctx.createScriptProcessor(bufferLength, 1, 1);
         pcmProcessorRef.current = processor;
+        let onAudioProcessCount = 0;
+        let pcmSendCount = 0;
         processor.onaudioprocess = (e: AudioProcessingEvent) => {
+          onAudioProcessCount++;
+          if (onAudioProcessCount <= 5) console.log("[STT] onaudioprocess fired");
           if (!mounted || wsRef.current?.readyState !== WebSocket.OPEN) return;
           const input = e.inputBuffer.getChannelData(0);
           const pcm = new Int16Array(input.length);
@@ -401,6 +464,10 @@ export function LiveTranscription() {
             pcm[i] = s < 0 ? s * 32768 : s * 32767;
           }
           wsRef.current.send(pcm.buffer);
+          pcmSendCount++;
+          if (pcmSendCount === 1 || pcmSendCount % 100 === 0) {
+            console.log("[STT] sending PCM bytes:", pcm.byteLength);
+          }
         };
         src.connect(processor);
         const silentGain = ctx.createGain();
@@ -438,6 +505,7 @@ export function LiveTranscription() {
           const first = segments[0];
           const transcript = first.transcript;
           const isFinal = first.isFinal;
+          console.log("[STT] parsed transcript:", { transcript: (transcript || "").slice(0, 80), isFinal, speakerId: first.speakerId });
           try {
             console.log("[STT] Transcript chunk:", (transcript || "").slice(0, 120), "final=", isFinal, "segments=", segments.length);
           } catch {
@@ -447,7 +515,10 @@ export function LiveTranscription() {
           phraseBufferRef.current = transcript;
           recentSpeechRef.current = transcript;
           setInterimTranscript(transcript);
-          setInterimSpeakerId(typeof first.speakerId === "number" ? first.speakerId : null);
+          if (transcript) console.log("[STT] setInterimTranscript called with:", transcript.slice(0, 60));
+          const speakerIdForInterim = typeof first.speakerId === "number" ? first.speakerId : null;
+          lastInterimSpeakerIdRef.current = speakerIdForInterim;
+          setInterimSpeakerId(speakerIdForInterim);
           setDiarizationSpeakerIds((prev) => {
             const next = new Set(prev);
             segments.forEach((s) => {
@@ -456,7 +527,35 @@ export function LiveTranscription() {
             return next.size === prev.length && prev.every((id) => next.has(id)) ? prev : [...next].sort((a, b) => a - b);
           });
 
-          if (!isFinal) return;
+          if (!isFinal) {
+            if (commitInterimTimeoutRef.current) clearTimeout(commitInterimTimeoutRef.current);
+            if (transcript.trim()) {
+              commitInterimTimeoutRef.current = setTimeout(() => {
+                commitInterimTimeoutRef.current = null;
+                if (!mounted) return;
+                const toCommit = phraseBufferRef.current?.trim() ?? "";
+                if (!toCommit) return;
+                const sid = lastInterimSpeakerIdRef.current;
+                const mappedSpeaker =
+                  typeof sid === "number"
+                    ? (diarizationMeSpeakerId === null ? (sid === 0 ? "user" : "prospect") : sid === diarizationMeSpeakerId ? "user" : "prospect")
+                    : "user";
+                appendTranscript({ speaker: mappedSpeaker, text: toCommit });
+                phraseBufferRef.current = "";
+                recentSpeechRef.current = "";
+                lastFinalTextRef.current = toCommit;
+                lastFinalAtRef.current = Date.now();
+                setInterimTranscript("");
+                setInterimSpeakerId(null);
+              }, 2500);
+            }
+            return;
+          }
+
+          if (commitInterimTimeoutRef.current) {
+            clearTimeout(commitInterimTimeoutRef.current);
+            commitInterimTimeoutRef.current = null;
+          }
 
           const combinedFinal = segments.map((s) => s.transcript).join(" ").trim();
           if (combinedFinal.length === 0) {
@@ -483,6 +582,7 @@ export function LiveTranscription() {
                   ? (speakerId === 0 ? "user" : "prospect")
                   : (speakerId === diarizationMeSpeakerId ? "user" : "prospect"))
                 : "user";
+            console.log("[STT] appendTranscript called with:", { speaker: mappedSpeaker, text: finalText.slice(0, 60) });
             appendTranscript({ speaker: mappedSpeaker, text: finalText });
           }
           try {
@@ -518,6 +618,7 @@ export function LiveTranscription() {
         };
 
         const handleClose = (ev: CloseEvent) => {
+          console.log("[STT] websocket close", ev.code, ev.reason);
           if (keepaliveRef.current) {
             clearInterval(keepaliveRef.current);
             keepaliveRef.current = null;
@@ -548,7 +649,10 @@ export function LiveTranscription() {
         };
 
         ws.onmessage = handleMessage;
-        ws.onerror = () => showConnectionError("Check your network and try again.");
+        ws.onerror = () => {
+          console.log("[STT] websocket error");
+          showConnectionError("Check your network and try again.");
+        };
         ws.onclose = handleClose;
       } catch (err) {
         if (!mounted) return;
@@ -580,8 +684,12 @@ export function LiveTranscription() {
 
     return () => {
       mounted = false;
+      if (commitInterimTimeoutRef.current) {
+        clearTimeout(commitInterimTimeoutRef.current);
+        commitInterimTimeoutRef.current = null;
+      }
     };
-  }, [isRecording, audioInputDeviceId, appendTranscript, setSessionId, setMicError, setInterimTranscript]);
+  }, [isRecording, audioInputDeviceId, appendTranscript, setSessionId, setMicError, setInterimTranscript, setInterimSpeakerId, setDiarizationSpeakerIds, diarizationMeSpeakerId]);
 
   return null;
 }
