@@ -12,7 +12,8 @@ function buildDeepgramParams(sampleRate: number): URLSearchParams {
     punctuate: "true",
     smart_format: "true",
     interim_results: "true",
-    utterance_end_ms: "5000",
+    // Shorter pause threshold prevents giant run-on blocks while staying "few but clean".
+    utterance_end_ms: "1500",
     endpointing: "500",
     diarize: "true",
     utterances: "true",
@@ -20,6 +21,45 @@ function buildDeepgramParams(sampleRate: number): URLSearchParams {
   return params;
 }
 const KEEPALIVE_INTERVAL_MS = 2000;
+
+function splitIntoParagraphs(text: string): string[] {
+  const cleaned = (text || "").replace(/\s+/g, " ").trim();
+  if (!cleaned) return [];
+  if (cleaned.length <= 260) return [cleaned];
+
+  const sentences = cleaned
+    .split(/(?<=[.!?])\s+/g)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (sentences.length <= 1) {
+    const words = cleaned.split(" ").filter(Boolean);
+    if (words.length <= 60) return [cleaned];
+    const chunkSize = Math.max(35, Math.ceil(words.length / Math.min(4, Math.ceil(words.length / 45))));
+    const out: string[] = [];
+    for (let i = 0; i < words.length; i += chunkSize) out.push(words.slice(i, i + chunkSize).join(" ").trim());
+    return out.filter(Boolean);
+  }
+
+  const out: string[] = [];
+  let buf = "";
+  for (const s of sentences) {
+    const next = buf ? `${buf} ${s}` : s;
+    if (next.length <= 320 || !buf) {
+      buf = next;
+      continue;
+    }
+    out.push(buf);
+    buf = s;
+  }
+  if (buf) out.push(buf);
+
+  if (out.length >= 2 && out[out.length - 1].length < 60) {
+    out[out.length - 2] = `${out[out.length - 2]} ${out[out.length - 1]}`.trim();
+    out.pop();
+  }
+  return out;
+}
 
 function getSttProxyUrl(): string {
   // 1. If NEXT_PUBLIC_STT_PROXY_URL exists, use that
@@ -646,12 +686,15 @@ export function LiveTranscription() {
               : "user";
 
           if (bufferHasFullSentence) {
-            const isContinuation = looksLikeContinuation(textToAppend) && lastAppendedSpeakerRef.current === firstSpeaker;
-            if (isContinuation) {
-              appendToLastTranscript({ speaker: firstSpeaker, text: textToAppend });
-            } else {
-              appendTranscript({ speaker: firstSpeaker, text: textToAppend });
+            const paragraphs = splitIntoParagraphs(textToAppend);
+            const first = paragraphs[0] ?? "";
+            const rest = paragraphs.slice(1);
+            const isContinuation = looksLikeContinuation(first) && lastAppendedSpeakerRef.current === firstSpeaker;
+            if (first) {
+              if (isContinuation) appendToLastTranscript({ speaker: firstSpeaker, text: first });
+              else appendTranscript({ speaker: firstSpeaker, text: first });
             }
+            rest.forEach((p) => appendTranscript({ speaker: firstSpeaker, text: p }));
             lastAppendedSpeakerRef.current = firstSpeaker;
           } else {
             for (const seg of segments) {
@@ -664,12 +707,15 @@ export function LiveTranscription() {
                     ? (speakerId === 0 ? "user" : "prospect")
                     : (speakerId === diarizationMeSpeakerId ? "user" : "prospect"))
                   : "user";
-              const isContinuation = looksLikeContinuation(finalText) && lastAppendedSpeakerRef.current === mappedSpeaker;
-              if (isContinuation) {
-                appendToLastTranscript({ speaker: mappedSpeaker, text: finalText });
-              } else {
-                appendTranscript({ speaker: mappedSpeaker, text: finalText });
+              const paragraphs = splitIntoParagraphs(finalText);
+              const first = paragraphs[0] ?? "";
+              const rest = paragraphs.slice(1);
+              const isContinuation = looksLikeContinuation(first) && lastAppendedSpeakerRef.current === mappedSpeaker;
+              if (first) {
+                if (isContinuation) appendToLastTranscript({ speaker: mappedSpeaker, text: first });
+                else appendTranscript({ speaker: mappedSpeaker, text: first });
               }
+              rest.forEach((p) => appendTranscript({ speaker: mappedSpeaker, text: p }));
               lastAppendedSpeakerRef.current = mappedSpeaker;
             }
           }
