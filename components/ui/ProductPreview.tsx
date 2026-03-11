@@ -1,237 +1,400 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+
+type AiKind = "answer" | "followup" | "clarification";
+
+interface AiResponse {
+  kind: AiKind;
+  text: string;
+}
+
+const AI_RESPONSES: AiResponse[] = [
+  {
+    kind: "answer",
+    text: "“Great question. The net premium is the pure cost of insurance, while the gross premium also includes the insurer’s expenses and admin fees.”",
+  },
+  {
+    kind: "followup",
+    text: "“Would it be helpful if I broke down which part of your premium pays for coverage versus company expenses?”",
+  },
+  {
+    kind: "answer",
+    text: "“Paying monthly doesn’t change your coverage—it just spreads the gross annual premium into smaller payments over the year.”",
+  },
+  {
+    kind: "followup",
+    text: "“I can show you a simple side‑by‑side of annual versus monthly so you can see the tradeoff between cash flow and simplicity.”",
+  },
+  {
+    kind: "answer",
+    text: "“Your age and health affect pricing because they feed into the mortality and morbidity rates the insurer uses to price risk.”",
+  },
+  {
+    kind: "followup",
+    text: "“Is it okay if I briefly explain how those rates translate into the numbers you’re seeing on your quote?”",
+  },
+  {
+    kind: "clarification",
+    text: "“Net level annual premium is the amount needed each year to fund future benefits; gross premium is that amount plus the insurer’s operating costs.”",
+  },
+  {
+    kind: "answer",
+    text: "“If a payment is missed, most policies include a short grace period before coverage lapses—I can walk you through what that looks like in your case.”",
+  },
+  {
+    kind: "followup",
+    text: "“When you think about this policy, are you more focused on total long‑term cost, flexibility in payments, or leaving a specific benefit amount?”",
+  },
+  {
+    kind: "answer",
+    text: "“People often choose annual payments when they want the clearest view of total cost; monthly is usually about smoothing cash flow.”",
+  },
+];
 
 interface ProductPreviewProps {
   className?: string;
 }
 
 export function ProductPreview({ className }: ProductPreviewProps) {
+  const [visibleIndexes, setVisibleIndexes] = useState<number[]>([0, 1, 2]);
+
+  useEffect(() => {
+    const rotate = () => {
+      const indices = AI_RESPONSES.map((_, i) => i);
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      setVisibleIndexes(indices.slice(0, 3));
+    };
+
+    const id = setInterval(rotate, 6000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
-    <div
+    <motion.div
       className={cn(
-        "bg-background-surface border border-border/50 rounded-card overflow-hidden shadow-2xl backdrop-blur-sm",
+        "relative rounded-card overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.85)]",
+        // Solid charcoal base with subtle glass edge
+        "bg-[#050708]",
+        "border border-white/6 backdrop-blur-xl",
+        "before:pointer-events-none before:absolute before:inset-px before:rounded-[inherit] before:border before:border-white/10 before:opacity-70",
         className
       )}
+      initial={{ opacity: 0, y: 32, scale: 0.97 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
     >
       {/* Window Chrome */}
-      <div className="bg-background-elevated border-b border-border/50 px-5 py-3.5 flex items-center gap-3">
+      <div className="relative z-10 bg-background-elevated/90 px-5 py-3.5 flex items-center gap-3 border-b border-white/10">
         <div className="flex gap-2">
           <div className="w-3 h-3 rounded-full bg-red-500/60 hover:bg-red-500/80 transition-colors"></div>
           <div className="w-3 h-3 rounded-full bg-yellow-500/60 hover:bg-yellow-500/80 transition-colors"></div>
           <div className="w-3 h-3 rounded-full bg-green-500/60 hover:bg-green-500/80 transition-colors"></div>
         </div>
         <div className="flex-1 text-center">
-          <span className="text-text-dim text-xs font-mono">persuaid.app/call/abc123</span>
+          <span className="inline-flex items-center gap-2 text-text-dim text-[11px] font-mono">
+            <span className="relative flex items-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-primary animate-pulse" />
+              <span className="absolute inset-0 rounded-full border border-green-primary/40 blur-[1px] opacity-60" />
+            </span>
+            https://persuaid.app
+          </span>
         </div>
-        <div className="w-16"></div>
+        <div className="w-20 flex justify-end">
+          <img
+            src="/PersuaidLogo.png"
+            alt="Persuaid"
+            className="w-5 h-5 opacity-80"
+          />
+        </div>
       </div>
 
       {/* Main UI Grid */}
-      <div className="p-4 grid grid-cols-12 gap-3 h-[400px] lg:h-[500px]">
-        {/* Transcript Panel - Left */}
-        <div className="col-span-12 lg:col-span-7 bg-background rounded-lg border border-border/50 p-3 overflow-y-auto">
-          <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/30">
-            <h3 className="text-xs font-bold text-text-primary flex items-center gap-2 tracking-tight">
-              <span className="relative">
-                <span className="w-2 h-2 bg-green-primary rounded-full animate-pulse"></span>
-                <span className="absolute inset-0 w-2 h-2 bg-green-primary rounded-full animate-ping opacity-75"></span>
-              </span>
-              Live Transcript
+      <div className="relative z-0 p-4 lg:p-5 grid grid-cols-12 gap-3 lg:gap-4 min-h-[560px] lg:min-h-[680px]">
+        {/* Left column: What to say next + Live transcript */}
+        <div className="col-span-12 lg:col-span-7 flex flex-col gap-3 lg:gap-3.5">
+          {/* What to say next */}
+          <motion.div
+            className="relative flex-[1.15] min-h-[190px] bg-background/80 rounded-2xl border border-white/10 p-3.5 sm:p-4 flex flex-col overflow-hidden shadow-[0_18px_60px_rgba(0,0,0,0.7)]"
+            whileHover={{ y: -3, scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            transition={{ type: "spring", stiffness: 230, damping: 24, mass: 0.9 }}
+          >
+            <div className="relative z-10 flex items-center justify-between mb-3">
+              <div>
+                <div className="inline-flex items-center gap-2">
+                  <h3 className="text-xs sm:text-sm font-semibold text-text-primary tracking-tight">
+                    What to say next
+                  </h3>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-primary/10 text-[10px] text-green-accent border border-green-primary/40">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-primary animate-pulse" />
+                    AI coaching
+                  </span>
+                </div>
+              </div>
+              <div className="hidden sm:flex flex-col items-end gap-1">
+                <span className="text-[10px] text-text-dim font-mono">Call · 00:18:42</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 border border-white/10 text-[10px] text-text-muted">
+                  <span className="w-1 h-1 rounded-full bg-emerald-300" />
+                  Objection detected
+                </span>
+              </div>
+            </div>
+
+            {/* Main suggestion card */}
+            <motion.div
+              className="relative z-10 mt-3 flex-1 rounded-xl border border-white/10 bg-background-elevated/90 px-4 py-4 flex flex-col gap-3 overflow-hidden group"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 260, damping: 24, mass: 0.9 }}
+            >
+              {/* AI thinking indicator */}
+              <div className="flex items-center gap-2 text-[13px] sm:text-[14px] text-text-muted mb-2">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-primary/10 text-[12px] font-medium text-green-accent border border-green-primary/40">
+                  AI
+                </span>
+                <span>Drafting your next line…</span>
+                <span className="flex gap-1 ml-1">
+                  <span className="w-1 h-1 rounded-full bg-green-primary animate-bounce" />
+                  <span className="w-1 h-1 rounded-full bg-green-primary animate-bounce" style={{ animationDelay: "0.12s" }} />
+                  <span className="w-1 h-1 rounded-full bg-green-primary animate-bounce" style={{ animationDelay: "0.24s" }} />
+                </span>
+              </div>
+
+              {/* Example AI responses stream */}
+              <div className="space-y-1.5 text-left text-[14px] sm:text-[15px] text-text-primary/95">
+                {visibleIndexes.map((idx, i) => {
+                  const line = AI_RESPONSES[idx];
+                  const kindLabel =
+                    line.kind === "answer"
+                      ? "Suggested answer"
+                      : line.kind === "followup"
+                      ? "Recommended follow-up"
+                      : "Clarifying point";
+                  return (
+                    <motion.div
+                      key={`${line.text}-${i}`}
+                      className="flex items-start gap-2"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: i * 0.15 }}
+                    >
+                      <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-primary/12 text-[10px] font-medium text-green-accent border border-green-primary/40">
+                        AI
+                      </span>
+                      <div>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 mb-1 rounded-full bg-background/80 text-[9px] text-text-muted border border-border-subtle">
+                          {kindLabel}
+                          <span className="h-1 w-1 rounded-full bg-emerald-300 animate-pulse" />
+                        </span>
+                        <p className="leading-relaxed">
+                          {line.text}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Hover overlay headline */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
+                <p className="px-4 text-center text-[16px] sm:text-xl md:text-2xl font-semibold text-white leading-snug max-w-xl">
+                  Live AI coaching that tells you exactly what to say next on this call.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Input row */}
+            <div className="relative z-10 mt-3 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+              <div className="flex-1 rounded-full bg-background-elevated/80 border border-white/10 px-3.5 py-1.5 text-[11px] text-text-dim flex items-center shadow-inner">
+                <span className="truncate">
+                  Press Enter to get an answer, or type your own question for Persuaid…
+                </span>
+              </div>
+              <div className="flex gap-2 sm:ml-1">
+                <button
+                  className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-green-primary to-emerald-400 text-[11px] font-semibold text-black shadow-[0_0_0_1px_rgba(22,163,74,0.6),0_16px_40px_rgba(22,163,74,0.45)] hover:shadow-[0_0_0_1px_rgba(22,163,74,0.7),0_18px_48px_rgba(22,163,74,0.6)] transition-all"
+                >
+                  Ask follow-up
+                </button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Live transcript */}
+          <motion.div
+            className="relative flex-[0.9] min-h-[170px] bg-background/70 rounded-2xl border border-white/8 p-3.5 sm:p-4 flex flex-col overflow-hidden"
+            whileHover={{ y: -2, scale: 1.005 }}
+            transition={{ type: "spring", stiffness: 230, damping: 24, mass: 0.9 }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <span className="w-2 h-2 bg-green-primary rounded-full inline-block animate-pulse" />
+                  <span className="absolute inset-0 rounded-full border border-green-primary/40 blur-[1px] opacity-60" />
+                </div>
+                <h3 className="text-xs sm:text-sm font-semibold text-text-primary tracking-tight">
+                  Live transcript
+                </h3>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] text-text-dim font-mono">00:18:42</span>
+                <button className="text-[10px] text-text-muted hover:text-text-primary transition-colors underline-offset-2 hover:underline">
+                  Clear transcript
+                </button>
+              </div>
+            </div>
+
+            <div className="text-[10px] text-text-dim mb-2">
+              What the prospect says on the call. Persuaid listens here, then pulls in the right answer from your notes.
+            </div>
+
+            {/* Transcript content */}
+            <div className="flex-1 rounded-xl bg-background-elevated/70 border border-white/6 px-3.5 py-2.5 text-[11px] leading-relaxed overflow-hidden space-y-1.5">
+              <p>
+                <span className="text-emerald-300 font-semibold">Rep</span>
+                <span className="mx-1 text-text-dim">· 10:23:04</span>
+                <span className="text-text-secondary">
+                  Thanks for walking through this with me. I&apos;ll explain pricing in plain language and you can stop me anywhere.
+                </span>
+              </p>
+              <p>
+                <span className="text-sky-200 font-semibold">Prospect</span>
+                <span className="mx-1 text-text-dim">· 10:23:47</span>
+                <span className="text-text-secondary">
+                  I see a net premium and a gross premium here. Why is the gross premium higher—what exactly am I paying for?
+                </span>
+              </p>
+              <p>
+                <span className="text-sky-200 font-semibold">Prospect</span>
+                <span className="mx-1 text-text-dim">· 10:24:18</span>
+                <span className="text-text-secondary">
+                  And if I pay monthly instead of annually, does that change the total I&apos;m paying over time?
+                </span>
+              </p>
+              <p>
+                <span className="text-sky-200 font-semibold">Prospect</span>
+                <span className="mx-1 text-text-dim">· 10:24:59</span>
+                <span className="text-text-secondary">
+                  One more thing—you mentioned mortality rates earlier. How much do my age and health actually change this number?
+                </span>
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="mt-3 flex flex-col sm:flex-row gap-2">
+              <button className="flex-1 rounded-full border border-white/10 bg-background-elevated/90 px-3 py-1.5 text-[11px] font-medium text-text-primary hover:bg-background-elevated transition-colors">
+                Download call notes
+              </button>
+              <button className="flex-1 rounded-full bg-white/5 text-[11px] font-medium text-emerald-200 px-3 py-1.5 hover:bg-white/10 border border-emerald-400/40 transition-colors">
+                Hand off to CRM summary
+              </button>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Right column: Notes */}
+        <motion.div
+          className="col-span-12 lg:col-span-5 bg-background/75 rounded-2xl border border-white/8 p-3.5 sm:p-4 flex flex-col"
+          whileHover={{ y: -2, scale: 1.005 }}
+          transition={{ type: "spring", stiffness: 230, damping: 24, mass: 0.9 }}
+        >
+          <div className="flex items-center justify-between mb-3.5">
+            <h3 className="text-xs sm:text-sm font-semibold text-text-primary tracking-tight">
+              Notes
             </h3>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-text-dim font-mono">02:34</span>
-              <div className="w-1 h-1 bg-green-primary rounded-full"></div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {/* Message 1 */}
-            <div className="flex gap-3 group">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-primary/30 to-green-primary/10 border border-green-primary/20 flex items-center justify-center flex-shrink-0 group-hover:border-green-primary/40 transition-colors">
-                <span className="text-green-primary text-[10px] font-bold">JD</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-semibold text-text-primary">John Doe</span>
-                  <span className="text-[9px] text-text-dim font-mono">10:23:14</span>
-                </div>
-                <p className="text-xs text-text-secondary leading-relaxed">
-                  Hi Sarah, thanks for taking the time today. I wanted to discuss how we can help streamline your sales process.
-                </p>
-              </div>
-            </div>
-
-            {/* Message 2 */}
-            <div className="flex gap-3 group">
-              <div className="w-8 h-8 rounded-full bg-background-elevated border border-border/50 flex items-center justify-center flex-shrink-0 group-hover:border-border transition-colors">
-                <span className="text-text-muted text-[10px] font-bold">SC</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-semibold text-text-primary">Sarah Chen</span>
-                  <span className="text-[9px] text-text-dim font-mono">10:24:32</span>
-                </div>
-                <p className="text-xs text-text-secondary leading-relaxed">
-                  Sure, I'm interested. We've been looking at solutions but haven't found the right fit yet. What makes your approach different?
-                </p>
-              </div>
-            </div>
-
-            {/* Message 3 */}
-            <div className="flex gap-3 group">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-primary/30 to-green-primary/10 border border-green-primary/20 flex items-center justify-center flex-shrink-0 group-hover:border-green-primary/40 transition-colors">
-                <span className="text-green-primary text-[10px] font-bold">JD</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-semibold text-text-primary">John Doe</span>
-                  <span className="text-[9px] text-text-dim font-mono">10:25:08</span>
-                </div>
-                <p className="text-xs text-text-secondary leading-relaxed">
-                  Great question. Our platform provides real-time AI guidance during calls, so you always know what to say next. It's like having a sales coach in your ear.
-                </p>
-              </div>
-            </div>
-
-            {/* Typing indicator */}
-            <div className="flex gap-2">
-              <div className="w-7 h-7 rounded-full bg-background-elevated border border-border flex items-center justify-center flex-shrink-0">
-                <span className="text-text-muted text-[10px] font-semibold">SC</span>
-              </div>
-              <div className="flex-1">
-                <div className="flex gap-1">
-                  <div className="w-1.5 h-1.5 bg-text-dim rounded-full animate-bounce"></div>
-                  <div className="w-1.5 h-1.5 bg-text-dim rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                  <div className="w-1.5 h-1.5 bg-text-dim rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* AI Suggestions Panel - Right */}
-        <div className="col-span-12 lg:col-span-5 bg-background rounded-lg border border-green-primary/30 shadow-glow-sm p-3 overflow-y-auto relative">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-primary/50 to-transparent"></div>
-          <h3 className="text-xs font-bold text-text-primary mb-3 flex items-center gap-2 tracking-tight">
-            <div className="w-4 h-4 rounded bg-green-primary/20 flex items-center justify-center">
-              <svg className="w-2.5 h-2.5 text-green-primary" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            </div>
-            AI Suggestions
-          </h3>
-
-          <div className="space-y-2">
-            <div className="bg-green-primary/10 border border-green-primary/30 rounded-lg p-3 relative overflow-hidden group hover:bg-green-primary/15 transition-colors">
-              <div className="absolute top-0 left-0 w-0.5 h-full bg-green-primary"></div>
-              <div className="flex items-start gap-1.5 mb-1.5">
-                <div className="w-4 h-4 rounded bg-green-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="w-2.5 h-2.5 text-green-primary" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                    <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="text-[10px] font-bold text-green-accent mb-1">Objection Handling</div>
-                  <p className="text-[10px] text-text-secondary leading-relaxed">
-                    Address her concern about finding the right fit. Ask: "What specific challenges have you faced with previous solutions?"
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-background-elevated border border-border/50 rounded-lg p-3 hover:border-border transition-colors">
-              <div className="text-[10px] font-semibold text-text-primary mb-1">Next Step</div>
-              <p className="text-[10px] text-text-secondary leading-relaxed">
-                Share a relevant case study that matches her industry. Mention ROI metrics.
-              </p>
-            </div>
-
-            <div className="bg-background-elevated border border-border/50 rounded-lg p-3 hover:border-border transition-colors">
-              <div className="text-[10px] font-semibold text-text-primary mb-1">Talking Point</div>
-              <p className="text-[10px] text-text-secondary leading-relaxed">
-                Emphasize the real-time guidance feature. This addresses her need for immediate support.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Script Panel - Bottom Left */}
-        <div className="col-span-12 lg:col-span-6 bg-background rounded-lg border border-border/50 p-3 overflow-y-auto">
-          <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/30">
-            <h3 className="text-xs font-bold text-text-primary tracking-tight">Script</h3>
-            <button className="text-[10px] font-medium text-green-primary hover:text-green-accent transition-colors flex items-center gap-1">
-              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Edit
+            <button
+              className="text-text-dim hover:text-text-primary transition-colors"
+              aria-label="Collapse notes"
+            >
+              <span className="text-lg leading-none">−</span>
             </button>
           </div>
 
-          <div className="space-y-1.5">
-            <div className="text-[10px] text-text-dim mb-1">Opening</div>
-            <div className="bg-background-elevated rounded p-1.5 text-[10px] text-text-secondary">
-              ✓ Thank them for their time<br />
-              ✓ Introduce yourself and company<br />
-              ✓ Set agenda for the call
+          <div className="mb-3 flex flex-wrap items-center gap-1.5 text-[10px]">
+            <button className="px-2.5 py-1 rounded-full bg-background-elevated/90 border border-white/10 text-text-muted hover:text-text-primary hover:bg-background-elevated transition-colors">
+              Load from file
+            </button>
+            <button className="px-2.5 py-1 rounded-full bg-background-elevated/90 border border-white/10 text-text-muted hover:text-text-primary hover:bg-background-elevated transition-colors">
+              Import from my notes
+            </button>
+            <button className="px-2.5 py-1 rounded-full bg-background-elevated/90 border border-white/10 text-text-muted hover:text-text-primary hover:bg-background-elevated transition-colors">
+              Style
+            </button>
+            <button className="px-2.5 py-1 rounded-full bg-background-elevated/90 border border-white/10 text-text-muted hover:text-text-primary hover:bg-background-elevated transition-colors">
+              Headings
+            </button>
+            <button className="ml-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-green-primary to-emerald-400 text-[10px] font-medium text-black hover:shadow-[0_14px_40px_rgba(22,163,74,0.6)] transition-all">
+              Rewrite with AI
+            </button>
+          </div>
+
+          <p className="text-[11px] text-green-accent mb-2">
+            Product Knowledge notes — Connected to the AI assistant, tailored to your case.
+          </p>
+
+          <div className="flex-1 rounded-xl bg-background-elevated/80 border border-white/8 px-3.5 py-2.5 text-[11px] text-text-secondary leading-relaxed overflow-y-auto space-y-2">
+            <p className="font-semibold text-text-primary">Premium structure</p>
+
+            <div className="mt-1">
+              <p className="font-semibold text-text-primary">Net Single Premium</p>
+              <ul className="mt-1 space-y-1 list-disc list-inside marker:text-emerald-300">
+                <li>Covers mortality cost (death benefit) and interest only.</li>
+                <li>Influenced by interest rate, insured&apos;s age, gender, benefits, and mortality rate.</li>
+                <li>Calculation: Net single premium = Mortality cost − Interest.</li>
+              </ul>
             </div>
 
-            <div className="text-[10px] text-text-dim mt-3 mb-1">Discovery</div>
-            <div className="bg-background-elevated rounded p-1.5 text-[10px] text-text-secondary">
-              • What challenges are you facing?<br />
-              • What solutions have you tried?<br />
-              • What would success look like?
+            <div className="mt-2">
+              <p className="font-semibold text-text-primary">Net Level Annual Premium</p>
+              <ul className="mt-1 space-y-1 list-disc list-inside marker:text-emerald-300">
+                <li>Level amount paid each year to fund the future benefit.</li>
+                <li>Example: To pay $300,000 in 25 years, this is the annual amount needed.</li>
+              </ul>
             </div>
 
-            <div className="text-[10px] text-text-dim mt-3 mb-1">Value Prop</div>
-            <div className="bg-background-elevated rounded p-1.5 text-[10px] text-text-secondary">
-              → Real-time AI guidance<br />
-              → Better objection handling<br />
-              → Increased close rates
+            <div className="mt-2">
+              <p className="font-semibold text-text-primary">Gross Premium</p>
+              <ul className="mt-1 space-y-1 list-disc list-inside marker:text-emerald-300">
+                <li>Total premium charged by the insurer, including mortality, interest, and company expenses.</li>
+                <li>Calculation: Gross premium = Net premium + Insurer expenses (admin, commissions, overhead).</li>
+              </ul>
+            </div>
+
+            <div className="mt-2">
+              <p className="font-semibold text-text-primary">Gross Annual Premium</p>
+              <ul className="mt-1 space-y-1 list-disc list-inside marker:text-emerald-300">
+                <li>Gross premium expressed on an annual basis.</li>
+                <li>Adjusted for payment frequency; most clients pay annually or in monthly installments.</li>
+              </ul>
+            </div>
+
+            <div className="pt-2 border-t border-white/5">
+              <p className="font-semibold text-text-primary">Risk factors · Mortality &amp; Morbidity</p>
+              <ul className="mt-1 space-y-1 list-disc list-inside marker:text-emerald-300">
+                <li>Mortality rate: Expected frequency of death for a given age and profile.</li>
+                <li>Morbidity rate: Expected incidence of illness or disability.</li>
+                <li>Higher rates increase the risk the insurer is taking and lead to higher premiums.</li>
+              </ul>
             </div>
           </div>
-        </div>
 
-        {/* Notes Panel - Bottom Right */}
-        <div className="col-span-12 lg:col-span-6 bg-background rounded-lg border border-border/50 p-3 overflow-y-auto">
-          <h3 className="text-xs font-bold text-text-primary mb-3 pb-2 border-b border-border/30 tracking-tight">Notes</h3>
-
-          <div className="space-y-2">
-            <div className="flex items-start gap-1.5">
-              <input type="checkbox" className="mt-0.5 w-3 h-3 text-green-primary border-border rounded" defaultChecked />
-              <div className="flex-1">
-                <div className="text-[10px] text-text-secondary">Interested in real-time guidance</div>
-                <div className="text-[9px] text-text-dim mt-0.5">Tagged: Interest</div>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-1.5">
-              <input type="checkbox" className="mt-0.5 w-3 h-3 text-green-primary border-border rounded" />
-              <div className="flex-1">
-                <div className="text-[10px] text-text-secondary">Has tried other solutions before</div>
-                <div className="text-[9px] text-text-dim mt-0.5">Tagged: Objection</div>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-1.5">
-              <input type="checkbox" className="mt-0.5 w-3 h-3 text-green-primary border-border rounded" />
-              <div className="flex-1">
-                <div className="text-[10px] text-text-secondary">Follow up: Send case study</div>
-                <div className="text-[9px] text-text-dim mt-0.5">Tagged: Action</div>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2 border-t border-border">
-              <div className="flex flex-wrap gap-1">
-                <span className="px-1.5 py-0.5 bg-green-primary/10 text-green-accent text-[9px] rounded">Interest</span>
-                <span className="px-1.5 py-0.5 bg-background-elevated text-text-muted text-[9px] rounded">Objection</span>
-                <span className="px-1.5 py-0.5 bg-background-elevated text-text-muted text-[9px] rounded">Action</span>
-              </div>
-            </div>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <button className="text-[11px] text-text-muted hover:text-text-primary transition-colors">
+              Clear
+            </button>
+            <button className="flex-1 rounded-full bg-gradient-to-r from-green-primary to-emerald-400 text-[11px] font-semibold text-black px-4 py-1.5 hover:shadow-[0_16px_44px_rgba(22,163,74,0.6)] transition-all">
+              Save
+            </button>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
