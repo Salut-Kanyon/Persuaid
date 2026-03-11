@@ -13,7 +13,7 @@ function buildDeepgramParams(sampleRate: number): URLSearchParams {
     smart_format: "true",
     interim_results: "true",
     utterance_end_ms: "5000",
-    endpointing: "800",
+    endpointing: "500",
     diarize: "true",
     utterances: "true",
   });
@@ -178,10 +178,52 @@ function parseDeepgramMessage(raw: string): ParsedDeepgramResult | ParsedDeepgra
   }
 }
 
+/** True only when text clearly continues the previous phrase (e.g. "in monthly...", "including..."). Avoids merging new thoughts. */
+function looksLikeContinuation(text: string): boolean {
+  const t = text.trim();
+  if (!t) return false;
+  const firstWord = t.split(/\s+/)[0]?.toLowerCase() ?? "";
+  const continuationWords = new Set([
+    "and", "or", "in", "but", "including", "so", "as", "for", "to", "with", "the", "a", "an",
+    "that", "which", "if", "because", "of", "than", "then", "from", "into", "on", "at", "by",
+  ]);
+  return continuationWords.has(firstWord);
+}
+
+/**
+ * Always accumulate: merge new transcript with buffer so we never drop what was already said.
+ * When Deepgram sends only the tail, we keep the buffer and append the new part (with overlap removed).
+ * Never replace with a shorter string—always print everything said.
+ */
+function mergeBufferWithNew(buffer: string, newText: string): string {
+  const b = buffer.trim();
+  const t = newText.trim();
+  if (!b) return t;
+  if (!t) return b;
+  if (b === t) return b;
+  if (t.toLowerCase().startsWith(b.toLowerCase())) return t;
+  if (b.toLowerCase().endsWith(t.toLowerCase())) return b;
+  const bEnd = b.trimEnd();
+  const maxOverlap = Math.min(bEnd.length, t.length, 100);
+  for (let len = maxOverlap; len >= 1; len--) {
+    const bSuffix = bEnd.slice(-len).toLowerCase();
+    const tPrefix = t.slice(0, len).toLowerCase();
+    if (bSuffix === tPrefix) {
+      const rest = t.slice(len).trimStart();
+      return b + (rest ? " " + rest : "");
+    }
+  }
+  if (t.length < b.length) {
+    return b + " " + t;
+  }
+  return t;
+}
+
 export function LiveTranscription() {
   const {
     isRecording,
     appendTranscript,
+    appendToLastTranscript,
     setSessionId,
     setMicError,
     audioInputDeviceId,
@@ -209,6 +251,8 @@ export function LiveTranscription() {
   const commitInterimTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Speaker id for current interim (used when committing on timeout). */
   const lastInterimSpeakerIdRef = useRef<number | null>(null);
+  /** Last speaker we appended (so we can merge continuation fragments into same line). */
+  const lastAppendedSpeakerRef = useRef<"user" | "prospect" | null>(null);
 
   // Allow other parts of the app (e.g., Q&A) to clear the current phrase buffer.
   useEffect(() => {
@@ -512,10 +556,11 @@ export function LiveTranscription() {
             // ignore
           }
 
-          phraseBufferRef.current = transcript;
-          recentSpeechRef.current = transcript;
-          setInterimTranscript(transcript);
-          if (transcript) console.log("[STT] setInterimTranscript called with:", transcript.slice(0, 60));
+          const merged = mergeBufferWithNew(phraseBufferRef.current, transcript ?? "");
+          phraseBufferRef.current = merged;
+          recentSpeechRef.current = merged;
+          setInterimTranscript(merged);
+          if (transcript) console.log("[STT] buffer merged, showing:", merged.slice(0, 80));
           const speakerIdForInterim = typeof first.speakerId === "number" ? first.speakerId : null;
           lastInterimSpeakerIdRef.current = speakerIdForInterim;
           setInterimSpeakerId(speakerIdForInterim);
@@ -540,14 +585,19 @@ export function LiveTranscription() {
                   typeof sid === "number"
                     ? (diarizationMeSpeakerId === null ? (sid === 0 ? "user" : "prospect") : sid === diarizationMeSpeakerId ? "user" : "prospect")
                     : "user";
-                appendTranscript({ speaker: mappedSpeaker, text: toCommit });
+                if (looksLikeContinuation(toCommit) && lastAppendedSpeakerRef.current === mappedSpeaker) {
+                  appendToLastTranscript({ speaker: mappedSpeaker, text: toCommit });
+                } else {
+                  appendTranscript({ speaker: mappedSpeaker, text: toCommit });
+                }
+                lastAppendedSpeakerRef.current = mappedSpeaker;
                 phraseBufferRef.current = "";
                 recentSpeechRef.current = "";
                 lastFinalTextRef.current = toCommit;
                 lastFinalAtRef.current = Date.now();
                 setInterimTranscript("");
                 setInterimSpeakerId(null);
-              }, 2500);
+              }, 3500);
             }
             return;
           }
@@ -569,24 +619,66 @@ export function LiveTranscription() {
             return;
           }
 
-          lastFinalTextRef.current = combinedFinal;
+          const buf = phraseBufferRef.current.trim();
+          const finalTrimmed = combinedFinal.trim();
+          const bufNorm = buf.replace(/[.?!]+$/, "").trim().toLowerCase();
+          const finalNorm = finalTrimmed.replace(/[.?!]+$/, "").trim().toLowerCase();
+          const bufferHasFullSentence =
+            buf.length > 0 &&
+            finalTrimmed.length > 0 &&
+            buf.length > finalTrimmed.length &&
+            (bufNorm.endsWith(finalNorm) || buf.toLowerCase().endsWith(finalTrimmed.toLowerCase()));
+
+          let textToAppend = combinedFinal;
+          if (bufferHasFullSentence) {
+            textToAppend = buf;
+          }
+
+          lastFinalTextRef.current = textToAppend;
           lastFinalAtRef.current = now;
 
-          for (const seg of segments) {
-            const finalText = seg.transcript.trim();
-            if (!finalText) continue;
-            const speakerId = seg.speakerId;
-            const mappedSpeaker =
-              typeof speakerId === "number"
-                ? (diarizationMeSpeakerId === null
-                  ? (speakerId === 0 ? "user" : "prospect")
-                  : (speakerId === diarizationMeSpeakerId ? "user" : "prospect"))
-                : "user";
-            console.log("[STT] appendTranscript called with:", { speaker: mappedSpeaker, text: finalText.slice(0, 60) });
-            appendTranscript({ speaker: mappedSpeaker, text: finalText });
+          const firstSeg = segments[0];
+          const firstSpeaker: "user" | "prospect" =
+            typeof firstSeg?.speakerId === "number"
+              ? (diarizationMeSpeakerId === null
+                ? (firstSeg.speakerId === 0 ? "user" : "prospect")
+                : (firstSeg.speakerId === diarizationMeSpeakerId ? "user" : "prospect"))
+              : "user";
+
+          if (bufferHasFullSentence) {
+            const isContinuation = looksLikeContinuation(textToAppend) && lastAppendedSpeakerRef.current === firstSpeaker;
+            if (isContinuation) {
+              appendToLastTranscript({ speaker: firstSpeaker, text: textToAppend });
+            } else {
+              appendTranscript({ speaker: firstSpeaker, text: textToAppend });
+            }
+            lastAppendedSpeakerRef.current = firstSpeaker;
+          } else {
+            for (const seg of segments) {
+              const finalText = seg.transcript.trim();
+              if (!finalText) continue;
+              const speakerId = seg.speakerId;
+              const mappedSpeaker: "user" | "prospect" =
+                typeof speakerId === "number"
+                  ? (diarizationMeSpeakerId === null
+                    ? (speakerId === 0 ? "user" : "prospect")
+                    : (speakerId === diarizationMeSpeakerId ? "user" : "prospect"))
+                  : "user";
+              const isContinuation = looksLikeContinuation(finalText) && lastAppendedSpeakerRef.current === mappedSpeaker;
+              if (isContinuation) {
+                appendToLastTranscript({ speaker: mappedSpeaker, text: finalText });
+              } else {
+                appendTranscript({ speaker: mappedSpeaker, text: finalText });
+              }
+              lastAppendedSpeakerRef.current = mappedSpeaker;
+            }
           }
           try {
-            console.log("[STT] Transcript update (appended):", combinedFinal.slice(0, 80));
+            if (bufferHasFullSentence) {
+              console.log("[STT] Used interim buffer (full sentence), appended:", textToAppend.slice(0, 80));
+            } else {
+              console.log("[STT] Transcript update (appended):", textToAppend.slice(0, 80));
+            }
           } catch {
             // ignore
           }
@@ -684,12 +776,13 @@ export function LiveTranscription() {
 
     return () => {
       mounted = false;
+      lastAppendedSpeakerRef.current = null;
       if (commitInterimTimeoutRef.current) {
         clearTimeout(commitInterimTimeoutRef.current);
         commitInterimTimeoutRef.current = null;
       }
     };
-  }, [isRecording, audioInputDeviceId, appendTranscript, setSessionId, setMicError, setInterimTranscript, setInterimSpeakerId, setDiarizationSpeakerIds, diarizationMeSpeakerId]);
+  }, [isRecording, audioInputDeviceId, appendTranscript, appendToLastTranscript, setSessionId, setMicError, setInterimTranscript, setInterimSpeakerId, setDiarizationSpeakerIds, diarizationMeSpeakerId]);
 
   return null;
 }

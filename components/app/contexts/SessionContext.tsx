@@ -53,6 +53,8 @@ interface SessionContextValue {
     text: string;
     name?: string;
   }) => void;
+  /** Append text to the last transcript entry if same speaker (for continuation fragments). */
+  appendToLastTranscript: (segment: { speaker?: TranscriptSpeaker; text: string }) => void;
   clearTranscript: () => void;
   suggestions: Suggestion[];
   setSuggestions: (s: Suggestion[] | ((prev: Suggestion[]) => Suggestion[])) => void;
@@ -228,6 +230,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     clearBufferRef.current = fn;
   }, []);
 
+  const capitalizeFirst = (s: string) => {
+    const t = s.trim();
+    if (!t) return t;
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
+
   const appendTranscript = useCallback(
     (segment: {
       speaker?: TranscriptSpeaker;
@@ -236,17 +244,68 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }) => {
       const trimmed = segment.text?.trim();
       if (!trimmed) return;
+      const normalized = capitalizeFirst(trimmed);
       setTranscript((prev) => {
-        if (prev.length > 0 && prev[prev.length - 1].text === trimmed) return prev;
+        if (prev.length > 0 && prev[prev.length - 1].text === normalized) return prev;
         return [
           ...prev,
           {
             id: crypto.randomUUID(),
             speaker: segment.speaker ?? "user",
             name: segment.name,
-            text: trimmed,
+            text: normalized,
             timestamp: new Date().toISOString(),
           },
+        ];
+      });
+    },
+    []
+  );
+
+  const appendToLastTranscript = useCallback(
+    (segment: { speaker?: TranscriptSpeaker; text: string }) => {
+      const trimmed = segment.text?.trim();
+      if (!trimmed) return;
+      const speaker = segment.speaker ?? "user";
+      setTranscript((prev) => {
+        if (prev.length === 0) {
+          return [
+            {
+              id: crypto.randomUUID(),
+              speaker,
+              text: capitalizeFirst(trimmed),
+              timestamp: new Date().toISOString(),
+            },
+          ];
+        }
+        const last = prev[prev.length - 1];
+        if (last.speaker !== speaker) {
+          return [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              speaker,
+              text: capitalizeFirst(trimmed),
+              timestamp: new Date().toISOString(),
+            },
+          ];
+        }
+        const lastEnd = last.text.trimEnd().slice(-1);
+        if (lastEnd === "." || lastEnd === "?" || lastEnd === "!") {
+          return [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              speaker,
+              text: capitalizeFirst(trimmed),
+              timestamp: new Date().toISOString(),
+            },
+          ];
+        }
+        const merged = last.text.trimEnd() + " " + trimmed;
+        return [
+          ...prev.slice(0, -1),
+          { ...last, text: merged },
         ];
       });
     },
@@ -259,6 +318,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     () => ({
       transcript,
       appendTranscript,
+      appendToLastTranscript,
       clearTranscript,
       suggestions,
       setSuggestions,
@@ -304,6 +364,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       interimTranscript,
       callParticipantName,
       appendTranscript,
+      appendToLastTranscript,
       clearTranscript,
       suggestions,
       isRecording,
