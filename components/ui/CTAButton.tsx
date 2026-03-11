@@ -8,6 +8,7 @@ interface CTAButtonProps {
   className?: string;
   onClick?: () => void;
   href?: string;
+  disabled?: boolean;
 }
 
 export function CTAButton({
@@ -17,6 +18,7 @@ export function CTAButton({
   className,
   onClick,
   href,
+  disabled = false,
 }: CTAButtonProps) {
   const sizeStyles = {
     default: "px-8 py-4 text-base",
@@ -39,7 +41,8 @@ export function CTAButton({
     <Component
       href={href}
       onClick={onClick}
-      className={cn(baseStyles, variants[variant], className)}
+      disabled={disabled}
+      className={cn(baseStyles, variants[variant], disabled && "opacity-60 cursor-not-allowed", className)}
     >
       {variant === "primary" && (
         <span className="absolute inset-0 bg-gradient-to-r from-green-accent/0 via-green-accent/20 to-green-accent/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />

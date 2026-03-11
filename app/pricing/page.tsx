@@ -15,6 +15,29 @@ const YEARLY_DISCOUNT = 0.2;
 
 export default function PricingPage() {
   const [interval, setInterval] = useState<BillingInterval>("monthly");
+  const [checkoutLoading, setCheckoutLoading] = useState<"pro" | "team" | null>(null);
+
+  const startCheckout = async (plan: "pro" | "team") => {
+    setCheckoutLoading(plan);
+    try {
+      const res = await fetch("/api/stripe/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, interval }),
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      const msg = data.error || "Checkout unavailable";
+      alert(msg);
+    } catch {
+      alert("Something went wrong. Try again.");
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
 
   const proMonthly = 20;
   const teamPerUserMonthly = 49;
@@ -153,6 +176,8 @@ export default function PricingPage() {
               cta="Start free trial"
               highlighted={true}
               className="flex-1 flex flex-col h-full"
+              onCheckout={() => startCheckout("pro")}
+              checkoutLoading={checkoutLoading === "pro"}
             />
             <p className="text-center text-xs text-text-dim mt-2">Most popular</p>
           </div>
@@ -185,8 +210,13 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <CTAButton variant="secondary" className="w-full" href="/download">
-                Start free trial
+              <CTAButton
+                variant="secondary"
+                className="w-full"
+                onClick={() => startCheckout("team")}
+                disabled={checkoutLoading === "team"}
+              >
+                {checkoutLoading === "team" ? "Redirecting…" : "Start free trial"}
               </CTAButton>
             </div>
           </div>

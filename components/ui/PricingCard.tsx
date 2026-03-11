@@ -11,6 +11,9 @@ interface PricingCardProps {
   cta: string;
   highlighted?: boolean;
   className?: string;
+  /** When set, CTA runs this instead of navigating to href (e.g. Stripe checkout). */
+  onCheckout?: () => void;
+  checkoutLoading?: boolean;
 }
 
 export function PricingCard({
@@ -22,6 +25,8 @@ export function PricingCard({
   cta,
   highlighted = false,
   className,
+  onCheckout,
+  checkoutLoading = false,
 }: PricingCardProps) {
   return (
     <div
@@ -73,9 +78,11 @@ export function PricingCard({
       <CTAButton
         variant={highlighted ? "primary" : "secondary"}
         className="w-full"
-        href="/download"
+        href={onCheckout ? undefined : "/download"}
+        onClick={onCheckout}
+        disabled={checkoutLoading}
       >
-        {cta}
+        {checkoutLoading ? "Redirecting…" : cta}
       </CTAButton>
     </div>
   );

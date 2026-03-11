@@ -66,8 +66,18 @@ function getInsightIcon(type: CoachingInsight["type"]) {
   }
 }
 
-function getInsightStyles(_type: CoachingInsight["type"]) {
-  return "bg-green-primary/10 border-green-primary/20 text-green-accent";
+function getInsightStyles(type: CoachingInsight["type"]) {
+  switch (type) {
+    case "strength":
+    case "next_step":
+      return "bg-green-primary/10 border-green-primary/20 text-green-700 dark:text-green-400";
+    case "improve":
+      return "bg-red-500/10 border-red-500/25 text-red-700 dark:text-red-400";
+    case "moment":
+      return "bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-300";
+    default:
+      return "bg-green-primary/10 border-green-primary/20 text-green-700 dark:text-green-400";
+  }
 }
 
 export default function AnalyzePage() {
