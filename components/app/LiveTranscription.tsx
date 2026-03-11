@@ -233,7 +233,7 @@ function looksLikeContinuation(text: string): boolean {
 /**
  * Always accumulate: merge new transcript with buffer so we never drop what was already said.
  * When Deepgram sends only the tail, we keep the buffer and append the new part (with overlap removed).
- * Never replace with a shorter string—always print everything said.
+ * Avoid appending shorter "revisions" that can create duplicated phrases.
  */
 function mergeBufferWithNew(buffer: string, newText: string): string {
   const b = buffer.trim();
@@ -243,8 +243,9 @@ function mergeBufferWithNew(buffer: string, newText: string): string {
   if (b === t) return b;
   if (t.toLowerCase().startsWith(b.toLowerCase())) return t;
   if (b.toLowerCase().endsWith(t.toLowerCase())) return b;
+  if (b.toLowerCase().includes(t.toLowerCase())) return b;
   const bEnd = b.trimEnd();
-  const maxOverlap = Math.min(bEnd.length, t.length, 100);
+  const maxOverlap = Math.min(bEnd.length, t.length, 180);
   for (let len = maxOverlap; len >= 1; len--) {
     const bSuffix = bEnd.slice(-len).toLowerCase();
     const tPrefix = t.slice(0, len).toLowerCase();
@@ -253,9 +254,27 @@ function mergeBufferWithNew(buffer: string, newText: string): string {
       return b + (rest ? " " + rest : "");
     }
   }
+  // If Deepgram sends a shorter revision with no overlap, usually keep the longer buffer.
+  // But if the shorter text looks like a "new thought" tail after a pause (e.g. you say one more word),
+  // append it so we don't lose it.
   if (t.length < b.length) {
-    return b + " " + t;
+    const bWords = b.toLowerCase().split(/\s+/).filter(Boolean);
+    const tWords = t.toLowerCase().split(/\s+/).filter(Boolean);
+    const bTail = bWords.slice(-6).join(" ");
+    const tAll = tWords.join(" ");
+    const lowOverlap = bTail && tAll && !bTail.includes(tAll) && !tAll.includes(bTail);
+    const looksLikeShortTail = tWords.length > 0 && tWords.length <= 3;
+    if (lowOverlap && looksLikeShortTail) return b + " " + t;
+    return b;
   }
+  // If Deepgram "resets" to a new thought after a pause (low overlap), don't discard what we already buffered.
+  // Treat it as a new segment and append, so we don't lose prior sentences.
+  const bWords = b.toLowerCase().split(/\s+/).filter(Boolean);
+  const tWords = t.toLowerCase().split(/\s+/).filter(Boolean);
+  const bTail = bWords.slice(-6).join(" ");
+  const tHead = tWords.slice(0, 6).join(" ");
+  const likelyReset = bWords.length >= 8 && tWords.length >= 5 && bTail !== "" && tHead !== "" && !bTail.includes(tHead) && !tHead.includes(bTail);
+  if (likelyReset) return b + " " + t;
   return t;
 }
 
@@ -293,6 +312,10 @@ export function LiveTranscription() {
   const lastInterimSpeakerIdRef = useRef<number | null>(null);
   /** Last speaker we appended (so we can merge continuation fragments into same line). */
   const lastAppendedSpeakerRef = useRef<"user" | "prospect" | null>(null);
+  /** Last diarized speaker id we appended (0/1/etc). Used to break sooner on speaker changes. */
+  const lastAppendedDiarizedSpeakerIdRef = useRef<number | null>(null);
+  /** Last interim transcript we saw (used to commit only after it stabilizes). */
+  const lastInterimTextRef = useRef<string>("");
 
   // Allow other parts of the app (e.g., Q&A) to clear the current phrase buffer.
   useEffect(() => {
@@ -542,6 +565,7 @@ export function LiveTranscription() {
           if (onAudioProcessCount <= 5) console.log("[STT] onaudioprocess fired");
           if (!mounted || wsRef.current?.readyState !== WebSocket.OPEN) return;
           const input = e.inputBuffer.getChannelData(0);
+
           const pcm = new Int16Array(input.length);
           for (let i = 0; i < input.length; i++) {
             const s = Math.max(-1, Math.min(1, input[i]));
@@ -601,6 +625,7 @@ export function LiveTranscription() {
           recentSpeechRef.current = merged;
           setInterimTranscript(merged);
           if (transcript) console.log("[STT] buffer merged, showing:", merged.slice(0, 80));
+          lastInterimTextRef.current = merged;
           const speakerIdForInterim = typeof first.speakerId === "number" ? first.speakerId : null;
           lastInterimSpeakerIdRef.current = speakerIdForInterim;
           setInterimSpeakerId(speakerIdForInterim);
@@ -615,29 +640,42 @@ export function LiveTranscription() {
           if (!isFinal) {
             if (commitInterimTimeoutRef.current) clearTimeout(commitInterimTimeoutRef.current);
             if (transcript.trim()) {
+              const scheduledText = lastInterimTextRef.current;
+              const scheduledAt = Date.now();
               commitInterimTimeoutRef.current = setTimeout(() => {
                 commitInterimTimeoutRef.current = null;
                 if (!mounted) return;
                 const toCommit = phraseBufferRef.current?.trim() ?? "";
                 if (!toCommit) return;
+                // Only commit if the interim has stabilized (avoid spammy partial overlaps).
+                if (toCommit !== scheduledText.trim() && Date.now() - scheduledAt < 2200) return;
                 const sid = lastInterimSpeakerIdRef.current;
                 const mappedSpeaker =
                   typeof sid === "number"
                     ? (diarizationMeSpeakerId === null ? (sid === 0 ? "user" : "prospect") : sid === diarizationMeSpeakerId ? "user" : "prospect")
                     : "user";
-                if (looksLikeContinuation(toCommit) && lastAppendedSpeakerRef.current === mappedSpeaker) {
-                  appendToLastTranscript({ speaker: mappedSpeaker, text: toCommit });
-                } else {
-                  appendTranscript({ speaker: mappedSpeaker, text: toCommit });
+                const hardBreakOnSpeakerChange =
+                  typeof sid === "number" &&
+                  typeof lastAppendedDiarizedSpeakerIdRef.current === "number" &&
+                  sid !== lastAppendedDiarizedSpeakerIdRef.current;
+                const paragraphs = splitIntoParagraphs(toCommit);
+                const first = paragraphs[0] ?? "";
+                const rest = paragraphs.slice(1);
+                const isContinuation = !hardBreakOnSpeakerChange && looksLikeContinuation(first) && lastAppendedSpeakerRef.current === mappedSpeaker;
+                if (first) {
+                  if (isContinuation) appendToLastTranscript({ speaker: mappedSpeaker, text: first });
+                  else appendTranscript({ speaker: mappedSpeaker, text: first });
                 }
+                rest.forEach((p) => appendTranscript({ speaker: mappedSpeaker, text: p }));
                 lastAppendedSpeakerRef.current = mappedSpeaker;
+                if (typeof sid === "number") lastAppendedDiarizedSpeakerIdRef.current = sid;
                 phraseBufferRef.current = "";
                 recentSpeechRef.current = "";
                 lastFinalTextRef.current = toCommit;
                 lastFinalAtRef.current = Date.now();
                 setInterimTranscript("");
                 setInterimSpeakerId(null);
-              }, 3500);
+              }, 1200);
             }
             return;
           }
@@ -678,6 +716,7 @@ export function LiveTranscription() {
           lastFinalAtRef.current = now;
 
           const firstSeg = segments[0];
+          const firstSegSpeakerId = typeof firstSeg?.speakerId === "number" ? firstSeg.speakerId : null;
           const firstSpeaker: "user" | "prospect" =
             typeof firstSeg?.speakerId === "number"
               ? (diarizationMeSpeakerId === null
@@ -689,13 +728,18 @@ export function LiveTranscription() {
             const paragraphs = splitIntoParagraphs(textToAppend);
             const first = paragraphs[0] ?? "";
             const rest = paragraphs.slice(1);
-            const isContinuation = looksLikeContinuation(first) && lastAppendedSpeakerRef.current === firstSpeaker;
+            const hardBreakOnSpeakerChange =
+              typeof firstSegSpeakerId === "number" &&
+              typeof lastAppendedDiarizedSpeakerIdRef.current === "number" &&
+              firstSegSpeakerId !== lastAppendedDiarizedSpeakerIdRef.current;
+            const isContinuation = !hardBreakOnSpeakerChange && looksLikeContinuation(first) && lastAppendedSpeakerRef.current === firstSpeaker;
             if (first) {
               if (isContinuation) appendToLastTranscript({ speaker: firstSpeaker, text: first });
               else appendTranscript({ speaker: firstSpeaker, text: first });
             }
             rest.forEach((p) => appendTranscript({ speaker: firstSpeaker, text: p }));
             lastAppendedSpeakerRef.current = firstSpeaker;
+            if (typeof firstSegSpeakerId === "number") lastAppendedDiarizedSpeakerIdRef.current = firstSegSpeakerId;
           } else {
             for (const seg of segments) {
               const finalText = seg.transcript.trim();
@@ -710,13 +754,18 @@ export function LiveTranscription() {
               const paragraphs = splitIntoParagraphs(finalText);
               const first = paragraphs[0] ?? "";
               const rest = paragraphs.slice(1);
-              const isContinuation = looksLikeContinuation(first) && lastAppendedSpeakerRef.current === mappedSpeaker;
+              const hardBreakOnSpeakerChange =
+                typeof speakerId === "number" &&
+                typeof lastAppendedDiarizedSpeakerIdRef.current === "number" &&
+                speakerId !== lastAppendedDiarizedSpeakerIdRef.current;
+              const isContinuation = !hardBreakOnSpeakerChange && looksLikeContinuation(first) && lastAppendedSpeakerRef.current === mappedSpeaker;
               if (first) {
                 if (isContinuation) appendToLastTranscript({ speaker: mappedSpeaker, text: first });
                 else appendTranscript({ speaker: mappedSpeaker, text: first });
               }
               rest.forEach((p) => appendTranscript({ speaker: mappedSpeaker, text: p }));
               lastAppendedSpeakerRef.current = mappedSpeaker;
+              if (typeof speakerId === "number") lastAppendedDiarizedSpeakerIdRef.current = speakerId;
             }
           }
           try {

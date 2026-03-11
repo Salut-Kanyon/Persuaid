@@ -236,6 +236,35 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return t.charAt(0).toUpperCase() + t.slice(1);
   };
 
+  const normalizeForOverlap = (s: string) =>
+    s
+      .trim()
+      .replace(/\s+/g, " ")
+      .replace(/[“”]/g, "\"")
+      .toLowerCase();
+
+  const splitWords = (s: string) => normalizeForOverlap(s).split(" ").filter(Boolean);
+
+  const isRecent = (iso: string | undefined, ms: number) => {
+    if (!iso) return false;
+    const t = Date.parse(iso);
+    if (!Number.isFinite(t)) return false;
+    return Date.now() - t <= ms;
+  };
+
+  const hasStrongOverlap = (a: string, b: string) => {
+    const aw = splitWords(a);
+    const bw = splitWords(b);
+    if (aw.length < 6 || bw.length < 6) return false;
+    const n = Math.min(8, aw.length, bw.length);
+    const aTail = aw.slice(-n).join(" ");
+    const bTail = bw.slice(-n).join(" ");
+    if (aTail === bTail) return true;
+    const aHead = aw.slice(0, n).join(" ");
+    const bHead = bw.slice(0, n).join(" ");
+    return aTail === bHead || bTail === aHead;
+  };
+
   const appendTranscript = useCallback(
     (segment: {
       speaker?: TranscriptSpeaker;
@@ -246,12 +275,36 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (!trimmed) return;
       const normalized = capitalizeFirst(trimmed);
       setTranscript((prev) => {
-        if (prev.length > 0 && prev[prev.length - 1].text === normalized) return prev;
+        const speaker = segment.speaker ?? "user";
+        const last = prev[prev.length - 1];
+        if (last) {
+          // Exact duplicate.
+          if (last.text === normalized && last.speaker === speaker) {
+            // Only drop duplicates that happen immediately (STT echo/revision).
+            if (isRecent(last.timestamp, 2000)) return prev;
+          }
+
+          if (last.speaker === speaker) {
+            const lastNorm = normalizeForOverlap(last.text);
+            const nextNorm = normalizeForOverlap(normalized);
+            // Only treat overlap as STT revision if it happens shortly after the last append.
+            if (isRecent(last.timestamp, 2000)) {
+              // If new text contains the last (or vice-versa), replace with the longer one.
+              if (nextNorm.includes(lastNorm) || lastNorm.includes(nextNorm) || hasStrongOverlap(last.text, normalized)) {
+                const replacement = normalized.length >= last.text.length ? normalized : last.text;
+                if (replacement !== last.text) {
+                  return [...prev.slice(0, -1), { ...last, text: replacement }];
+                }
+                return prev;
+              }
+            }
+          }
+        }
         return [
           ...prev,
           {
             id: crypto.randomUUID(),
-            speaker: segment.speaker ?? "user",
+            speaker,
             name: segment.name,
             text: normalized,
             timestamp: new Date().toISOString(),
@@ -302,7 +355,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             },
           ];
         }
-        const merged = last.text.trimEnd() + " " + trimmed;
+        // Avoid merging duplicated overlapping tails (common with STT revisions).
+        const lastText = last.text.trimEnd();
+        const nextText = trimmed.trim();
+        const lastNorm = normalizeForOverlap(lastText);
+        const nextNorm = normalizeForOverlap(nextText);
+        if (isRecent(last.timestamp, 2000) && (nextNorm.includes(lastNorm) || hasStrongOverlap(lastText, nextText))) {
+          const replacement = nextText.length >= lastText.length ? capitalizeFirst(nextText) : lastText;
+          return [...prev.slice(0, -1), { ...last, text: replacement }];
+        }
+        const merged = lastText + " " + nextText;
         return [
           ...prev.slice(0, -1),
           { ...last, text: merged },
