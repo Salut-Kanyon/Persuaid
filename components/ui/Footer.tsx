@@ -3,24 +3,18 @@ import { CTAButton } from "./CTAButton";
 export function Footer() {
   const footerLinks = {
     Product: [
-      { label: "Features", href: "#features" },
       { label: "Pricing", href: "/pricing" },
-      { label: "Integrations", href: "#" },
+      { label: "Manifesto", href: "/manifesto" },
     ],
-    Company: [
-      { label: "About", href: "#about" },
-      { label: "Blog", href: "#" },
-      { label: "Careers", href: "#" },
-    ],
-    Resources: [
-      { label: "Documentation", href: "#" },
-      { label: "Support", href: "#" },
-      { label: "API", href: "#" },
+    Support: [
+      { label: "Help Center", href: "/contact" },
+      { label: "Contact", href: "/contact" },
     ],
     Legal: [
-      { label: "Privacy", href: "#" },
-      { label: "Terms", href: "#" },
-      { label: "Security", href: "#" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Data Processing Agreement", href: "/data-processing-agreement" },
+      { label: "Subprocessors", href: "/subprocessors" },
     ],
   };
 
@@ -44,7 +38,7 @@ export function Footer() {
               The AI copilot for sales calls. Say the right thing on every
               conversation.
             </p>
-            <CTAButton variant="primary" href="/download">
+            <CTAButton variant="primary" href="/sign-in">
               Start free trial
             </CTAButton>
           </div>

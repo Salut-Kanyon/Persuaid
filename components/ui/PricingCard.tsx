@@ -78,7 +78,7 @@ export function PricingCard({
       <CTAButton
         variant={highlighted ? "primary" : "secondary"}
         className="w-full"
-        href={onCheckout ? undefined : "/download"}
+        href={onCheckout ? undefined : "/sign-in"}
         onClick={onCheckout}
         disabled={checkoutLoading}
       >

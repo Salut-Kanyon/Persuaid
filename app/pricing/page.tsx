@@ -153,7 +153,7 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <CTAButton variant="secondary" className="w-full" href="/download">
+              <CTAButton variant="secondary" className="w-full" href="/sign-in">
                 Get started
               </CTAButton>
             </div>
@@ -268,9 +268,9 @@ export default function PricingPage() {
           <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mb-3">
             Ready to coach on every call?
           </h2>
-          <p className="text-text-muted mb-6">Download Persuaid and start your free trial.</p>
+          <p className="text-text-muted mb-6">Sign in or create an account to start your free trial.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <CTAButton href="/download" variant="primary" size="large">
+            <CTAButton href="/sign-in" variant="primary" size="large">
               Start free trial
             </CTAButton>
             <a

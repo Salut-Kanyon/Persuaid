@@ -441,119 +441,65 @@ export default function Home() {
         </motion.div>
       </Section>
 
-      {/* After the call — simplified */}
-      <Section className="bg-background">
+      {/* After the call — compact, rectangle card */}
+      <Section className="bg-background pb-8 md:pb-10 lg:pb-12">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.5 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.45 }}
           className="max-w-5xl mx-auto"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
-            {/* Left: short copy */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
             <div className="lg:col-span-5 text-center lg:text-left">
-              <motion.span
-                initial={{ opacity: 0, x: -6 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="text-xs font-semibold text-green-accent uppercase tracking-wider"
-              >
-                After the call
-              </motion.span>
-              <motion.h2
-                initial={{ opacity: 0, y: 8 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.05 }}
-                className="text-3xl sm:text-4xl font-bold text-text-primary mt-3 mb-4 leading-tight tracking-tight"
-              >
+              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">After the call</span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-text-primary mt-3 mb-3 leading-tight tracking-tight">
                 Turn the call into clear next steps
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0, y: 6 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                className="text-base text-text-muted leading-relaxed mb-8"
-              >
-                Persuaid organizes the conversation into key moments, one useful AI insight, and the follow-up so nothing gets lost.
-              </motion.p>
-              <motion.ul
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-                className="space-y-3 text-[15px] text-text-secondary"
-              >
-                {[
-                  { label: "AI summary", desc: "The important parts of the call, already organized." },
-                  { label: "CRM ready", desc: "Save it or send the next steps where your team works." },
-                ].map((item, i) => (
-                  <motion.li
-                    key={item.label}
-                    className="flex items-start gap-2.5"
-                    variants={{ hidden: { opacity: 0, y: 6 }, visible: { opacity: 1, y: 0 } }}
-                  >
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-green-primary flex-shrink-0" />
-                    <span><strong className="text-text-primary font-medium">{item.label}</strong> — {item.desc}</span>
-                  </motion.li>
-                ))}
-              </motion.ul>
+              </h2>
+              <p className="text-base text-text-muted leading-relaxed mb-6">
+                Key moments, one AI insight, and next steps—so nothing gets lost.
+              </p>
+              <ul className="space-y-2.5 text-base text-text-secondary">
+                <li className="flex items-start gap-2"><span className="mt-2 w-1.5 h-1.5 rounded-full bg-green-primary flex-shrink-0" /><span><strong className="text-text-primary font-medium">AI summary</strong> — Call highlights, organized.</span></li>
+                <li className="flex items-start gap-2"><span className="mt-2 w-1.5 h-1.5 rounded-full bg-green-primary flex-shrink-0" /><span><strong className="text-text-primary font-medium">CRM ready</strong> — Save or send where your team works.</span></li>
+              </ul>
             </div>
 
-            {/* Right: single card */}
             <div className="lg:col-span-7">
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.45, delay: 0.08 }}
-                className="rounded-2xl border border-white/10 bg-[#0a0c0d] shadow-[0_24px_64px_rgba(0,0,0,0.45)] overflow-hidden"
+                className="rounded-xl border border-white/10 bg-[#0a0c0d] shadow-[0_20px_50px_rgba(0,0,0,0.4)] overflow-hidden"
               >
-                <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-                  <span className="text-base font-semibold text-text-primary">Call summary</span>
-                  <span className="text-sm text-text-dim font-mono">00:18:42</span>
+                <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-text-primary">Call summary</span>
+                  <span className="text-xs text-text-dim font-mono">00:18:42</span>
                 </div>
-
-                <div className="p-6 sm:p-8 space-y-8">
-                  <div>
-                    <h4 className="text-sm font-semibold text-text-primary mb-3">Key moments</h4>
-                    <ul className="text-[15px] text-text-secondary leading-relaxed space-y-2">
-                      <li>· Pricing and payment options came up</li>
-                      <li>· Prospect worried about adding extra work for reps</li>
-                      <li>· Interest increased when real-time help was explained</li>
-                    </ul>
+                <div className="p-4 sm:p-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                    <div>
+                      <h4 className="text-xs font-semibold text-text-primary mb-1.5 uppercase tracking-wider">Key moments</h4>
+                      <ul className="text-[13px] text-text-secondary leading-snug space-y-1">
+                        <li>· Pricing and payment options came up</li>
+                        <li>· Prospect worried about extra work for reps</li>
+                        <li>· Interest grew when real-time help was explained</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-semibold text-text-primary mb-1.5 uppercase tracking-wider">Next steps</h4>
+                      <p className="text-[13px] text-text-secondary leading-snug">Send pricing one-pager and book a 30-minute demo.</p>
+                    </div>
                   </div>
-
-                  <div>
-                    <h4 className="text-sm font-semibold text-text-primary mb-3">AI insight</h4>
-                    <p className="text-[15px] text-text-secondary leading-relaxed">
-                      Prospect&apos;s main concern was adoption. Messaging around &quot;help during the call, not more work after&quot; landed well.
-                    </p>
+                  <div className="mt-4 pt-4 border-t border-white/8">
+                    <h4 className="text-xs font-semibold text-text-primary mb-1.5 uppercase tracking-wider">AI insight</h4>
+                    <p className="text-[13px] text-text-secondary leading-snug mb-3">Prospect&apos;s main concern was adoption. &quot;Help during the call, not more work after&quot; landed well.</p>
+                    <h4 className="text-xs font-semibold text-text-primary mb-1 uppercase tracking-wider">Suggested follow-up</h4>
+                    <p className="text-[13px] text-text-primary leading-snug italic">&quot;What usually makes a new tool hard for your reps to adopt?&quot;</p>
                   </div>
-
-                  <div>
-                    <h4 className="text-sm font-semibold text-text-primary mb-3">Suggested follow-up</h4>
-                    <p className="text-[15px] text-text-primary leading-relaxed italic">
-                      &quot;What usually makes a new tool hard for your reps to adopt?&quot;
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-semibold text-text-primary mb-3">Next steps</h4>
-                    <p className="text-[15px] text-text-secondary leading-relaxed">
-                      Send pricing one-pager and book a 30-minute demo.
-                    </p>
-                  </div>
-
-                  <div className="pt-2 flex gap-3">
-                    <button type="button" className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-sm font-medium text-text-primary hover:bg-white/10 transition-colors">
-                      Save
-                    </button>
-                    <button type="button" className="px-4 py-2 rounded-xl bg-green-primary/20 text-sm font-semibold text-green-accent border border-green-primary/40 hover:bg-green-primary/30 transition-colors">
-                      Hand off to CRM
-                    </button>
+                  <div className="mt-4 flex gap-2">
+                    <button type="button" className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs font-medium text-text-primary hover:bg-white/10 transition-colors">Save</button>
+                    <button type="button" className="px-3 py-1.5 rounded-lg bg-green-primary/20 text-xs font-semibold text-green-accent border border-green-primary/40 hover:bg-green-primary/30 transition-colors">Hand off to CRM</button>
                   </div>
                 </div>
               </motion.div>
@@ -565,27 +511,61 @@ export default function Home() {
       <FAQSection />
 
       {/* Final CTA Section */}
-      <Section>
+      <Section className="py-16 sm:py-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center max-w-3xl mx-auto"
+          transition={{ duration: 0.5 }}
+          className="max-w-6xl mx-auto flex flex-col lg:flex-row lg:items-center gap-12 lg:gap-16"
         >
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-text-primary mb-8 leading-tight tracking-tight">
-            Start your free trial
-          </h2>
-          <p className="text-xl sm:text-2xl text-text-muted mb-12 leading-relaxed font-light max-w-2xl mx-auto">
-            No credit card required. Sign in or create an account to get started.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <CTAButton variant="primary" href="/sign-in" className="text-lg px-8 py-4">
-              Try for Free
-            </CTAButton>
-            <CTAButton variant="secondary" href="/pricing" className="text-lg px-8 py-4">
-              Compare plans
-            </CTAButton>
+          {/* Left: copy + button */}
+          <div className="flex-1 space-y-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text-primary leading-tight tracking-tight">
+              Sales AI that helps during the call, not after.
+            </h2>
+            <p className="text-lg text-text-muted leading-relaxed">
+              Try <span className="text-text-primary font-semibold">Persuaid</span> on your next call today.
+            </p>
+            <p className="text-sm text-text-dim">
+              No credit card required.
+            </p>
+            <a
+              href="/sign-in"
+              className="group inline-flex items-center gap-3 px-8 py-3.5 text-base font-semibold rounded-2xl transition-all duration-300 border-2 border-green-primary/70 bg-black text-white hover:bg-gray-900 hover:border-green-primary hover:shadow-2xl hover:shadow-green-primary/20 shadow-lg transform hover:scale-[1.05] active:scale-100 focus:outline-none focus:ring-2 focus:ring-green-primary focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
+            >
+              <img
+                src="/PersuaidLogo.png"
+                alt=""
+                className="w-5 h-5 flex-shrink-0 object-contain group-hover:scale-110 transition-transform duration-300"
+                aria-hidden
+              />
+              <span>Try for Free</span>
+            </a>
+          </div>
+          {/* Right: video — place your MP4 in public/ */}
+          <div className="flex-1 min-w-0 flex items-center justify-center">
+            <div className="relative w-full max-w-md aspect-video min-h-[220px] rounded-2xl overflow-hidden border border-white/10 bg-[#0d0d0d] shadow-2xl shadow-black/50 ring-1 ring-white/5">
+              <video
+                src="/Create_a_minimal_premium_UI_an_Veo_31_11206.mp4"
+                className="absolute inset-0 w-full h-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                aria-hidden
+              />
+              {/* Soft vignette so video blends into dark background */}
+              <div
+                className="absolute inset-0 pointer-events-none rounded-2xl"
+                style={{
+                  background: "radial-gradient(ellipse 80% 70% at 50% 50%, transparent 50%, rgba(10,10,10,0.4) 85%, rgba(10,10,10,0.85) 100%)",
+                  boxShadow: "inset 0 0 60px 20px rgba(10,10,10,0.3)",
+                }}
+                aria-hidden
+              />
+            </div>
           </div>
         </motion.div>
       </Section>
