@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CTAButton } from "./CTAButton";
-import { ProductPreview } from "./ProductPreview";
 
 const FADE_START = 0;
 const FADE_END = 950;
@@ -130,21 +129,6 @@ export function Hero() {
                   See it in action →
                 </a>
             </motion.div>
-          </motion.div>
-
-          {/* Product Preview - Below, Centered */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-4xl mx-auto"
-          >
-            <div className="relative">
-              {/* Enhanced glow effects */}
-              <div className="absolute -inset-6 bg-green-primary/30 blur-3xl rounded-3xl opacity-60 animate-pulse" />
-              <div className="absolute -inset-3 bg-green-primary/20 blur-2xl rounded-3xl opacity-40" />
-              <ProductPreview className="relative transform hover:scale-[1.01] transition-transform duration-700" />
-            </div>
           </motion.div>
         </div>
       </div>
