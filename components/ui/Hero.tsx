@@ -230,16 +230,12 @@ export function Hero() {
       <div
         className="absolute inset-0 pointer-events-none bg-cover bg-no-repeat transition-opacity duration-150"
         style={{
-          backgroundImage: "url(/Thisone.png)",
+          backgroundImage: "url(/MGBack.png)",
           backgroundPosition: "center 125%",
           opacity: bgOpacity,
         }}
         aria-hidden
       />
-      {/* Enhanced background glow with multiple layers */}
-      <div className="absolute inset-0 bg-gradient-to-b from-green-glow/8 via-green-glow/3 to-transparent pointer-events-none" />
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-green-primary/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-green-primary/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
         <div className="flex flex-col items-center gap-4">
