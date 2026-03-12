@@ -12,7 +12,7 @@ export function Section({ children, className, id }: SectionProps) {
     <section
       id={id}
       className={cn(
-        "py-section-xs md:py-section-sm lg:py-section-md xl:py-section",
+        "py-14 md:py-16 lg:py-20",
         className
       )}
     >

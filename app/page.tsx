@@ -264,26 +264,24 @@ export default function Home() {
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="text-center mb-16 lg:mb-20">
+          <div className="text-left mb-16 lg:mb-20">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="inline-block mb-6"
+              className="mb-6"
             >
               <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
-                Product Overview
+                What we offer
               </span>
             </motion.div>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-text-primary mb-5 leading-tight tracking-tight">
-              One workspace for{" "}
-              <span className="text-green-primary">live sales calls</span>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary leading-tight tracking-tight">
+              Make your sales meetings{" "}
+              <span className="bg-gradient-to-r from-green-primary via-green-accent to-emerald-400 bg-clip-text text-transparent">
+                better
+              </span>
             </h2>
-            <p className="text-lg sm:text-xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light">
-              This is an example of how the software works during a real call—what to say next, what&apos;s been said, and the product
-              knowledge Persuaid uses, all in one place.
-            </p>
           </div>
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -327,7 +325,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="space-y-10 lg:space-y-14">
+          <div className="space-y-14 lg:space-y-16">
             {[
               {
                 step: "01",
@@ -358,7 +356,7 @@ export default function Home() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.08 }}
                 className={cn(
-                  "relative flex flex-col md:flex-row items-stretch gap-6 md:gap-10",
+                  "relative flex flex-col md:flex-row items-stretch gap-8 md:gap-12",
                   index % 2 === 1 ? "md:flex-row-reverse" : ""
                 )}
               >
@@ -442,7 +440,7 @@ export default function Home() {
       </Section>
 
       {/* After the call — compact, rectangle card */}
-      <Section className="bg-background pb-8 md:pb-10 lg:pb-12">
+      <Section className="bg-background pb-10 md:pb-14 lg:pb-16">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -450,7 +448,7 @@ export default function Home() {
           transition={{ duration: 0.45 }}
           className="max-w-5xl mx-auto"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
             <div className="lg:col-span-5 text-center lg:text-left">
               <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">After the call</span>
               <h2 className="text-3xl sm:text-4xl font-bold text-text-primary mt-3 mb-3 leading-tight tracking-tight">
@@ -527,12 +525,9 @@ export default function Home() {
             <p className="text-lg text-text-muted leading-relaxed">
               Try <span className="text-text-primary font-semibold">Persuaid</span> on your next call today.
             </p>
-            <p className="text-sm text-text-dim">
-              No credit card required.
-            </p>
             <a
               href="/sign-in"
-              className="group inline-flex items-center gap-3 px-8 py-3.5 text-base font-semibold rounded-2xl transition-all duration-300 border-2 border-green-primary/70 bg-black text-white hover:bg-gray-900 hover:border-green-primary hover:shadow-2xl hover:shadow-green-primary/20 shadow-lg transform hover:scale-[1.05] active:scale-100 focus:outline-none focus:ring-2 focus:ring-green-primary focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
+              className="group inline-flex items-center gap-3 px-8 py-3.5 text-base font-semibold rounded-2xl transition-all duration-300 border-2 border-green-primary/70 bg-black text-white hover:bg-green-primary hover:border-green-primary hover:shadow-2xl hover:shadow-green-primary/20 shadow-lg transform hover:scale-[1.05] active:scale-100 focus:outline-none focus:ring-2 focus:ring-green-primary focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
             >
               <img
                 src="/PersuaidLogo.png"
@@ -543,11 +538,11 @@ export default function Home() {
               <span>Try for Free</span>
             </a>
           </div>
-          {/* Right: video — place your MP4 in public/ */}
-          <div className="flex-1 min-w-0 flex items-center justify-center">
-            <div className="relative w-full max-w-md aspect-video min-h-[220px] rounded-2xl overflow-hidden border border-white/10 bg-[#0d0d0d] shadow-2xl shadow-black/50 ring-1 ring-white/5">
+          {/* Right: video with small AI transcript overlay */}
+          <div className="flex-1 min-w-0 flex items-center justify-center mt-6 lg:mt-8">
+            <div className="relative w-full max-w-2xl aspect-video min-h-[280px] sm:min-h-[320px] rounded-2xl overflow-hidden border border-white/10 bg-[#0d0d0d] shadow-2xl shadow-black/50 ring-1 ring-white/5">
               <video
-                src="/Create_a_minimal_premium_UI_an_Veo_31_11206.mp4"
+                src="/VideoAd.mp4"
                 className="absolute inset-0 w-full h-full object-cover"
                 autoPlay
                 muted
@@ -556,7 +551,7 @@ export default function Home() {
                 preload="auto"
                 aria-hidden
               />
-              {/* Soft vignette so video blends into dark background */}
+              {/* Soft vignette */}
               <div
                 className="absolute inset-0 pointer-events-none rounded-2xl"
                 style={{
@@ -565,6 +560,32 @@ export default function Home() {
                 }}
                 aria-hidden
               />
+              {/* Small AI transcript overlay (like Hero) */}
+              <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4">
+                <div className="w-full max-w-[240px] sm:max-w-[280px] rounded-xl border border-white/10 bg-black/50 shadow-xl overflow-hidden flex flex-col backdrop-blur-sm">
+                  <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between bg-black/40 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-primary animate-pulse" />
+                      <span className="text-xs font-semibold text-text-primary">Live AI transcript</span>
+                    </div>
+                    <span className="text-[10px] text-text-dim font-mono tabular-nums">00:18</span>
+                  </div>
+                  <div className="p-2.5 space-y-1.5 bg-black/35">
+                    <div className="flex gap-2">
+                      <span className="text-[10px] font-semibold text-emerald-300/95 shrink-0">Rep</span>
+                      <p className="text-[11px] text-text-primary leading-snug">Thanks for your time—focused on how we can help.</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-[10px] font-semibold text-sky-200/95 shrink-0">Prospect</span>
+                      <p className="text-[11px] text-text-primary leading-snug">We've tried tools that added more work for reps.</p>
+                    </div>
+                    <div className="flex gap-2 rounded-lg bg-black/45 border border-green-primary/20 pl-2 py-1.5 pr-2">
+                      <span className="text-[10px] font-semibold text-green-primary shrink-0">AI</span>
+                      <p className="text-[11px] text-text-primary leading-snug">Suggested: &quot;That&apos;s what we fix. Real-time help, no extra steps.&quot;</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>

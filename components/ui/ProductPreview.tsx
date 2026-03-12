@@ -68,7 +68,7 @@ export function ProductPreview({ className }: ProductPreviewProps) {
         <div className="col-span-12 lg:col-span-7 flex flex-col gap-3 lg:gap-3.5">
           {/* What to say next */}
           <motion.div
-            className="relative flex-[1.15] min-h-[180px] bg-background/80 rounded-2xl border border-white/10 p-3.5 sm:p-4 flex flex-col overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.6)]"
+            className="group relative flex-[1.15] min-h-[180px] bg-background/80 rounded-2xl border border-white/10 p-3.5 sm:p-4 flex flex-col overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.6)]"
             whileHover={{ y: -3, scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             transition={{ type: "spring", stiffness: 230, damping: 24, mass: 0.9 }}
@@ -122,12 +122,7 @@ export function ProductPreview({ className }: ProductPreviewProps) {
                 ))}
               </div>
 
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/90 opacity-100 group-hover:opacity-0 transition-opacity duration-200 rounded-xl z-10">
-                <p className="px-4 text-center text-[13px] sm:text-base font-medium text-white leading-snug max-w-[300px]">
-                  Press Enter and Persuaid uses the last moments of the conversation plus your product notes to draft the next line.
-                </p>
-              </div>
-            </motion.div>
+              </motion.div>
 
             <div className="relative z-10 mt-2.5 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
               <div className="flex-1 rounded-full bg-background-elevated/80 border border-white/10 px-3.5 py-1.5 text-[11px] text-text-dim flex items-center shadow-inner">
@@ -136,6 +131,12 @@ export function ProductPreview({ className }: ProductPreviewProps) {
               <button className="rounded-full bg-gradient-to-r from-green-primary to-emerald-400 px-3.5 py-1.5 text-[11px] font-semibold text-black hover:opacity-90 transition-opacity">
                 Ask follow-up
               </button>
+            </div>
+            {/* Hover overlay: explanation */}
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-black/85 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <p className="px-4 text-center text-[13px] sm:text-base font-medium text-white leading-snug max-w-[300px]">
+                Press Enter and Persuaid uses the last moments of the conversation plus your product notes to draft the next line.
+              </p>
             </div>
           </motion.div>
 
@@ -167,7 +168,8 @@ export function ProductPreview({ className }: ProductPreviewProps) {
               <button className="flex-1 rounded-full border border-white/10 bg-background-elevated/90 px-3 py-1.5 text-[10px] font-medium text-text-primary">Download call notes</button>
               <button className="flex-1 rounded-full bg-white/5 text-[10px] font-medium text-emerald-200 px-3 py-1.5 border border-emerald-400/40">Hand off to CRM</button>
             </div>
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-black/90 opacity-100 group-hover:opacity-0 transition-opacity duration-200 z-10">
+            {/* Hover overlay: explanation */}
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-black/85 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
               <p className="px-4 text-center text-[12px] sm:text-sm font-medium text-white leading-snug max-w-[260px]">When toggled on, Persuaid listens to the full conversation and uses it with your notes to suggest what to say next.</p>
             </div>
           </motion.div>
@@ -203,7 +205,8 @@ export function ProductPreview({ className }: ProductPreviewProps) {
             <button className="text-[10px] text-text-muted hover:text-text-primary">Clear</button>
             <button className="flex-1 rounded-full bg-gradient-to-r from-green-primary to-emerald-400 text-[11px] font-semibold text-black px-3.5 py-1.5">Save</button>
           </div>
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-black/90 opacity-100 group-hover:opacity-0 transition-opacity duration-200 z-10">
+          {/* Hover overlay: explanation */}
+          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-black/85 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <p className="px-4 text-center text-[12px] sm:text-sm font-medium text-white leading-snug max-w-[280px]">
               Add all your product knowledge and everything you need to know about your product here. The AI will still think for itself if nothing is in here—but this gives it a guide to focus on.
             </p>

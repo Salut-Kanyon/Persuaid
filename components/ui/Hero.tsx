@@ -8,9 +8,9 @@ const FADE_START = 0;
 const FADE_END = 950;
 
 const HERO_TITLE =
-  "Sales calls are hard. Persuaid guides you on what to say.";
+  "Become the smartest salesperson in the room with Persuaid.";
 const HERO_SUBTITLE =
-  "AI listens to your call and suggests what to say next—and questions to ask—in real time.";
+  "AI listens to your call and suggests what to say next and the right questions to ask in real time.";
 
 const HERO_WORDS = HERO_TITLE.split(" ");
 
@@ -88,9 +88,9 @@ function LiveTranscriptVideo({ show }: { show: boolean }) {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: show ? 1 : 0, y: show ? 0 : 24 }}
       transition={{ duration: 0.7, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-      className="w-full max-w-5xl xl:max-w-6xl mx-auto px-3 sm:px-4"
+      className="w-full max-w-4xl xl:max-w-5xl mx-auto px-3 sm:px-4"
     >
-      <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.6)] shadow-green-950/20 aspect-[16/10] min-h-[320px] sm:min-h-[380px]">
+      <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.6)] shadow-green-950/20 aspect-[16/10] min-h-[260px] sm:min-h-[300px]">
         <video
           src="/VideoAI.mp4"
           className="absolute inset-0 w-full h-full object-cover"
@@ -113,16 +113,16 @@ function LiveTranscriptVideo({ show }: { show: boolean }) {
           }}
           aria-hidden
         />
-        <div className="absolute inset-0 flex items-center justify-center p-5 sm:p-8">
-          <div className="w-full max-w-3xl rounded-2xl border border-white/10 bg-black/50 shadow-2xl overflow-hidden flex flex-col backdrop-blur-sm">
-            <div className="px-6 py-3.5 border-b border-white/10 flex items-center justify-between bg-black/40 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-green-primary animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
-                <span className="text-base font-semibold text-text-primary tracking-tight">Live AI transcript</span>
+        <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
+          <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-black/50 shadow-2xl overflow-hidden flex flex-col backdrop-blur-sm">
+            <div className="px-4 py-2.5 border-b border-white/10 flex items-center justify-between bg-black/40 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-primary animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                <span className="text-sm font-semibold text-text-primary tracking-tight">Live AI transcript</span>
               </div>
-              <span className="text-sm text-text-dim font-mono tabular-nums">00:18:42</span>
+              <span className="text-xs text-text-dim font-mono tabular-nums">00:18:42</span>
             </div>
-            <div className="p-6 space-y-4 text-left h-[300px] sm:h-[340px] overflow-y-auto overflow-x-hidden flex flex-col bg-black/35">
+            <div className="p-4 space-y-3 text-left h-[220px] sm:h-[260px] overflow-y-auto overflow-x-hidden flex flex-col bg-black/35">
               <div className="space-y-4 flex-1 min-h-0">
                 {TRANSCRIPT_LINES.slice(0, visibleCount).map((line, i) => (
                   <motion.div
@@ -132,11 +132,11 @@ function LiveTranscriptVideo({ show }: { show: boolean }) {
                     transition={{ duration: 0.4, ease: "easeOut" }}
                     className="flex gap-3 shrink-0"
                   >
-                    <span className={`text-xs font-semibold shrink-0 ${line.whoClass}`}>{line.who}</span>
-                    <p className="text-sm sm:text-base text-text-primary leading-relaxed">{line.text}</p>
+                    <span className={`text-[10px] font-semibold shrink-0 ${line.whoClass}`}>{line.who}</span>
+                    <p className="text-xs sm:text-sm text-text-primary leading-relaxed">{line.text}</p>
                   </motion.div>
                 ))}
-                <div className="min-h-[80px] flex flex-col justify-end">
+                <div className="min-h-[56px] flex flex-col justify-end">
                   <AnimatePresence mode="wait">
                     {liveLine ? (
                       <motion.div
@@ -145,10 +145,10 @@ function LiveTranscriptVideo({ show }: { show: boolean }) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.35 }}
-                        className="flex gap-3 rounded-xl bg-black/45 border border-green-primary/30 pl-2 py-2 pr-3 shrink-0 min-h-[80px] border-white/10"
+                        className="flex gap-2 rounded-lg bg-black/45 border border-green-primary/30 pl-2 py-1.5 pr-2 shrink-0 min-h-[56px] border-white/10"
                       >
-                        <span className={`text-xs font-semibold shrink-0 ${liveLine.whoClass}`}>{liveLine.who}</span>
-                        <p className="text-sm sm:text-base text-text-primary leading-relaxed">{liveLine.text}</p>
+                        <span className={`text-[10px] font-semibold shrink-0 ${liveLine.whoClass}`}>{liveLine.who}</span>
+                        <p className="text-xs sm:text-sm text-text-primary leading-relaxed">{liveLine.text}</p>
                       </motion.div>
                     ) : (
                       <motion.div
@@ -156,7 +156,7 @@ function LiveTranscriptVideo({ show }: { show: boolean }) {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="min-h-[80px]"
+                        className="min-h-[56px]"
                         aria-hidden
                       />
                     )}
@@ -225,12 +225,13 @@ export function Hero() {
   }, []);
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center pt-24 lg:pt-32 pb-32 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center pt-12 lg:pt-16 pb-24 overflow-hidden">
       {/* Landing background image - fades out on scroll */}
       <div
-        className="absolute inset-0 pointer-events-none bg-cover bg-center bg-no-repeat transition-opacity duration-150"
+        className="absolute inset-0 pointer-events-none bg-cover bg-no-repeat transition-opacity duration-150"
         style={{
-          backgroundImage: "url(/BackIMG.png)",
+          backgroundImage: "url(/Thisone.png)",
+          backgroundPosition: "center 125%",
           opacity: bgOpacity,
         }}
         aria-hidden
@@ -241,15 +242,15 @@ export function Hero() {
       <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-green-primary/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
-        <div className="flex flex-col items-center gap-8">
+        <div className="flex flex-col items-center gap-4">
           {/* Hero Content - Above */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-            className="text-center w-full -mt-8"
+            className="text-center w-full -mt-6"
           >
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-text-primary mb-3 leading-tight tracking-tight">
               <HeroTitleWords />
             </h1>
 
@@ -257,7 +258,7 @@ export function Hero() {
               initial={{ opacity: 0 }}
               animate={{ opacity: showSubtitle ? 1 : 0 }}
               transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-              className="text-base sm:text-lg text-text-muted mb-4 max-w-2xl mx-auto leading-relaxed font-light"
+              className="text-base sm:text-lg lg:text-xl text-text-secondary mb-5 max-w-2xl mx-auto leading-relaxed"
             >
               {HERO_SUBTITLE}
             </motion.p>
@@ -266,11 +267,11 @@ export function Hero() {
               initial={{ opacity: 0 }}
               animate={{ opacity: showCTA ? 1 : 0 }}
               transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-              className="flex flex-col items-center gap-3 mb-10"
+              className="flex flex-col items-center mb-6"
             >
                 <a
                   href="/sign-in"
-                  className="group flex items-center gap-3 px-8 py-3.5 text-base font-semibold rounded-2xl transition-all duration-300 border-2 border-green-primary/70 bg-black text-white hover:bg-gray-900 hover:border-green-primary hover:shadow-2xl hover:shadow-green-primary/20 shadow-lg transform hover:scale-105 active:scale-100"
+                  className="group inline-flex items-center gap-3 px-8 py-4 text-base font-semibold rounded-2xl transition-all duration-300 border-2 border-green-primary/70 bg-black text-white hover:bg-green-primary hover:border-green-primary hover:shadow-2xl hover:shadow-green-primary/20 shadow-lg transform hover:scale-105 active:scale-100"
                 >
                   <img
                     src="/PersuaidLogo.png"
@@ -279,16 +280,12 @@ export function Hero() {
                   />
                   <span className="text-lg">Try for Free</span>
                 </a>
-                <a
-                  href="#product"
-                  className="text-sm text-text-dim hover:text-green-accent transition-colors duration-200"
-                >
-                  See it in action →
-                </a>
             </motion.div>
 
             {/* Looping video with live AI transcript overlay */}
-            <LiveTranscriptVideo show={showCTA} />
+            <div className="mt-56 sm:mt-64">
+              <LiveTranscriptVideo show={showCTA} />
+            </div>
           </motion.div>
         </div>
       </div>

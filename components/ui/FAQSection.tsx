@@ -59,7 +59,7 @@ export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <Section id="faq" className="bg-background-default pt-8 md:pt-10 lg:pt-12">
+    <Section id="faq" className="bg-background-default pt-10 md:pt-14">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
