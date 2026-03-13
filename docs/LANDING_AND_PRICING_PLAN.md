@@ -32,7 +32,7 @@ This doc is a plan to move the landing and pricing pages from prototype feel to 
 **UX tweaks**
 
 - Add a short “Who it’s for” line under the hero (e.g. “For SDRs, AEs, and founders who run their own demos.”).
-- Ensure primary CTA is always “Download” or “Start free trial” and goes to `/download` (or signup).
+- Ensure primary CTA is always “Download” or “Start free trial” and goes to `/pricing`, `/dashboard`, or `/sign-in` (browser app; no download).
 - Optional: one “See it in action” link that scrolls to product preview or a 30s Loom later.
 
 ---

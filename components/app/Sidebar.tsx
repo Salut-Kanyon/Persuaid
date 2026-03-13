@@ -5,7 +5,19 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase/client";
+import { useSession } from "@/components/app/contexts/SessionContext";
 import type { User } from "@supabase/supabase-js";
+
+const SIDEBAR_COLLAPSED_KEY = "persuaid_sidebar_collapsed";
+
+function getStoredCollapsed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 const navigation = [
   {
@@ -68,9 +80,57 @@ function getEmailInitial(email: string | undefined): string {
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { isRecording } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const [collapsed, setCollapsedState] = useState(false);
+  /** When a call starts we collapse the sidebar; when it ends we restore this. */
+  const openBeforeCallRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    setCollapsedState(getStoredCollapsed());
+  }, []);
+
+  useEffect(() => {
+    if (isRecording) {
+      if (openBeforeCallRef.current === null) {
+        openBeforeCallRef.current = !collapsed;
+        setCollapsedState(true);
+        try {
+          if (typeof window !== "undefined") localStorage.setItem(SIDEBAR_COLLAPSED_KEY, "1");
+        } catch {
+          // ignore
+        }
+      }
+    } else {
+      if (openBeforeCallRef.current !== null) {
+        const wasOpen = openBeforeCallRef.current;
+        openBeforeCallRef.current = null;
+        setCollapsedState(!wasOpen);
+        try {
+          if (typeof window !== "undefined") {
+            if (wasOpen) localStorage.removeItem(SIDEBAR_COLLAPSED_KEY);
+            else localStorage.setItem(SIDEBAR_COLLAPSED_KEY, "1");
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }, [isRecording, collapsed]);
+
+  const setCollapsed = (value: boolean) => {
+    setCollapsedState(value);
+    try {
+      if (typeof window !== "undefined") {
+        if (value) localStorage.setItem(SIDEBAR_COLLAPSED_KEY, "1");
+        else localStorage.removeItem(SIDEBAR_COLLAPSED_KEY);
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u));
@@ -101,33 +161,75 @@ export function Sidebar() {
   const initial = getEmailInitial(email);
 
   return (
-    <aside className="w-52 bg-background-elevated/35 backdrop-blur-2xl border-r border-border/8 flex flex-col">
-      {/* Logo — click to go to landing */}
-      <div className="px-4 pt-4 pb-2">
+    <aside
+      className={cn(
+        "bg-background-elevated/35 backdrop-blur-2xl border-r border-border/8 flex flex-col transition-[width] duration-200 ease-out overflow-hidden",
+        collapsed ? "w-[3.5rem]" : "w-52"
+      )}
+    >
+      {/* Logo + collapse arrow: when collapsed, stack so logo has full width and can be larger */}
+      <div
+        className={cn(
+          "shrink-0 pt-4 pb-2",
+          collapsed ? "flex flex-col items-center gap-1 px-1" : "flex items-center gap-0 px-2"
+        )}
+      >
         <Link
           href="/"
-          className="flex items-end gap-0 group"
+          className={cn(
+            "flex items-end gap-0 group min-w-0 transition-all duration-200",
+            collapsed ? "flex-none justify-center" : "flex-1"
+          )}
         >
           <img
             src="/PersuaidLogo.png"
             alt="Persuaid"
-            className="w-8 h-8 flex-shrink-0 object-contain translate-y-1 group-hover:opacity-90 transition-opacity"
+            className={cn(
+              "flex-shrink-0 object-contain translate-y-1 group-hover:opacity-90 transition-all duration-200",
+              "w-8 h-8"
+            )}
           />
-          <span className="text-lg font-semibold text-text-primary tracking-tight -ml-1 translate-y-3 group-hover:text-green-accent transition-colors">
-            ersuaid
-          </span>
+          {!collapsed && (
+            <span className="text-lg font-semibold text-text-primary tracking-tight -ml-1 translate-y-3 group-hover:text-green-accent transition-colors">
+              ersuaid
+            </span>
+          )}
         </Link>
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className={cn(
+            "flex-shrink-0 p-1.5 rounded-lg text-text-dim hover:text-text-primary hover:bg-background-surface/30 transition-all",
+            collapsed && "mt-0.5"
+          )}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <svg
+            className={cn("w-5 h-5 transition-transform", collapsed && "rotate-180")}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
       </div>
       {/* Navigation */}
-      <nav className="flex-1 px-2.5 py-4 space-y-1">
+      <nav className={cn("flex-1 px-2.5 py-4 space-y-1", collapsed && "px-2")}>
         {navigation.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
           return (
             <Link
               key={item.name}
               href={item.href}
+              title={collapsed ? item.name : undefined}
               className={cn(
-                "flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-medium transition-all duration-300 group relative",
+                "flex items-center gap-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative",
+                collapsed ? "justify-center px-0 py-2.5" : "px-2.5 py-2",
                 isActive
                   ? "bg-green-primary/8 text-text-primary shadow-[0_0_0_1px_rgba(16,185,129,0.08)]"
                   : "text-text-primary hover:bg-background-surface/25"
@@ -139,9 +241,13 @@ export function Sidebar() {
               )}>
                 {item.icon}
               </span>
-              <span className="flex-1 truncate">{item.name}</span>
-              {isActive && (
-                <div className="w-1.5 h-1.5 rounded-full bg-green-primary/80 shadow-[0_0_6px_rgba(16,185,129,0.4)] flex-shrink-0" />
+              {!collapsed && (
+                <>
+                  <span className="flex-1 truncate">{item.name}</span>
+                  {isActive && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-primary/80 shadow-[0_0_6px_rgba(16,185,129,0.4)] flex-shrink-0" />
+                  )}
+                </>
               )}
             </Link>
           );
@@ -149,26 +255,39 @@ export function Sidebar() {
       </nav>
 
       {/* User profile */}
-      <div className="p-2.5 border-t border-border/6 relative" ref={profileRef}>
+      <div className={cn("p-2.5 border-t border-border/6 relative shrink-0", collapsed && "p-2")} ref={profileRef}>
         <button
           type="button"
           onClick={() => setProfileOpen((o) => !o)}
-          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-background-surface/25 transition-all duration-300 cursor-pointer group text-left"
+          title={collapsed ? displayName : undefined}
+          className={cn(
+            "w-full flex items-center gap-2 rounded-xl hover:bg-background-surface/25 transition-all duration-300 cursor-pointer group text-left",
+            collapsed ? "justify-center px-0 py-2" : "px-2.5 py-2"
+          )}
         >
           <div className="w-8 h-8 rounded-full bg-green-primary/20 border border-green-primary/30 flex items-center justify-center flex-shrink-0">
             <span className="text-green-primary text-sm font-semibold">{initial}</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium text-text-primary truncate">{displayName}</div>
-            <div className="text-[10px] text-text-dim/60 truncate">{email || "Signed in"}</div>
-          </div>
-          <svg className={cn("w-4 h-4 text-text-dim/50 flex-shrink-0 transition-transform", profileOpen && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          {!collapsed && (
+            <>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium text-text-primary truncate">{displayName}</div>
+                <div className="text-[10px] text-text-dim/60 truncate">{email || "Signed in"}</div>
+              </div>
+              <svg className={cn("w-4 h-4 text-text-dim/50 flex-shrink-0 transition-transform", profileOpen && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </>
+          )}
         </button>
 
         {profileOpen && (
-          <div className="absolute bottom-full left-2.5 right-2.5 mb-1 py-1 rounded-xl bg-background-elevated border border-border shadow-lg z-50">
+          <div
+            className={cn(
+              "absolute bottom-full mb-1 py-1 rounded-xl bg-background-elevated border border-border shadow-lg z-50 min-w-[11rem]",
+              collapsed ? "left-full top-1/2 -translate-y-1/2 bottom-auto ml-1" : "left-2.5 right-2.5"
+            )}
+          >
             <Link
               href="/dashboard/settings"
               onClick={() => setProfileOpen(false)}

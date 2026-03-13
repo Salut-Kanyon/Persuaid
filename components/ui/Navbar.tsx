@@ -5,12 +5,12 @@ import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showDownloadButton, setShowDownloadButton] = useState(false);
+  const [showCtaButton, setShowCtaButton] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      // Show download button when scrolled past 400px (hero section)
-      setShowDownloadButton(window.scrollY > 400);
+      // Show CTA when scrolled past 400px (hero section)
+      setShowCtaButton(window.scrollY > 400);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -25,8 +25,8 @@ export function Navbar() {
 
   return (
     <>
-      {/* Fixed Download Button - appears when scrolling past hero */}
-      {showDownloadButton && (
+      {/* Fixed CTA - appears when scrolling past hero */}
+      {showCtaButton && (
         <div className="fixed top-4 right-4 z-50 hidden md:block animate-in fade-in slide-in-from-top-2">
           <a
             href="/sign-in"

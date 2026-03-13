@@ -54,8 +54,8 @@ export function PricingCard({
 
       <ul className="space-y-4 mb-10">
         {features.map((feature, index) => (
-          <li key={index} className="flex items-start">
-            <div className="w-5 h-5 rounded-full bg-green-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5 mr-3">
+          <li key={index} className="flex items-start gap-3">
+            <div className="w-5 h-5 rounded-full bg-green-primary/25 flex items-center justify-center flex-shrink-0 mt-0.5 ring-2 ring-green-primary/20">
               <svg
                 className="w-3 h-3 text-green-primary"
                 fill="none"
@@ -70,7 +70,7 @@ export function PricingCard({
                 />
               </svg>
             </div>
-            <span className="text-text-secondary text-sm leading-relaxed">{feature}</span>
+            <span className="text-text-primary text-sm font-medium leading-relaxed">{feature}</span>
           </li>
         ))}
       </ul>
@@ -78,7 +78,7 @@ export function PricingCard({
       <CTAButton
         variant={highlighted ? "primary" : "secondary"}
         className="w-full"
-        href={onCheckout ? undefined : "/sign-in"}
+        href={onCheckout ? undefined : "/dashboard"}
         onClick={onCheckout}
         disabled={checkoutLoading}
       >

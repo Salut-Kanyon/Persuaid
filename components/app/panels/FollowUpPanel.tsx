@@ -2,10 +2,12 @@
 
 import { useEffect, useCallback, useState, useRef } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
+import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import { cn } from "@/lib/utils";
 
 export function FollowUpPanel() {
-  const { transcript, followUpText, setFollowUpText, requestFollowUp } = useSession();
+  const { transcript, followUpText, setFollowUpText, followUpSource, setFollowUpSource, requestFollowUp } = useSession();
+  const { canUseProFeatures, openUpgradeModal } = useEntitlements();
   const [chatInput, setChatInput] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -20,21 +22,34 @@ export function FollowUpPanel() {
       const target = e.target as HTMLElement;
       if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
       e.preventDefault();
+      if (!canUseProFeatures) {
+        openUpgradeModal();
+        return;
+      }
       requestFollowUp("answer");
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [requestFollowUp]);
+  }, [requestFollowUp, canUseProFeatures, openUpgradeModal]);
 
   const handleSend = useCallback(async () => {
     const text = chatInput.trim();
     if (!text) {
+      if (!canUseProFeatures) {
+        openUpgradeModal();
+        return;
+      }
       requestFollowUp("answer");
+      return;
+    }
+    if (!canUseProFeatures) {
+      openUpgradeModal();
       return;
     }
     setChatInput("");
     setSending(true);
     setFollowUpText("…");
+    setFollowUpSource("");
     try {
       const res = await fetch("/api/ai/answer", {
         method: "POST",
@@ -44,15 +59,18 @@ export function FollowUpPanel() {
       const data = (await res.json()) as { answer?: string; error?: string };
       if (res.ok && typeof data.answer === "string") {
         setFollowUpText(data.answer);
+        setFollowUpSource("the web");
       } else {
         setFollowUpText(data.error || "Something went wrong. Try again.");
+        setFollowUpSource("");
       }
     } catch {
       setFollowUpText("Request failed. Try again.");
+      setFollowUpSource("");
     } finally {
       setSending(false);
     }
-  }, [chatInput, setFollowUpText, requestFollowUp]);
+  }, [chatInput, setFollowUpText, setFollowUpSource, requestFollowUp, canUseProFeatures, openUpgradeModal]);
 
   const hasTranscript = transcript.length > 0;
   const hasResponse = followUpText && followUpText !== "…";
@@ -78,8 +96,15 @@ export function FollowUpPanel() {
             <span>Thinking…</span>
           </div>
         ) : hasResponse ? (
-          <div className="rounded-xl bg-background-elevated/50 border border-border/30 p-4 text-sm">
-            <p className="text-text-primary leading-relaxed whitespace-pre-wrap">{followUpText}</p>
+          <div className="space-y-2">
+            <div className="rounded-xl bg-background-elevated/50 border border-border/30 p-4 text-sm">
+              <p className="text-text-primary leading-relaxed whitespace-pre-wrap">{followUpText}</p>
+            </div>
+            {followUpSource ? (
+              <p className="text-xs text-text-dim/90 pl-1">
+                From: {followUpSource}
+              </p>
+            ) : null}
           </div>
         ) : (
           <div className="rounded-xl bg-background-elevated/40 border border-border/20 p-4 text-sm text-text-dim/80">
@@ -98,7 +123,7 @@ export function FollowUpPanel() {
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder="Type a specific question or objection (Send), or press Enter for the next line to say…"
+            placeholder="Type a question or objection…"
             className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm bg-background-elevated/60 border border-border/50 text-text-primary placeholder:text-text-dim/50 focus:outline-none focus:ring-1 focus:ring-green-primary/40"
             disabled={sending}
           />
@@ -116,7 +141,13 @@ export function FollowUpPanel() {
           </button>
           <button
             type="button"
-            onClick={() => requestFollowUp("follow_up_question")}
+            onClick={() => {
+              if (!canUseProFeatures) {
+                openUpgradeModal();
+                return;
+              }
+              requestFollowUp("follow_up_question");
+            }}
             disabled={isLoading || !hasTranscript}
             className={cn(
               "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0",

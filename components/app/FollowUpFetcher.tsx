@@ -8,8 +8,14 @@ const MAX_MESSAGES = 150;
 
 /** Fetches follow-up: mode "answer" (Enter) = what to say; "follow_up_question" (button) = question to ask. */
 export function FollowUpFetcher() {
-  const { transcript, scriptContext, notesContext, dealContext, setFollowUpText, followUpRequestedAt, followUpMode } = useSession();
+  const { transcript, scriptContext, notesContext, dealContext, setFollowUpText, setFollowUpSource, followUpRequestedAt, followUpMode } = useSession();
   const prevRequestedAtRef = useRef(0);
+
+  const sourceTypeToLabel: Record<string, string> = {
+    notes: "your notes",
+    conversation: "the conversation",
+    web: "the web",
+  };
 
   useEffect(() => {
     if (followUpRequestedAt === 0 || followUpRequestedAt === prevRequestedAtRef.current) return;
@@ -21,6 +27,7 @@ export function FollowUpFetcher() {
     }));
 
     setFollowUpText("…");
+    setFollowUpSource("");
 
     (async () => {
       try {
@@ -35,17 +42,20 @@ export function FollowUpFetcher() {
             mode: followUpMode,
           }),
         });
-        const data = (await res.json()) as { text?: string; error?: string };
+        const data = (await res.json()) as { text?: string; sourceType?: string; error?: string };
         if (res.ok && typeof data.text === "string") {
           setFollowUpText(data.text);
+          setFollowUpSource(sourceTypeToLabel[data.sourceType ?? ""] ?? "the conversation");
         } else {
           setFollowUpText(data.error || "Something went wrong. Try again.");
+          setFollowUpSource("");
         }
       } catch {
         setFollowUpText("Request failed. Try again.");
+        setFollowUpSource("");
       }
     })();
-  }, [followUpRequestedAt, transcript, scriptContext, notesContext, dealContext, followUpMode, setFollowUpText]);
+  }, [followUpRequestedAt, transcript, scriptContext, notesContext, dealContext, followUpMode, setFollowUpText, setFollowUpSource]);
 
   return null;
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
+import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 
 const isElectron = typeof navigator !== "undefined" && /Electron/i.test(navigator.userAgent);
 
@@ -54,6 +55,7 @@ function formatTime(iso: string): string {
 
 export function TranscriptPanel() {
   const { transcript, isRecording, micError, setMicError, setRecording, audioInputDeviceId, setAudioInputDeviceId, requestSuggestions } = useSession();
+  const { canUseProFeatures, openUpgradeModal } = useEntitlements();
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
   const [showNoSpeechHint, setShowNoSpeechHint] = useState(false);
@@ -115,12 +117,16 @@ export function TranscriptPanel() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
+        if (!canUseProFeatures) {
+          openUpgradeModal();
+          return;
+        }
         requestSuggestions();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isRecording, requestSuggestions]);
+  }, [isRecording, requestSuggestions, canUseProFeatures, openUpgradeModal]);
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
@@ -215,7 +221,7 @@ export function TranscriptPanel() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2.5">
                   <span className="text-xs font-medium text-text-primary">
-                    {message.name ?? (message.speaker === "user" ? "You" : "Prospect")}
+                    {message.name ?? (message.speaker === "user" ? "You" : "Other")}
                   </span>
                   <span className="text-[10px] text-text-dim/60 font-mono tracking-wider">
                     {formatTime(message.timestamp)}

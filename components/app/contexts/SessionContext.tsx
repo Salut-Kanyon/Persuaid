@@ -91,6 +91,9 @@ interface SessionContextValue {
   /** Exact next line to say (call copilot) or answer from chat. Set by FollowUpFetcher or Send. */
   followUpText: string;
   setFollowUpText: (s: string | ((prev: string) => string)) => void;
+  /** Where the suggestion came from: "your notes" | "the conversation" | "the web". Shown as "From: …" */
+  followUpSource: string;
+  setFollowUpSource: (s: string) => void;
   /** Increments when user requests follow-up (Enter). Used by FollowUpFetcher. */
   followUpRequestedAt: number;
   /** Request follow-up: "answer" = what to say (Enter), "follow_up_question" = question to ask (button). */
@@ -160,6 +163,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [audioInputDeviceId, setAudioInputDeviceIdState] = useState<string | null>(null);
   const [suggestionsRequestedAt, setSuggestionsRequestedAt] = useState(0);
   const [followUpText, setFollowUpText] = useState("");
+  const [followUpSource, setFollowUpSource] = useState("");
   const [followUpRequestedAt, setFollowUpRequestedAt] = useState(0);
   const [followUpMode, setFollowUpMode] = useState<"answer" | "follow_up_question">("answer");
   const [callParticipantName, setCallParticipantName] = useState("");
@@ -252,6 +256,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return Date.now() - t <= ms;
   };
 
+  // Only drop exact duplicate if it's a very recent STT echo (~700ms). Otherwise user may have said it twice on purpose.
+  const ECHO_DEDUPE_MS = 700;
+  // Only treat overlap as "revision" (replace) within 1s and when new text is strictly longer. Prevents replacing when user repeats.
+  const REVISION_WINDOW_MS = 1000;
+
   const hasStrongOverlap = (a: string, b: string) => {
     const aw = splitWords(a);
     const bw = splitWords(b);
@@ -278,26 +287,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         const speaker = segment.speaker ?? "user";
         const last = prev[prev.length - 1];
         if (last) {
-          // Exact duplicate.
+          // Exact duplicate: only drop if very recent (STT echo). If user said the same thing again after a pause, keep both.
           if (last.text === normalized && last.speaker === speaker) {
-            // Only drop duplicates that happen immediately (STT echo/revision).
-            if (isRecent(last.timestamp, 2000)) return prev;
-          }
-
-          if (last.speaker === speaker) {
+            if (isRecent(last.timestamp, ECHO_DEDUPE_MS)) return prev;
+            // Same phrase repeated on purpose — append as new segment.
+          } else if (last.speaker === speaker) {
             const lastNorm = normalizeForOverlap(last.text);
             const nextNorm = normalizeForOverlap(normalized);
-            // Only treat overlap as STT revision if it happens shortly after the last append.
-            if (isRecent(last.timestamp, 2000)) {
-              // If new text contains the last (or vice-versa), replace with the longer one.
-              if (nextNorm.includes(lastNorm) || lastNorm.includes(nextNorm) || hasStrongOverlap(last.text, normalized)) {
-                const replacement = normalized.length >= last.text.length ? normalized : last.text;
-                if (replacement !== last.text) {
-                  return [...prev.slice(0, -1), { ...last, text: replacement }];
-                }
-                return prev;
+            // Only replace when new text is clearly a longer revision of the same utterance (short window).
+            if (isRecent(last.timestamp, REVISION_WINDOW_MS) && nextNorm.length > lastNorm.length) {
+              if (nextNorm.includes(lastNorm) || hasStrongOverlap(last.text, normalized)) {
+                return [...prev.slice(0, -1), { ...last, text: normalized }];
               }
             }
+            // Same length or shorter, or outside window: don't replace (avoids overwriting when user repeats).
           }
         }
         return [
@@ -355,14 +358,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             },
           ];
         }
-        // Avoid merging duplicated overlapping tails (common with STT revisions).
+        // Replace only when clearly a longer revision of same utterance (short window). Otherwise merge so we don't overwrite repeats.
         const lastText = last.text.trimEnd();
         const nextText = trimmed.trim();
         const lastNorm = normalizeForOverlap(lastText);
         const nextNorm = normalizeForOverlap(nextText);
-        if (isRecent(last.timestamp, 2000) && (nextNorm.includes(lastNorm) || hasStrongOverlap(lastText, nextText))) {
-          const replacement = nextText.length >= lastText.length ? capitalizeFirst(nextText) : lastText;
-          return [...prev.slice(0, -1), { ...last, text: replacement }];
+        if (isRecent(last.timestamp, REVISION_WINDOW_MS) && nextText.length > lastText.length && (nextNorm.includes(lastNorm) || hasStrongOverlap(lastText, nextText))) {
+          return [...prev.slice(0, -1), { ...last, text: capitalizeFirst(nextText) }];
         }
         const merged = lastText + " " + nextText;
         return [
@@ -407,6 +409,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       suggestionsRequestedAt,
       followUpText,
       setFollowUpText,
+      followUpSource,
+      setFollowUpSource,
       followUpRequestedAt,
       requestFollowUp,
       followUpMode,
@@ -443,6 +447,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       requestSuggestions,
       suggestionsRequestedAt,
       followUpText,
+      followUpSource,
       followUpRequestedAt,
       requestFollowUp,
       followUpMode,

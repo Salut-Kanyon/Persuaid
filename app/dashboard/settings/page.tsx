@@ -9,6 +9,7 @@ import { SettingsItem } from "@/components/app/settings/SettingsItem";
 import { ToggleSetting } from "@/components/app/settings/ToggleSetting";
 import { DropdownSetting } from "@/components/app/settings/DropdownSetting";
 import { useSettings } from "@/components/app/settings/useSettings";
+import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import type { ExportFormat, ThemePreference } from "@/lib/settings";
 
 function getEmailInitial(email: string | undefined): string {
@@ -30,6 +31,7 @@ export default function SettingsPage() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const { settings, update } = useSettings();
+  const { plan } = useEntitlements();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => {
@@ -231,7 +233,14 @@ export default function SettingsPage() {
             <SettingsItem
               label="Current plan"
               description="Your plan is managed through pricing."
-              control={<span className="text-xs font-medium text-text-primary">Free</span>}
+              control={
+                <span className={cn(
+                  "text-xs font-medium capitalize",
+                  plan === "pro" || plan === "team" ? "text-green-accent" : "text-text-primary"
+                )}>
+                  {plan === "team" ? "Team" : plan === "pro" ? "Pro" : "Free"}
+                </span>
+              }
             />
             <SettingsItem
               label="Manage subscription"

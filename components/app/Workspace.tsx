@@ -35,8 +35,8 @@ function computeLayout(containerWidth: number, containerHeight: number) {
   const leftWidth = (w - gap) * 0.5;
   const rightWidth = (w - gap) * 0.5;
   const totalLeft = h - gap;
-  const topH = totalLeft * 0.62;
-  const bottomH = totalLeft * 0.38;
+  const topH = totalLeft * 0.52;
+  const bottomH = totalLeft * 0.48;
   return {
     followUp: { x: pad, y: pad, width: leftWidth, height: topH },
     transcript: { x: pad, y: pad + topH + gap, width: leftWidth, height: bottomH },
@@ -183,6 +183,7 @@ export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProp
       <LiveTranscription />
       <FollowUpFetcher />
       <DealContextFetcher />
+
       {visibleCount === 0 && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <p className="text-text-muted text-sm">All panels hidden. Double-click the background to show panels.</p>

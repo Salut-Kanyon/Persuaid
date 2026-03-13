@@ -40,7 +40,7 @@ export default function PricingPage() {
   };
 
   const proMonthly = 20;
-  const teamPerUserMonthly = 49;
+  const teamPerUserMonthly = 50;
   const proYearlyPerMonth = Math.round(proMonthly * (1 - YEARLY_DISCOUNT));
   const teamYearlyPerMonth = Math.round(teamPerUserMonthly * (1 - YEARLY_DISCOUNT));
 
@@ -140,20 +140,21 @@ export default function PricingPage() {
               <div className="flex items-baseline mb-8">
                 <span className="text-4xl font-bold text-text-primary">$0</span>
               </div>
-              <ul className="space-y-3 mb-8 flex-1">
+              <ul className="space-y-3.5 mb-8 flex-1">
                 {[
-                  "3 hours transcription",
-                  "Limited AI suggestions",
+                  "30 minutes transcription per month",
+                  "Real-time AI suggestions (limited)",
+                  "Live transcript & key points",
                   "Save & export transcripts",
                   "Basic notes",
                 ].map((f, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-text-secondary">
-                    <span className="text-green-primary mt-0.5">✓</span>
-                    {f}
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="text-green-primary mt-0.5 shrink-0 font-bold">✓</span>
+                    <span className="text-sm text-text-primary font-medium">{f}</span>
                   </li>
                 ))}
               </ul>
-              <CTAButton variant="secondary" className="w-full" href="/sign-in">
+              <CTAButton variant="secondary" className="w-full" href="/dashboard">
                 Get started
               </CTAButton>
             </div>
@@ -167,11 +168,11 @@ export default function PricingPage() {
               period={proPeriod + yearlySuffix}
               description="For reps who live on calls. Full AI coaching and analytics."
               features={[
-                "30 hours transcription",
-                "Unlimited AI suggestions",
-                "Follow-up question generation",
-                "Scripts + notes as context",
-                "Analytics dashboard",
+                "50 hours transcription per month",
+                "Unlimited real-time AI suggestions",
+                "Follow-up questions & objection handlers",
+                "Scripts & notes as AI context",
+                "Analytics & call insights",
               ]}
               cta="Start free trial"
               highlighted={true}
@@ -196,17 +197,18 @@ export default function PricingPage() {
                 <span className="text-4xl font-bold text-text-primary">{teamPrice}</span>
                 <span className="text-text-dim ml-2 text-base">{teamPeriod}{yearlySuffix && " "}{yearlySuffix}</span>
               </div>
-              <ul className="space-y-3 mb-8 flex-1">
+              <ul className="space-y-3.5 mb-8 flex-1">
                 {[
-                  "100 hours transcription",
-                  "Team analytics",
-                  "Shared scripts",
-                  "Coaching insights",
-                  "Priority AI responses",
+                  "100 hours transcription per month",
+                  "Everything in Pro, plus:",
+                  "Team analytics & leaderboards",
+                  "Shared scripts & playbooks",
+                  "Coaching insights & rep performance",
+                  "Priority support",
                 ].map((f, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-text-secondary">
-                    <span className="text-green-primary mt-0.5">✓</span>
-                    {f}
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="text-green-primary mt-0.5 shrink-0 font-bold">✓</span>
+                    <span className={cn("text-sm", i === 1 ? "text-text-muted font-medium italic" : "text-text-primary font-medium")}>{f}</span>
                   </li>
                 ))}
               </ul>
@@ -236,7 +238,7 @@ export default function PricingPage() {
             {[
               {
                 q: "How does the free plan work?",
-                a: "Sign up and get 3 hours of transcription per month, limited AI suggestions, transcripts, and basic notes. No credit card required.",
+                a: "Sign up and get 30 minutes of transcription per month, limited AI suggestions, live transcript, and basic notes. No credit card required.",
               },
               {
                 q: "Can I change plans later?",
@@ -268,10 +270,23 @@ export default function PricingPage() {
           <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mb-3">
             Ready to coach on every call?
           </h2>
-          <p className="text-text-muted mb-6">Sign in or create an account to start your free trial.</p>
+          <p className="text-text-muted mb-6">Start your free trial with Pro or Team.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <CTAButton href="/sign-in" variant="primary" size="large">
-              Start free trial
+            <CTAButton
+              variant="primary"
+              size="large"
+              onClick={() => startCheckout("pro")}
+              disabled={checkoutLoading === "pro"}
+            >
+              {checkoutLoading === "pro" ? "Redirecting…" : "Start free trial (Pro)"}
+            </CTAButton>
+            <CTAButton
+              variant="secondary"
+              size="large"
+              onClick={() => startCheckout("team")}
+              disabled={checkoutLoading === "team"}
+            >
+              {checkoutLoading === "team" ? "Redirecting…" : "Start free trial (Team)"}
             </CTAButton>
             <a
               href="/"

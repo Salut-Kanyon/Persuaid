@@ -163,13 +163,21 @@ Rules specific to this mode:
     `For your internal reasoning only (do NOT mention this out loud), first decide which intent category best matches the prospect's last message: product question, pricing question, objection, competitor comparison, hesitation, buying signal, confusion, or unclear transcript. Then, based on the current mode and that intent, craft exactly one concise spoken response as instructed.`
   );
   if (mode === "follow_up_question") {
-    parts.push(`What is one good follow-up question the rep should ask next? Reply with only that question.`);
+    parts.push(`What is one good follow-up question the rep should ask next?
+
+Reply with a JSON object only, no other text. Use this exact format:
+{"text": "the exact question the rep should ask", "sourceType": "notes" | "conversation" | "web"}
+Set sourceType to: "notes" if you used the rep's notes; "conversation" if you used only the transcript/context of the call; "web" if you used general knowledge (not from notes or transcript).`);
   } else {
-    parts.push(`What is the exact sentence the rep should say to answer the customer? Reply with only that line.`);
+    parts.push(`What is the exact sentence the rep should say to answer the customer?
+
+Reply with a JSON object only, no other text. Use this exact format:
+{"text": "the exact line the rep should say", "sourceType": "notes" | "conversation" | "web"}
+Set sourceType to: "notes" if you used the rep's notes; "conversation" if you used only the transcript/context of the call; "web" if you used general knowledge (not from notes or transcript).`);
   }
   const userPrompt = parts.join("\n\n");
 
-  const maxTokens = mode === "follow_up_question" ? 80 : 280;
+  const maxTokens = mode === "follow_up_question" ? 120 : 320;
 
   try {
     const res = await fetch(OPENAI_URL, {
@@ -197,15 +205,30 @@ Rules specific to this mode:
       );
     }
     const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    let text = data.choices?.[0]?.message?.content?.trim() ?? "";
-    // Strip any accidental markdown headings or leading list markers.
-    text = text.replace(/^##\s*[^\n]*\n?/gm, "").trim();
-    text = text.replace(/^[\-\u2022]\s*/, "").trim();
-    const fallback =
-      mode === "follow_up_question"
-        ? "Press the button again after more conversation."
-        : "Press Enter again after more conversation.";
-    return NextResponse.json({ text: text || fallback });
+    let raw = data.choices?.[0]?.message?.content?.trim() ?? "";
+    raw = raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+    let text = "";
+    let sourceType = "";
+    try {
+      const parsed = JSON.parse(raw) as { text?: string; sourceType?: string };
+      text = typeof parsed.text === "string" ? parsed.text.trim() : "";
+      const st = (parsed.sourceType ?? "").toLowerCase();
+      if (st === "notes" || st === "conversation" || st === "web") sourceType = st;
+    } catch {
+      text = raw.replace(/^##\s*[^\n]*\n?/gm, "").trim().replace(/^[\-\u2022]\s*/, "").trim();
+    }
+    if (!text) {
+      const fallback =
+        mode === "follow_up_question"
+          ? "Press the button again after more conversation."
+          : "Press Enter again after more conversation.";
+      text = fallback;
+    }
+    if (!sourceType) sourceType = "conversation";
+    return NextResponse.json({
+      text,
+      sourceType,
+    });
   } catch (e) {
     console.error("Follow-up API error:", e);
     return NextResponse.json(
