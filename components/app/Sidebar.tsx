@@ -197,7 +197,7 @@ export function Sidebar() {
         </Link>
         <button
           type="button"
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={cn(
             "flex-shrink-0 p-1.5 rounded-lg text-text-dim hover:text-text-primary hover:bg-background-surface/30 transition-all",
