@@ -66,24 +66,10 @@ export function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center">
+        <div className="pt-8 border-t border-border">
           <p className="text-text-dim text-sm">
             © {new Date().getFullYear()} Persuaid. All rights reserved.
           </p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <a
-              href="#"
-              className="text-text-dim hover:text-green-accent transition-colors duration-200 text-sm"
-            >
-              Twitter
-            </a>
-            <a
-              href="#"
-              className="text-text-dim hover:text-green-accent transition-colors duration-200 text-sm"
-            >
-              LinkedIn
-            </a>
-          </div>
         </div>
       </div>
     </footer>
