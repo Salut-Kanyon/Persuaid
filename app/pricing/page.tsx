@@ -136,23 +136,17 @@ export default function PricingPage() {
               )}
             >
               <h3 className="text-xl font-bold text-text-primary tracking-tight">Free</h3>
-              <p className="text-text-muted text-sm mt-1 mb-6">Try the copilot, no card required.</p>
+              <p className="text-text-muted text-sm mt-1 mb-6">30 minutes free for the AI Sales Agent.</p>
               <div className="flex items-baseline mb-8">
                 <span className="text-4xl font-bold text-text-primary">$0</span>
               </div>
-              <ul className="space-y-3.5 mb-8 flex-1">
-                {[
-                  "30 minutes transcription per month",
-                  "Real-time AI suggestions (limited)",
-                  "Live transcript & key points",
-                  "Save & export transcripts",
-                  "Basic notes",
-                ].map((f, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="text-green-primary mt-0.5 shrink-0 font-bold">✓</span>
-                    <span className="text-sm text-text-primary font-medium">{f}</span>
-                  </li>
-                ))}
+              <ul className="space-y-2.5 mb-8 flex-1 text-sm font-medium">
+                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
+                  30 minutes per month
+                </li>
+                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
+                  Product knowledge integration
+                </li>
               </ul>
               <CTAButton variant="secondary" className="w-full" href="/dashboard">
                 Get started
@@ -163,16 +157,15 @@ export default function PricingPage() {
           {/* Pro — highlighted, no star */}
           <div className="flex flex-col md:-mt-2 md:mb-2">
             <PricingCard
-              name="Pro"
+              name="Persuaid Pro"
               price={proPrice}
               period={proPeriod + yearlySuffix}
-              description="For reps who live on calls. Full AI coaching and analytics."
+              description="For reps who want live help on real sales calls."
               features={[
-                "50 hours transcription per month",
-                "Unlimited real-time AI suggestions",
-                "Follow-up questions & objection handlers",
-                "Scripts & notes as AI context",
-                "Analytics & call insights",
+                "20 hours per week",
+                "Meeting transcript analysis",
+                "Product knowledge integration",
+                "Customer support 24/7",
               ]}
               cta="Start free trial"
               highlighted={true}
@@ -191,26 +184,25 @@ export default function PricingPage() {
                 "bg-background-surface border-border/50 hover:border-green-primary/30 transition-colors"
               )}
             >
-              <h3 className="text-xl font-bold text-text-primary tracking-tight">Team</h3>
-              <p className="text-text-muted text-sm mt-1 mb-6">For teams that coach together.</p>
+              <h3 className="text-xl font-bold text-text-primary tracking-tight">Persuaid Pro Plus</h3>
+              <p className="text-text-muted text-sm mt-1 mb-6">For teams that need more live call coverage.</p>
               <div className="flex items-baseline mb-8">
                 <span className="text-4xl font-bold text-text-primary">{teamPrice}</span>
                 <span className="text-text-dim ml-2 text-base">{teamPeriod}{yearlySuffix && " "}{yearlySuffix}</span>
               </div>
-              <ul className="space-y-3.5 mb-8 flex-1">
-                {[
-                  "100 hours transcription per month",
-                  "Everything in Pro, plus:",
-                  "Team analytics & leaderboards",
-                  "Shared scripts & playbooks",
-                  "Coaching insights & rep performance",
-                  "Priority support",
-                ].map((f, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="text-green-primary mt-0.5 shrink-0 font-bold">✓</span>
-                    <span className={cn("text-sm", i === 1 ? "text-text-muted font-medium italic" : "text-text-primary font-medium")}>{f}</span>
-                  </li>
-                ))}
+              <ul className="space-y-2.5 mb-8 flex-1 text-sm font-medium">
+                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
+                  50 hours per month
+                </li>
+                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
+                  Meeting transcript analysis
+                </li>
+                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
+                  Product knowledge integration
+                </li>
+                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
+                  Customer support 24/7
+                </li>
               </ul>
               <CTAButton
                 variant="secondary"

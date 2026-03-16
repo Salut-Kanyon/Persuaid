@@ -133,7 +133,7 @@ function Step03MiniUI() {
       <div className="mb-2 text-[10px] text-text-dim">
         Whole conversation captured and streamed live.
       </div>
-      <div className="space-y-1.5 rounded-xl bg-background-elevated/80 border border-border-subtle px-3 py-2 text-[11px] leading-snug max-h-32 overflow-hidden">
+      <div className="space-y-1.5 rounded-xl bg-background-elevated/80 border border-border-subtle px-3 py-2 text-[11px] leading-snug h-32 md:h-36 overflow-hidden">
         {STEP03_LINES.slice(0, visibleCount).map((line, i) => (
           <motion.p
             key={i}
@@ -317,8 +317,12 @@ export default function Home() {
                 Simple Process
               </span>
             </motion.div>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
-              How Persuaid works on a call
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight tracking-tight">
+              <span className="text-text-primary">How</span>{" "}
+              <span className="bg-gradient-to-r from-green-primary via-green-accent to-emerald-400 bg-clip-text text-transparent">
+                Persuaid
+              </span>{" "}
+              <span className="text-text-primary">works on a call</span>
             </h2>
             <p className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light">
               Add your knowledge, start the call, and get live answers whenever you need them.
@@ -439,7 +443,7 @@ export default function Home() {
         </motion.div>
       </Section>
 
-      {/* After the call — compact, rectangle card */}
+      {/* After the call — post-call intelligence */}
       <Section className="bg-background pb-10 md:pb-14 lg:pb-16">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -450,17 +454,29 @@ export default function Home() {
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
             <div className="lg:col-span-5 text-center lg:text-left">
-              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">After the call</span>
-              <h2 className="text-3xl sm:text-4xl font-bold text-text-primary mt-3 mb-3 leading-tight tracking-tight">
-                Turn the call into clear next steps
+              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
+                After the call
+              </span>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mt-3 mb-3 leading-tight tracking-tight">
+                <span className="text-text-primary">The conversation is over.</span>{" "}
+                <span className="bg-gradient-to-r from-green-primary via-green-accent to-emerald-400 bg-clip-text text-transparent">
+                  The next move is already clear.
+                </span>
               </h2>
-              <p className="text-base text-text-muted leading-relaxed mb-6">
-                Key moments, one AI insight, and next steps—so nothing gets lost.
+              <p className="text-base text-text-muted leading-relaxed mb-5">
+                Persuaid turns every call into a clean recap, one sharp insight, and a concrete next move.
               </p>
-              <ul className="space-y-2.5 text-base text-text-secondary">
-                <li className="flex items-start gap-2"><span className="mt-2 w-1.5 h-1.5 rounded-full bg-green-primary flex-shrink-0" /><span><strong className="text-text-primary font-medium">AI summary</strong> — Call highlights, organized.</span></li>
-                <li className="flex items-start gap-2"><span className="mt-2 w-1.5 h-1.5 rounded-full bg-green-primary flex-shrink-0" /><span><strong className="text-text-primary font-medium">CRM ready</strong> — Save or send where your team works.</span></li>
-              </ul>
+              <div className="inline-flex flex-wrap gap-2 text-xs sm:text-sm text-text-primary/90">
+                <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10">
+                  Clean recap
+                </span>
+                <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10">
+                  One key insight
+                </span>
+                <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10">
+                  Ready for CRM
+                </span>
+              </div>
             </div>
 
             <div className="lg:col-span-7">
@@ -468,36 +484,88 @@ export default function Home() {
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="rounded-xl border border-white/10 bg-[#0a0c0d] shadow-[0_20px_50px_rgba(0,0,0,0.4)] overflow-hidden"
+                className="rounded-2xl border border-white/10 bg-[#050607] shadow-[0_26px_60px_rgba(0,0,0,0.7)] overflow-hidden"
               >
-                <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-text-primary">Call summary</span>
-                  <span className="text-xs text-text-dim font-mono">00:18:42</span>
+                <div className="px-5 py-3.5 border-b border-white/10 flex items-center justify-between">
+                  <span className="text-xs sm:text-sm font-semibold tracking-[0.18em] uppercase text-text-primary">
+                    Call recap
+                  </span>
+                  <span className="text-[11px] sm:text-xs text-text-dim font-mono">
+                    Call · 00:18:42
+                  </span>
                 </div>
-                <div className="p-4 sm:p-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <h4 className="text-xs font-semibold text-text-primary mb-1.5 uppercase tracking-wider">Key moments</h4>
-                      <ul className="text-[13px] text-text-secondary leading-snug space-y-1">
-                        <li>· Pricing and payment options came up</li>
-                        <li>· Prospect worried about extra work for reps</li>
-                        <li>· Interest grew when real-time help was explained</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-semibold text-text-primary mb-1.5 uppercase tracking-wider">Next steps</h4>
-                      <p className="text-[13px] text-text-secondary leading-snug">Send pricing one-pager and book a 30-minute demo.</p>
-                    </div>
+                <div className="p-5 sm:p-6 space-y-5">
+                  {/* Animated timeline strip */}
+                  <motion.div
+                    initial={{ width: "0%" }}
+                    whileInView={{ width: "100%" }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 1.4, ease: "easeOut" }}
+                    className="h-1 rounded-full bg-gradient-to-r from-emerald-500 via-green-accent to-emerald-300/60"
+                  />
+
+                  <div className="space-y-3">
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.35, delay: 0.05 }}
+                      className="flex items-start justify-between gap-4"
+                    >
+                      <div>
+                        <span className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-text-primary mb-1.5">
+                          Highlights
+                        </span>
+                        <ul className="text-[12px] sm:text-[13px] text-text-secondary leading-snug space-y-0.5">
+                          <li>Pricing and contract terms were a sticking point</li>
+                          <li>Reps worried about extra clicks and new tools</li>
+                          <li>Interest spiked when live, in‑call guidance was shown</li>
+                        </ul>
+                      </div>
+                      <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-200">
+                        Key insight: Rep adoption
+                      </span>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.35, delay: 0.12 }}
+                      className="flex flex-col gap-2"
+                    >
+                      <div>
+                        <span className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-text-primary mb-1.5">
+                          Next move
+                        </span>
+                        <p className="text-[12px] sm:text-[13px] text-text-secondary leading-snug">
+                          Send pricing and book the demo.
+                        </p>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-text-primary mb-1.5">
+                          Follow‑up
+                        </span>
+                        <p className="text-[12px] sm:text-[13px] text-text-primary leading-snug italic">
+                          “What usually slows rep adoption on new tools?”
+                        </p>
+                      </div>
+                    </motion.div>
                   </div>
-                  <div className="mt-4 pt-4 border-t border-white/8">
-                    <h4 className="text-xs font-semibold text-text-primary mb-1.5 uppercase tracking-wider">AI insight</h4>
-                    <p className="text-[13px] text-text-secondary leading-snug mb-3">Prospect&apos;s main concern was adoption. &quot;Help during the call, not more work after&quot; landed well.</p>
-                    <h4 className="text-xs font-semibold text-text-primary mb-1 uppercase tracking-wider">Suggested follow-up</h4>
-                    <p className="text-[13px] text-text-primary leading-snug italic">&quot;What usually makes a new tool hard for your reps to adopt?&quot;</p>
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <button type="button" className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs font-medium text-text-primary hover:bg-white/10 transition-colors">Save</button>
-                    <button type="button" className="px-3 py-1.5 rounded-lg bg-green-primary/20 text-xs font-semibold text-green-accent border border-green-primary/40 hover:bg-green-primary/30 transition-colors">Hand off to CRM</button>
+
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <button
+                      type="button"
+                      className="px-4 py-1.5 rounded-lg border border-white/10 bg-white/3 text-[11px] sm:text-xs font-medium text-text-primary hover:bg-white/8 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      className="px-4 py-1.5 rounded-lg bg-green-primary/20 text-[11px] sm:text-xs font-semibold text-green-accent border border-green-primary/40 hover:bg-green-primary/30 transition-colors"
+                    >
+                      Push to CRM
+                    </button>
                   </div>
                 </div>
               </motion.div>

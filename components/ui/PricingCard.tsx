@@ -52,25 +52,13 @@ export function PricingCard({
         </div>
       </div>
 
-      <ul className="space-y-4 mb-10">
+      <ul className="space-y-2.5 mb-10 text-sm font-medium leading-relaxed">
         {features.map((feature, index) => (
-          <li key={index} className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full bg-green-primary/25 flex items-center justify-center flex-shrink-0 mt-0.5 ring-2 ring-green-primary/20">
-              <svg
-                className="w-3 h-3 text-green-primary"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={3}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <span className="text-text-primary text-sm font-medium leading-relaxed">{feature}</span>
+          <li
+            key={index}
+            className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent"
+          >
+            {feature}
           </li>
         ))}
       </ul>
