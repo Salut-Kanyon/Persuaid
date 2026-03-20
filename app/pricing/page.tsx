@@ -128,34 +128,45 @@ export default function PricingPage() {
           className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto mb-20 items-stretch"
         >
           {/* Free */}
-          <div className="flex flex-col">
+          <div className="flex flex-col h-full min-h-0">
             <div
               className={cn(
-                "flex-1 rounded-2xl border p-8 flex flex-col",
+                "flex-1 rounded-2xl border p-8 flex flex-col min-h-0",
                 "bg-background-surface/40 border-border/50"
               )}
             >
-              <h3 className="text-xl font-bold text-text-primary tracking-tight">Free</h3>
-              <p className="text-text-muted text-sm mt-1 mb-6">30 minutes free for the AI Sales Agent.</p>
-              <div className="flex items-baseline mb-8">
+              <h3 className="text-xl font-bold text-text-primary tracking-tight shrink-0">Free</h3>
+              <p className="text-text-muted text-sm mt-1 mb-6 shrink-0">30 minutes free for the AI Sales Agent.</p>
+              <div className="flex items-baseline mb-8 shrink-0">
                 <span className="text-4xl font-bold text-text-primary">$0</span>
               </div>
-              <ul className="space-y-2.5 mb-8 flex-1 text-sm font-medium">
-                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
-                  30 minutes per month
-                </li>
-                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
-                  Product knowledge integration
-                </li>
-              </ul>
-              <CTAButton variant="secondary" className="w-full" href="/dashboard">
-                Get started
-              </CTAButton>
+              <div className="w-fit max-w-full self-start shrink-0 rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-2 shadow-sm backdrop-blur-md">
+                <ul className="space-y-1.5 text-sm font-medium list-none">
+                  <li>
+                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
+                      30 minutes per month
+                    </span>
+                  </li>
+                  <li>
+                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
+                      Product knowledge integration
+                    </span>
+                  </li>
+                </ul>
+              </div>
+              <div className="flex-1 min-h-0" aria-hidden />
+              <div className="w-full shrink-0 pt-8">
+                <CTAButton variant="secondary" className="w-full" href="/dashboard">
+                  Get started
+                </CTAButton>
+              </div>
             </div>
+            {/* Reserve space so CTAs line up with Pro column (“Most popular” row) */}
+            <div className="mt-2 min-h-[2rem] shrink-0" aria-hidden />
           </div>
 
           {/* Pro — highlighted, no star */}
-          <div className="flex flex-col md:-mt-2 md:mb-2">
+          <div className="flex flex-col h-full min-h-0 md:-mt-2 md:mb-2">
             <PricingCard
               name="Persuaid Pro"
               price={proPrice}
@@ -167,52 +178,66 @@ export default function PricingPage() {
                 "Product knowledge integration",
                 "Customer support 24/7",
               ]}
-              cta="Start free trial"
+              cta="Subscribe"
               highlighted={true}
-              className="flex-1 flex flex-col h-full"
+              className="flex-1 w-full min-h-0"
               onCheckout={() => startCheckout("pro")}
               checkoutLoading={checkoutLoading === "pro"}
             />
-            <p className="text-center text-xs text-text-dim mt-2">Most popular</p>
+            <p className="text-center text-xs text-text-dim mt-2 shrink-0">Most popular</p>
           </div>
 
           {/* Team */}
-          <div className="flex flex-col">
+          <div className="flex flex-col h-full min-h-0">
             <div
               className={cn(
-                "flex-1 rounded-2xl border p-8 flex flex-col",
+                "flex-1 rounded-2xl border p-8 flex flex-col min-h-0",
                 "bg-background-surface border-border/50 hover:border-green-primary/30 transition-colors"
               )}
             >
-              <h3 className="text-xl font-bold text-text-primary tracking-tight">Persuaid Pro Plus</h3>
-              <p className="text-text-muted text-sm mt-1 mb-6">For teams that need more live call coverage.</p>
-              <div className="flex items-baseline mb-8">
+              <h3 className="text-xl font-bold text-text-primary tracking-tight shrink-0">Persuaid Pro Plus</h3>
+              <p className="text-text-muted text-sm mt-1 mb-6 shrink-0">For teams that need more live call coverage.</p>
+              <div className="flex items-baseline mb-8 shrink-0">
                 <span className="text-4xl font-bold text-text-primary">{teamPrice}</span>
                 <span className="text-text-dim ml-2 text-base">{teamPeriod}{yearlySuffix && " "}{yearlySuffix}</span>
               </div>
-              <ul className="space-y-2.5 mb-8 flex-1 text-sm font-medium">
-                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
-                  50 hours per month
-                </li>
-                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
-                  Meeting transcript analysis
-                </li>
-                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
-                  Product knowledge integration
-                </li>
-                <li className="inline-flex bg-gradient-to-r from-green-primary/60 via-green-accent/70 to-emerald-300 bg-clip-text text-transparent">
-                  Customer support 24/7
-                </li>
-              </ul>
-              <CTAButton
-                variant="secondary"
-                className="w-full"
-                onClick={() => startCheckout("team")}
-                disabled={checkoutLoading === "team"}
-              >
-                {checkoutLoading === "team" ? "Redirecting…" : "Start free trial"}
-              </CTAButton>
+              <div className="w-fit max-w-full self-start shrink-0 rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-2 shadow-sm backdrop-blur-md">
+                <ul className="space-y-1.5 text-sm font-medium list-none">
+                  <li>
+                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
+                      50 hours per month
+                    </span>
+                  </li>
+                  <li>
+                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
+                      Meeting transcript analysis
+                    </span>
+                  </li>
+                  <li>
+                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
+                      Product knowledge integration
+                    </span>
+                  </li>
+                  <li>
+                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
+                      Customer support 24/7
+                    </span>
+                  </li>
+                </ul>
+              </div>
+              <div className="flex-1 min-h-0" aria-hidden />
+              <div className="w-full shrink-0 pt-8">
+                <CTAButton
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => startCheckout("team")}
+                  disabled={checkoutLoading === "team"}
+                >
+                  {checkoutLoading === "team" ? "Redirecting…" : "Subscribe"}
+                </CTAButton>
+              </div>
             </div>
+            <div className="mt-2 min-h-[2rem] shrink-0" aria-hidden />
           </div>
         </motion.div>
 
@@ -252,42 +277,7 @@ export default function PricingPage() {
           </div>
         </motion.div>
 
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="text-center mt-16"
-        >
-          <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mb-3">
-            Ready to coach on every call?
-          </h2>
-          <p className="text-text-muted mb-6">Start your free trial with Pro or Team.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <CTAButton
-              variant="primary"
-              size="large"
-              onClick={() => startCheckout("pro")}
-              disabled={checkoutLoading === "pro"}
-            >
-              {checkoutLoading === "pro" ? "Redirecting…" : "Start free trial (Pro)"}
-            </CTAButton>
-            <CTAButton
-              variant="secondary"
-              size="large"
-              onClick={() => startCheckout("team")}
-              disabled={checkoutLoading === "team"}
-            >
-              {checkoutLoading === "team" ? "Redirecting…" : "Start free trial (Team)"}
-            </CTAButton>
-            <a
-              href="/"
-              className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-xl border border-border/50 text-text-secondary hover:bg-background-surface hover:text-text-primary transition-colors"
-            >
-              Back to home
-            </a>
-          </div>
-        </motion.div>
+        {/* CTA removed to keep pricing page minimal */}
       </Section>
 
       <Footer />
