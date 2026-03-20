@@ -23,6 +23,25 @@ function getLastExchange(transcript: TranscriptMessage[], n = 16): string {
 
 type FollowUpMode = "answer" | "follow_up_question";
 
+function looksLikeQuestionOnly(text: string): boolean {
+  const t = (text ?? "").trim();
+  if (!t) return false;
+
+  // Must end with ? (commonly question-only outputs).
+  if (!t.endsWith("?")) return false;
+
+  // If there are multiple sentences, it's probably not question-only.
+  const sentenceParts = t.split(/[.!?]/).map((s) => s.trim()).filter(Boolean);
+  if (sentenceParts.length > 1) return false;
+
+  // If it starts like a question, treat as question-only.
+  return /^(what|why|how|when|where|which)\b/i.test(t);
+}
+
+function clampText(t: string): string {
+  return (t ?? "").trim().slice(0, 1200);
+}
+
 /** mode=answer → exact sentence to answer the customer. mode=follow_up_question → one question for the rep to ask. */
 export async function POST(req: NextRequest) {
   const key = process.env.OPENAI_API_KEY;
@@ -84,7 +103,8 @@ Prioritize: (1) Last thing the prospect said / current topic. (2) Full conversat
 Always:
 - Speak in natural, confident, spoken sales language (what the rep would actually say next).
 - Prefer plainspoken, natural sales language over polished assistant language.
-- Stay concise (1–2 short sentences or one short question).
+ - Stay concise (1–2 short sentences).
+ - Never output only a question in ANSWER mode. If you add a question for momentum, it must come after the answer sentence.
 - Do NOT output bullet points, headings, markdown, or multiple options.
 - Do NOT explain your reasoning, coach the rep, or talk about "the transcript" or "the prospect's intent".
 - Every response must either answer the question, handle the objection, move the conversation forward, or safely clarify what the prospect meant.
@@ -123,10 +143,11 @@ Your goal is to give the rep the exact short line or two they should say next to
 
 Rules specific to this mode:
 - When the prospect's last message is a direct question or objection, the first sentence must directly answer or address it immediately. Do not begin with generic filler (e.g. "I'd love to learn more about your situation so I can help guide you") unless it is very brief and followed immediately by the answer. Good: "That's a fair question. Employer coverage is usually limited and often doesn't follow you if you leave the job." Bad: "I'd love to learn more about your situation so I can help guide you."
-- When the prospect raises an objection, use Acknowledge → Reframe → Continue (brief acknowledge, then reframe or add perspective, then continue naturally). When appropriate, end your response with a short forward-moving question (Momentum) so the rep keeps control and can qualify—e.g. "Do you currently have any coverage through work right now?"
+- If the last prospect message looks like a definition/factual question (contains patterns like "what is", "what does", "define", "explain", "how does", "meaning"), treat it as a direct definition request and answer immediately in the first sentence.
+- When the prospect raises an objection, use Acknowledge → Reframe → Continue (brief acknowledge, then reframe or add perspective, then continue naturally). When appropriate, you may end with a short forward-moving question (Momentum), but only AFTER you have already answered.
 - Directly answer or respond to the prospect's last message using the intent you inferred.
 - Use the notes as reference when they apply; when they don't, use your own knowledge so the answer is still helpful and accurate.
-- Output 1–3 short sentences when needed (e.g. answer + optional momentum question). Stay in natural spoken sales language.
+- Output 1–3 short sentences when needed (answer first). If you include a follow-up question, it must be the 2nd sentence (or later) and the 1st sentence must still be a clear answer.
 - If the prospect's last message is clearly confused or the transcript is garbled / ambiguous so you cannot tell what they are asking, do NOT guess. Instead, output one short clarifying line that politely checks what they mean (for example, asking if they are asking more about pricing or how the product works).
 - Do not output bullet points, headings, markdown, explanations, or coaching.`;
 
@@ -217,6 +238,60 @@ Set sourceType to: "notes" if you used the rep's notes; "conversation" if you us
     } catch {
       text = raw.replace(/^##\s*[^\n]*\n?/gm, "").trim().replace(/^[\-\u2022]\s*/, "").trim();
     }
+
+    // Safety: in ANSWER mode, never allow “question-only” outputs.
+    // If the model returns a question without any declarative answer, re-prompt once.
+    if (mode === "answer" && looksLikeQuestionOnly(text)) {
+      const rewriteSystemPrompt = `${systemPrompt}
+
+Safety rewrite rules (ANSWER mode):
+- You MUST include a direct answer sentence first (declarative; NOT a question).
+- If you include a follow-up question, it must be after the answer (2nd sentence or later).
+- Never output only a question.
+- Keep it concise and spoken-sales natural.
+- Return a JSON object only using the same schema: { "text": "...", "sourceType": "notes" | "conversation" | "web" }.`;
+
+      const rewriteRes = await fetch(OPENAI_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: rewriteSystemPrompt },
+            {
+              role: "user",
+              content: `${userPrompt}\n\nDraft output failed safety check:\n${clampText(text)}`,
+            },
+          ],
+          max_tokens: 320,
+          temperature: 0.3,
+        }),
+      });
+
+      if (rewriteRes.ok) {
+        const rewriteData = (await rewriteRes.json()) as { choices?: Array<{ message?: { content?: string } }> };
+        let rewriteRaw = rewriteData.choices?.[0]?.message?.content?.trim() ?? "";
+        rewriteRaw = rewriteRaw
+          .replace(/^```json\s*/i, "")
+          .replace(/^```\s*/i, "")
+          .replace(/\s*```$/i, "")
+          .trim();
+
+        try {
+          const parsed = JSON.parse(rewriteRaw) as { text?: string; sourceType?: string };
+          const rewrittenText = typeof parsed.text === "string" ? parsed.text.trim() : "";
+          const st = (parsed.sourceType ?? "").toLowerCase();
+          if (rewrittenText) text = rewrittenText;
+          if (st === "notes" || st === "conversation" || st === "web") sourceType = st;
+        } catch {
+          // If parsing fails, keep original text fallback.
+        }
+      }
+    }
+
     if (!text) {
       const fallback =
         mode === "follow_up_question"
