@@ -8,9 +8,9 @@ const FADE_START = 0;
 const FADE_END = 950;
 
 const HERO_TITLE =
-  "Become the smartest salesperson in the room with Persuaid.";
+  "Never lose a deal because you didn't know what to say.";
 const HERO_SUBTITLE =
-  "AI listens to your call and suggests what to say next and the right questions to ask in real time.";
+  "Persuaid listens to your sales calls and feeds you winning responses, objection handling, and next moves live, while you're talking.";
 
 const HERO_WORDS = HERO_TITLE.split(" ");
 
@@ -24,7 +24,7 @@ const TRANSCRIPT_LINES = [
 const DRAFTING_LINE = { who: "AI", whoClass: "text-green-primary", text: "Drafting next line…" };
 
 const LIVE_EXTRA_LINES = [
-  { who: "AI", whoClass: "text-green-primary", text: "Try this: \"Teams like yours usually want help in the moment—not another recap after the call. Persuaid only speaks up when it can make your next sentence sharper.\"" },
+  { who: "AI", whoClass: "text-green-primary", text: "Try this: \"Teams like yours want the right line in the moment—and a clear recap after. Persuaid helps during the call and when it's over.\"" },
   { who: "AI", whoClass: "text-green-primary", text: "Follow-up: \"What would need to be true for a tool like this to actually get used by your reps every day?\"" },
   { who: "AI", whoClass: "text-green-primary", text: "Objection handled. Suggest: \"We sit next to your dialer and listen. No new meeting links, no bots on the call—just the next line when you need it.\"" },
   { who: "AI", whoClass: "text-green-primary", text: "Strong close: \"Want to run one real call with Persuaid on and see what it suggests? Takes two minutes to try.\"" },
@@ -301,7 +301,7 @@ export function Hero() {
                     alt="Persuaid"
                     className="w-5 h-5 flex-shrink-0 object-contain group-hover:scale-110 transition-transform duration-300"
                   />
-                  <span className="text-lg">Try for Free</span>
+                  <span className="text-lg">Try it on your next call</span>
                 </a>
             </motion.div>
 

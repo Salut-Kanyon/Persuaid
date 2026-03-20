@@ -154,7 +154,7 @@ function Step03MiniUI() {
 }
 
 const STEP04_ANSWERS = [
-  "That makes sense. Reps in your position usually want help in the moment, not another recap after the call.",
+  "That makes sense. Reps in your position want sharp lines live—and a solid recap when the call wraps.",
   "Here's how Persuaid fits in: it sits next to your dialer and only steps in when it can make your next sentence sharper.",
   "If your team has scripts, we can turn those into live prompts so reps don't search for them mid-call.",
 ];
@@ -273,15 +273,20 @@ export default function Home() {
               className="mb-6"
             >
               <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
-                What we offer
+                Your call dashboard
               </span>
             </motion.div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary leading-tight tracking-tight">
-              Make your sales meetings{" "}
+              Live transcript, AI next lines, and your product notes—{" "}
               <span className="bg-gradient-to-r from-green-primary via-green-accent to-emerald-400 bg-clip-text text-transparent">
-                better
+                on one screen.
               </span>
             </h2>
+            <p className="mt-5 text-lg sm:text-xl text-text-muted max-w-3xl leading-relaxed">
+              Below is the Persuaid workspace: <span className="text-text-primary font-medium">Start Call</span>,{" "}
+              <span className="text-text-primary font-medium">What to say next</span> with Press Enter, live transcript,
+              and Notes wired into the AI—exactly how it looks when you&apos;re selling.
+            </p>
           </div>
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -413,7 +418,7 @@ export default function Home() {
                           Positioning · Core value
                         </p>
                         <ul className="mt-0.5 space-y-0.5 list-disc list-inside marker:text-emerald-300">
-                          <li>Live coaching during the call, not a recap.</li>
+                          <li>Live coaching, next moves, and follow-ups during the call; save the transcript and run AI coach analysis after.</li>
                           <li>Fits next to any dialer or meeting tool.</li>
                         </ul>
                       </div>
@@ -443,7 +448,7 @@ export default function Home() {
         </motion.div>
       </Section>
 
-      {/* After the call — post-call intelligence */}
+      {/* After the call — transcript + AI coach */}
       <Section className="bg-background pb-10 md:pb-14 lg:pb-16">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -458,23 +463,23 @@ export default function Home() {
                 After the call
               </span>
               <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mt-3 mb-3 leading-tight tracking-tight">
-                <span className="text-text-primary">The conversation is over.</span>{" "}
+                <span className="text-text-primary">Save the transcript.</span>{" "}
                 <span className="bg-gradient-to-r from-green-primary via-green-accent to-emerald-400 bg-clip-text text-transparent">
-                  The next move is already clear.
+                  Let the AI coach analyze it.
                 </span>
               </h2>
               <p className="text-base text-text-muted leading-relaxed mb-5">
-                Persuaid turns every call into a clean recap, one sharp insight, and a concrete next move.
+                Next steps and follow-ups happen live during the call. When you&apos;re done, keep the conversation as text and run it through the AI coach for deeper analysis.
               </p>
               <div className="inline-flex flex-wrap gap-2 text-xs sm:text-sm text-text-primary/90">
                 <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10">
-                  Clean recap
+                  Saved transcript
                 </span>
                 <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10">
-                  One key insight
+                  AI coach analysis
                 </span>
                 <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10">
-                  Ready for CRM
+                  Export / reuse
                 </span>
               </div>
             </div>
@@ -488,7 +493,7 @@ export default function Home() {
               >
                 <div className="px-5 py-3.5 border-b border-white/10 flex items-center justify-between">
                   <span className="text-xs sm:text-sm font-semibold tracking-[0.18em] uppercase text-text-primary">
-                    Call recap
+                    Transcript · AI coach
                   </span>
                   <span className="text-[11px] sm:text-xs text-text-dim font-mono">
                     Call · 00:18:42
@@ -514,7 +519,7 @@ export default function Home() {
                     >
                       <div>
                         <span className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-text-primary mb-1.5">
-                          Highlights
+                          Coach highlights
                         </span>
                         <ul className="text-[12px] sm:text-[13px] text-text-secondary leading-snug space-y-0.5">
                           <li>Pricing and contract terms were a sticking point</li>
@@ -523,7 +528,7 @@ export default function Home() {
                         </ul>
                       </div>
                       <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-200">
-                        Key insight: Rep adoption
+                        From AI coach
                       </span>
                     </motion.div>
 
@@ -536,15 +541,15 @@ export default function Home() {
                     >
                       <div>
                         <span className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-text-primary mb-1.5">
-                          Next move
+                          Analysis summary
                         </span>
                         <p className="text-[12px] sm:text-[13px] text-text-secondary leading-snug">
-                          Send pricing and book the demo.
+                          Strong discovery on pain; confirm budget owner and timeline on the next touch.
                         </p>
                       </div>
                       <div>
                         <span className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-text-primary mb-1.5">
-                          Follow‑up
+                          Themes to review
                         </span>
                         <p className="text-[12px] sm:text-[13px] text-text-primary leading-snug italic">
                           “What usually slows rep adoption on new tools?”
@@ -558,13 +563,13 @@ export default function Home() {
                       type="button"
                       className="px-4 py-1.5 rounded-lg border border-white/10 bg-white/3 text-[11px] sm:text-xs font-medium text-text-primary hover:bg-white/8 transition-colors"
                     >
-                      Save
+                      Save transcript
                     </button>
                     <button
                       type="button"
                       className="px-4 py-1.5 rounded-lg bg-green-primary/20 text-[11px] sm:text-xs font-semibold text-green-accent border border-green-primary/40 hover:bg-green-primary/30 transition-colors"
                     >
-                      Push to CRM
+                      Run AI coach
                     </button>
                   </div>
                 </div>
@@ -588,10 +593,11 @@ export default function Home() {
           {/* Left: copy + button */}
           <div className="flex-1 space-y-6">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text-primary leading-tight tracking-tight">
-              Sales AI that helps during the call, not after.
+              Next moves and follow-ups while you&apos;re on the call—save the transcript and run the AI coach when you&apos;re done.
             </h2>
             <p className="text-lg text-text-muted leading-relaxed">
-              Try <span className="text-text-primary font-semibold">Persuaid</span> on your next call today.
+              Persuaid gives you winning lines, objection handling, and what to do next in real time. After you hang up, save the transcript and have the{" "}
+              <span className="text-text-primary font-semibold">AI coach</span> analyze the conversation.
             </p>
             <a
               href="/sign-in"
@@ -603,7 +609,7 @@ export default function Home() {
                 className="w-5 h-5 flex-shrink-0 object-contain group-hover:scale-110 transition-transform duration-300"
                 aria-hidden
               />
-              <span>Try for Free</span>
+              <span>Try it on your next call</span>
             </a>
           </div>
           {/* Right: video with small AI transcript overlay */}
