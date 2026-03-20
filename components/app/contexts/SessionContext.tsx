@@ -109,6 +109,13 @@ interface SessionContextValue {
   /** Interim speaker label (0/1/etc) when diarization is available; null when unknown or single-speaker. */
   interimSpeakerId: number | null;
   setInterimSpeakerId: (n: number | null) => void;
+  /**
+   * Refs that always contain the latest interim transcript/speaker id.
+   * Used for AI requests so pressing Enter uses the newest spoken text
+   * even if Deepgram hasn't finalized the segment yet.
+   */
+  latestInterimTranscriptRef: React.MutableRefObject<string>;
+  latestInterimSpeakerIdRef: React.MutableRefObject<number | null>;
   /** Observed diarization speaker IDs from STT stream (e.g. [0,1]). */
   diarizationSpeakerIds: number[];
   setDiarizationSpeakerIds: (ids: number[] | ((prev: number[]) => number[])) => void;
@@ -169,6 +176,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [callParticipantName, setCallParticipantName] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
   const [interimSpeakerId, setInterimSpeakerId] = useState<number | null>(null);
+  const latestInterimTranscriptRef = useRef<string>("");
+  const latestInterimSpeakerIdRef = useRef<number | null>(null);
   const [diarizationSpeakerIds, setDiarizationSpeakerIds] = useState<number[]>([]);
   const [diarizationMeSpeakerId, setDiarizationMeSpeakerIdState] = useState<number | null>(null);
   const recentSpeechRef = useRef("");
@@ -191,6 +200,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (!isRecording) {
       setInterimTranscript("");
       setInterimSpeakerId(null);
+      latestInterimTranscriptRef.current = "";
+      latestInterimSpeakerIdRef.current = null;
       setDiarizationSpeakerIds([]);
       setDealContext({});
     }
@@ -420,6 +431,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setInterimTranscript,
       interimSpeakerId,
       setInterimSpeakerId,
+      latestInterimTranscriptRef,
+      latestInterimSpeakerIdRef,
       diarizationSpeakerIds,
       setDiarizationSpeakerIds,
       diarizationMeSpeakerId,

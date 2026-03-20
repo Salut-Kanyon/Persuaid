@@ -247,6 +247,8 @@ export function LiveTranscription() {
     registerClearBuffer,
     setInterimTranscript,
     setInterimSpeakerId,
+    latestInterimTranscriptRef,
+    latestInterimSpeakerIdRef,
     diarizationMeSpeakerId,
     setDiarizationSpeakerIds,
   } = useSession();
@@ -273,8 +275,11 @@ export function LiveTranscription() {
       recentSpeechRef.current = "";
       lastInterimSpeakerIdRef.current = null;
       setInterimTranscript("");
+      setInterimSpeakerId(null);
+      latestInterimTranscriptRef.current = "";
+      latestInterimSpeakerIdRef.current = null;
     });
-  }, [registerClearBuffer, recentSpeechRef, setInterimTranscript]);
+  }, [registerClearBuffer, recentSpeechRef, setInterimTranscript, setInterimSpeakerId]);
 
   useEffect(() => {
     // Debug: confirm effect runs and isRecording state
@@ -548,9 +553,11 @@ export function LiveTranscription() {
           phraseBufferRef.current = merged;
           recentSpeechRef.current = merged;
           setInterimTranscript(merged);
+          latestInterimTranscriptRef.current = merged;
           const speakerIdForInterim = typeof first.speakerId === "number" ? first.speakerId : null;
           lastInterimSpeakerIdRef.current = speakerIdForInterim;
           setInterimSpeakerId(speakerIdForInterim);
+          latestInterimSpeakerIdRef.current = speakerIdForInterim;
           setDiarizationSpeakerIds((prev) => {
             const next = new Set(prev);
             segments.forEach((s) => {
@@ -591,6 +598,8 @@ export function LiveTranscription() {
           recentSpeechRef.current = "";
           setInterimTranscript("");
           setInterimSpeakerId(null);
+          latestInterimTranscriptRef.current = "";
+          latestInterimSpeakerIdRef.current = null;
 
           let runs: { speaker: "user" | "prospect"; text: string }[] = [];
 
