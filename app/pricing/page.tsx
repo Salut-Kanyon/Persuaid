@@ -173,7 +173,7 @@ export default function PricingPage() {
               period={proPeriod + yearlySuffix}
               description="For reps who want live help on real sales calls."
               features={[
-                "20 hours per week",
+                "20 hours per month",
                 "Meeting transcript analysis",
                 "Product knowledge integration",
                 "Customer support 24/7",
