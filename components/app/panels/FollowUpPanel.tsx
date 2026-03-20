@@ -5,6 +5,43 @@ import { useSession } from "@/components/app/contexts/SessionContext";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import { cn } from "@/lib/utils";
 
+/** Strip salesy follow-up questions from the answer; keep 1–3 concise sentences, declarative only. */
+function sanitizeAnswer(raw: string): string {
+  const t = raw.trim().replace(/\s+/g, " ");
+  if (!t) return t;
+
+  const softPitch =
+    /^(are you interested|would you like|can you tell me|do you want|shall we|how does that sound|want to know more|anything else|what questions do you have|is there anything|does that help|sound good)/i;
+  const softPitchAnywhere =
+    /are you interested|would you like to know|would you like me to|can you tell me more|tell me more about|if you'd like to know|let me know if you/i;
+
+  // Trim any trailing soft-pitch fragment even when punctuation is missing.
+  const trailingSoftPitch = /\s+(are you interested(?: in [^.!?]*)?|would you like to know(?: more)?(?: about [^.!?]*)?|can you tell me more(?: about [^.!?]*)?|do you want to learn more(?: about [^.!?]*)?)\s*[.!?…]*\s*$/i;
+  const trimmed = t.replace(trailingSoftPitch, "").trim();
+
+  const parts = (trimmed || t).split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+  if (parts.length === 0) return t;
+
+  let kept = [...parts];
+  while (kept.length > 0) {
+    const last = kept[kept.length - 1]!;
+    const stripped = last.replace(/^["'“”]|[\"'“”]$/g, "").trim();
+    const isQuestion = stripped.endsWith("?");
+    const isSoft =
+      isQuestion &&
+      (softPitch.test(stripped) || softPitchAnywhere.test(stripped));
+    if (isSoft) {
+      kept.pop();
+      continue;
+    }
+    break;
+  }
+
+  kept = kept.slice(0, 3);
+  const out = kept.join(" ").trim();
+  return out || t.slice(0, 400).trim();
+}
+
 export function FollowUpPanel() {
   const {
     transcript,
@@ -31,16 +68,23 @@ export function FollowUpPanel() {
   const [questionLoading, setQuestionLoading] = useState(false);
   const [definitionsOpen, setDefinitionsOpen] = useState(false);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const answerSectionRef = useRef<HTMLDivElement>(null);
+  const prevSanitizedAnswerRef = useRef<string>("");
 
   const hasTranscript = transcript.length > 0;
   const hasDefinitions = notesContext.trim().length > 80;
   const definitionsPreview = notesContext.trim().slice(0, 900);
 
+  // Keep the Answer block at the top of the scrollport — do NOT scroll to bottom.
   useEffect(() => {
-    // Keep the answer pinned; only scroll when the visible content changes.
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [lockedAnswer, suggestedFollowUp, uiMode, questionLoading]);
+    const next = lockedAnswer.trim();
+    if (!next || next === "…") return;
+    if (next === prevSanitizedAnswerRef.current) return;
+    prevSanitizedAnswerRef.current = next;
+    requestAnimationFrame(() => {
+      answerSectionRef.current?.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+    });
+  }, [lockedAnswer]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -134,7 +178,7 @@ export function FollowUpPanel() {
     }
 
     if (targetModeForCurrentText === "answer") {
-      setLockedAnswer(followUpText);
+      setLockedAnswer(sanitizeAnswer(followUpText));
       setLockedAnswerSource(followUpSource);
       setUiMode("answered");
       setQuestionLoading(false);
@@ -167,7 +211,6 @@ export function FollowUpPanel() {
     <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Main content: next line to say (or chat answer) */}
       <div
-        ref={scrollRef}
         className={cn(
           "flex-1 min-h-0 overflow-y-auto p-4",
           "flex flex-col gap-3"
@@ -181,10 +224,10 @@ export function FollowUpPanel() {
           </div>
         ) : (
           <>
-            {/* Answer */}
-            <div className="space-y-2">
+            {/* Answer — declarative text only; follow-ups live in the section below */}
+            <div ref={answerSectionRef} className="space-y-3 scroll-mt-2 pb-2">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-text-dim">
+                <h3 className="text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-300 via-green-400 to-teal-300 bg-clip-text text-transparent">
                   Answer
                 </h3>
                 {answerIsLoading ? (
@@ -198,8 +241,8 @@ export function FollowUpPanel() {
                   </div>
                 ) : null}
               </div>
-              <div className="rounded-xl bg-background-elevated/50 border border-border/30 p-4 text-sm">
-                <p className="text-text-primary leading-relaxed whitespace-pre-wrap">
+              <div className="rounded-xl bg-background-elevated/55 border border-border/30 p-4 text-sm">
+                <p className="text-text-primary/95 leading-7 whitespace-pre-wrap">
                   {lockedAnswer || "…"}
                 </p>
               </div>
@@ -209,11 +252,11 @@ export function FollowUpPanel() {
             </div>
 
             {/* Suggested follow-up */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-text-dim">
+            <div className="space-y-2 mt-1">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-text-dim/75">
                 Suggested follow-up
               </h3>
-              <div className="rounded-xl bg-background-elevated/40 border border-border/20 p-4 text-sm">
+              <div className="rounded-xl bg-background-elevated/25 border border-border/15 p-4 text-sm">
                 {questionLoading && !suggestedFollowUp ? (
                   <div className="flex items-center gap-2 text-sm text-text-dim">
                     <span className="inline-flex gap-1">
@@ -224,7 +267,7 @@ export function FollowUpPanel() {
                     <span>Thinking…</span>
                   </div>
                 ) : suggestedFollowUp ? (
-                  <p className="text-text-primary leading-relaxed whitespace-pre-wrap italic">{suggestedFollowUp}</p>
+                  <p className="text-text-secondary/90 leading-relaxed whitespace-pre-wrap italic">{suggestedFollowUp}</p>
                 ) : (
                   <p className="text-text-dim/90 leading-relaxed">Press “Follow-up” to generate a question.</p>
                 )}
