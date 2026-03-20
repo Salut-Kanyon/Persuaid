@@ -88,18 +88,22 @@ interface SessionContextValue {
   requestSuggestions: () => void;
   /** Increments when requestSuggestions() is called; used by AISuggestionsFetcher to trigger a fetch. */
   suggestionsRequestedAt: number;
-  /** Exact next line to say (call copilot) or answer from chat. Set by FollowUpFetcher or Send. */
-  followUpText: string;
-  setFollowUpText: (s: string | ((prev: string) => string)) => void;
-  /** Where the suggestion came from: "your notes" | "the conversation" | "the web". Shown as "From: …" */
-  followUpSource: string;
-  setFollowUpSource: (s: string) => void;
-  /** Increments when user requests follow-up (Enter). Used by FollowUpFetcher. */
-  followUpRequestedAt: number;
+  /** Increments when user requests a copilot answer (Enter / empty Send). FollowUpFetcher listens. */
+  answerRequestedAt: number;
+  /** Increments when user requests a suggested follow-up question. Separate from answer to avoid races. */
+  followUpQuestionRequestedAt: number;
   /** Request follow-up: "answer" = what to say (Enter), "follow_up_question" = question to ask (button). */
   requestFollowUp: (mode?: "answer" | "follow_up_question") => void;
-  /** Current mode for the last/next follow-up request. */
-  followUpMode: "answer" | "follow_up_question";
+  /** Direct answer from answer-mode AI or /api/ai/answer (chat). Never mixed with follow-up question output. */
+  answerText: string;
+  setAnswerText: (s: string | ((prev: string) => string)) => void;
+  answerSource: string;
+  setAnswerSource: (s: string) => void;
+  /** Suggested follow-up question only; written only by follow_up_question fetches. */
+  suggestedFollowUpText: string;
+  setSuggestedFollowUpText: (s: string | ((prev: string) => string)) => void;
+  suggestedFollowUpSource: string;
+  setSuggestedFollowUpSource: (s: string) => void;
   /** Name shown in header as "Call with [name]". Empty when not in call; set when recording (e.g. Prospect). */
   callParticipantName: string;
   setCallParticipantName: (s: string) => void;
@@ -169,10 +173,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [micError, setMicError] = useState<string | null>(null);
   const [audioInputDeviceId, setAudioInputDeviceIdState] = useState<string | null>(null);
   const [suggestionsRequestedAt, setSuggestionsRequestedAt] = useState(0);
-  const [followUpText, setFollowUpText] = useState("");
-  const [followUpSource, setFollowUpSource] = useState("");
-  const [followUpRequestedAt, setFollowUpRequestedAt] = useState(0);
-  const [followUpMode, setFollowUpMode] = useState<"answer" | "follow_up_question">("answer");
+  const [answerText, setAnswerText] = useState("");
+  const [answerSource, setAnswerSource] = useState("");
+  const [suggestedFollowUpText, setSuggestedFollowUpText] = useState("");
+  const [suggestedFollowUpSource, setSuggestedFollowUpSource] = useState("");
+  const [answerRequestedAt, setAnswerRequestedAt] = useState(0);
+  const [followUpQuestionRequestedAt, setFollowUpQuestionRequestedAt] = useState(0);
   const [callParticipantName, setCallParticipantName] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
   const [interimSpeakerId, setInterimSpeakerId] = useState<number | null>(null);
@@ -204,6 +210,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       latestInterimSpeakerIdRef.current = null;
       setDiarizationSpeakerIds([]);
       setDealContext({});
+      setAnswerText("");
+      setAnswerSource("");
+      setSuggestedFollowUpText("");
+      setSuggestedFollowUpSource("");
     }
   }, [isRecording]);
 
@@ -222,8 +232,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const requestFollowUp = useCallback((mode: "answer" | "follow_up_question" = "answer") => {
-    setFollowUpMode(mode);
-    setFollowUpRequestedAt((t) => t + 1);
+    if (mode === "follow_up_question") {
+      setFollowUpQuestionRequestedAt((t) => t + 1);
+    } else {
+      setAnswerRequestedAt((t) => t + 1);
+    }
   }, []);
 
   const setAudioInputDeviceId = useCallback((id: string | null) => {
@@ -418,13 +431,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setAudioInputDeviceId,
       requestSuggestions,
       suggestionsRequestedAt,
-      followUpText,
-      setFollowUpText,
-      followUpSource,
-      setFollowUpSource,
-      followUpRequestedAt,
+      answerRequestedAt,
+      followUpQuestionRequestedAt,
       requestFollowUp,
-      followUpMode,
+      answerText,
+      setAnswerText,
+      answerSource,
+      setAnswerSource,
+      suggestedFollowUpText,
+      setSuggestedFollowUpText,
+      suggestedFollowUpSource,
+      setSuggestedFollowUpSource,
       callParticipantName,
       setCallParticipantName,
       interimTranscript,
@@ -459,11 +476,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setAudioInputDeviceId,
       requestSuggestions,
       suggestionsRequestedAt,
-      followUpText,
-      followUpSource,
-      followUpRequestedAt,
+      answerText,
+      answerSource,
+      suggestedFollowUpText,
+      suggestedFollowUpSource,
+      answerRequestedAt,
+      followUpQuestionRequestedAt,
       requestFollowUp,
-      followUpMode,
       interimSpeakerId,
       diarizationSpeakerIds,
       diarizationMeSpeakerId,
