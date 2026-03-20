@@ -119,7 +119,6 @@ export function FollowUpPanel() {
     setSuggestedFollowUpText,
     setSuggestedFollowUpSource,
     requestFollowUp,
-    notesContext,
     isRecording,
   } = useSession();
   const { canUseProFeatures, openUpgradeModal } = useEntitlements();
@@ -131,7 +130,6 @@ export function FollowUpPanel() {
   const [uiMode, setUiMode] = useState<UiMode>("idle");
   const [lockedAnswer, setLockedAnswer] = useState<string>("");
   const [lockedAnswerSource, setLockedAnswerSource] = useState<string>("");
-  const [definitionsOpen, setDefinitionsOpen] = useState(false);
 
   const answerSectionRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -146,15 +144,12 @@ export function FollowUpPanel() {
   suggestedFollowUpTextRef.current = suggestedFollowUpText;
 
   const hasTranscript = transcript.length > 0;
-  const hasDefinitions = notesContext.trim().length > 80;
-  const definitionsPreview = notesContext.trim().slice(0, 900);
 
   useEffect(() => {
     if (!isRecording) {
       setUiMode("idle");
       setLockedAnswer("");
       setLockedAnswerSource("");
-      setDefinitionsOpen(false);
       prevSanitizedAnswerRef.current = "";
     }
   }, [isRecording]);
@@ -393,7 +388,7 @@ export function FollowUpPanel() {
                 Generating a new answer…
               </p>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Using your latest transcript. Suggested follow-up and details will appear right after.
+                Using your latest transcript. Your suggested follow-up will appear right after.
               </p>
             </div>
           </div>
@@ -440,33 +435,15 @@ export function FollowUpPanel() {
                     {suggestedFollowUpText}
                   </p>
                 ) : (
-                  <p className="text-text-dim/90 leading-relaxed">Press “Follow-up” to generate a question.</p>
+                  <p className="text-text-dim/90 leading-relaxed">
+                    A suggested question will appear here shortly.
+                  </p>
                 )}
                 {suggestedFollowUpSource ? (
                   <p className="text-xs text-text-dim/90 pt-2">From: {suggestedFollowUpSource}</p>
                 ) : null}
               </div>
             </div>
-
-            {hasDefinitions ? (
-              <div className="space-y-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-text-dim">
-                  Definitions
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setDefinitionsOpen((o) => !o)}
-                  className="w-fit px-3 py-1.5 rounded-lg border border-border/50 bg-background-elevated/40 text-xs font-medium text-text-primary hover:bg-background-elevated/60 transition-colors"
-                >
-                  {definitionsOpen ? "Hide definitions" : "Show definitions"}
-                </button>
-                {definitionsOpen ? (
-                  <div className="rounded-xl bg-background-elevated/30 border border-border/20 p-4 text-xs text-text-secondary leading-relaxed whitespace-pre-wrap max-h-44 overflow-y-auto">
-                    {definitionsPreview}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
 
             {uiMode === "error" ? (
               <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-sm text-amber-300">
@@ -499,29 +476,6 @@ export function FollowUpPanel() {
             )}
           >
             {sending ? "…" : "Send"}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (!canUseProFeatures) {
-                openUpgradeModal();
-                return;
-              }
-              if (DEBUG) {
-                // eslint-disable-next-line no-console
-                console.debug("[Persuaid][FollowUpPanel] request started: follow_up_question (button)");
-              }
-              requestFollowUp("follow_up_question");
-            }}
-            disabled={(questionLoading || (uiMode !== "answered" && !lockedAnswer)) || !hasTranscript}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0",
-              "bg-background-elevated/80 text-text-primary border border-border/50",
-              "hover:bg-background-surface hover:border-border disabled:opacity-50 disabled:cursor-not-allowed"
-            )}
-            title="Generate a follow-up sales question to ask the prospect"
-          >
-            Follow-up
           </button>
         </div>
       </div>
