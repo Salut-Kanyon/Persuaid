@@ -134,6 +134,7 @@ export function FollowUpPanel() {
   const [definitionsOpen, setDefinitionsOpen] = useState(false);
 
   const answerSectionRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const prevSanitizedAnswerRef = useRef<string>("");
   const lockedAnswerRef = useRef("");
   const suggestedFollowUpTextRef = useRef("");
@@ -167,6 +168,13 @@ export function FollowUpPanel() {
       answerSectionRef.current?.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
     });
   }, [lockedAnswer]);
+
+  // New answer request: snap scroll to top so the full-panel thinking state is fully visible.
+  useEffect(() => {
+    if (answerText === "…") {
+      scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [answerText]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -348,7 +356,8 @@ export function FollowUpPanel() {
     requestFollowUp,
   ]);
 
-  const answerIsLoading = answerText === "…";
+  /** Copilot / chat is fetching a new answer — show one unified thinking UI (not stale sections). */
+  const isGeneratingNewAnswer = answerText === "…" || sending;
   const questionLoading = suggestedFollowUpText === "…";
   const showSuggestedBody =
     suggestedFollowUpText && suggestedFollowUpText !== "…";
@@ -356,12 +365,39 @@ export function FollowUpPanel() {
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
       <div
+        ref={scrollContainerRef}
         className={cn(
           "flex-1 min-h-0 overflow-y-auto p-4",
           "flex flex-col gap-3"
         )}
       >
-        {uiMode === "idle" ? (
+        {/* Generating must win over idle: answerText can flip to "…" before uiMode effect runs */}
+        {isGeneratingNewAnswer ? (
+          <div
+            className={cn(
+              "flex-1 min-h-[min(320px,50vh)] flex flex-col items-center justify-center gap-4 py-10 px-6 rounded-2xl",
+              "border border-green-primary/20 bg-gradient-to-b from-green-primary/10 via-background-elevated/40 to-background-elevated/20",
+              "text-center"
+            )}
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <span className="inline-flex gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-primary/80 animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-green-primary/80 animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-green-primary/80 animate-bounce" />
+            </span>
+            <div className="space-y-2 max-w-sm">
+              <p className="text-sm font-semibold text-text-primary">
+                Generating a new answer…
+              </p>
+              <p className="text-xs text-text-dim leading-relaxed">
+                Using your latest transcript. Suggested follow-up and details will appear right after.
+              </p>
+            </div>
+          </div>
+        ) : uiMode === "idle" ? (
           <div className="rounded-xl bg-background-elevated/40 border border-border/20 p-4 text-sm text-text-dim/80">
             {hasTranscript
               ? "Press Enter to generate what to say next."
@@ -374,16 +410,6 @@ export function FollowUpPanel() {
                 <h3 className="text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-300 via-green-400 to-teal-300 bg-clip-text text-transparent">
                   Answer
                 </h3>
-                {answerIsLoading ? (
-                  <div className="flex items-center gap-2 text-xs text-text-dim">
-                    <span className="inline-flex gap-1">
-                      <span className="w-2 h-2 rounded-full bg-green-primary/70 animate-bounce [animation-delay:-0.3s]" />
-                      <span className="w-2 h-2 rounded-full bg-green-primary/70 animate-bounce [animation-delay:-0.15s]" />
-                      <span className="w-2 h-2 rounded-full bg-green-primary/70 animate-bounce" />
-                    </span>
-                    <span>Updating…</span>
-                  </div>
-                ) : null}
               </div>
               <div className="rounded-xl bg-background-elevated/55 border border-border/30 p-4 text-sm">
                 <p className="text-text-primary/95 leading-7 whitespace-pre-wrap">
