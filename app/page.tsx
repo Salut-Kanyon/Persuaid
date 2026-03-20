@@ -448,8 +448,8 @@ export default function Home() {
         </motion.div>
       </Section>
 
-      {/* After the call — transcript + AI coach */}
-      <Section className="bg-background pb-10 md:pb-14 lg:pb-16">
+      {/* Meet Cue — brand AI agent (pure black strip) */}
+      <Section className="bg-[rgb(0,0,0)] pb-10 md:pb-14 lg:pb-16">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -457,123 +457,52 @@ export default function Home() {
           transition={{ duration: 0.45 }}
           className="max-w-5xl mx-auto"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
-            <div className="lg:col-span-5 text-center lg:text-left">
-              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
-                After the call
-              </span>
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mt-3 mb-3 leading-tight tracking-tight">
-                <span className="text-text-primary">Save the transcript.</span>{" "}
-                <span className="bg-gradient-to-r from-green-primary via-green-accent to-emerald-400 bg-clip-text text-transparent">
-                  Let the AI coach analyze it.
-                </span>
-              </h2>
-              <p className="text-base text-text-muted leading-relaxed mb-5">
-                Next steps and follow-ups happen live during the call. When you&apos;re done, keep the conversation as text and run it through the AI coach for deeper analysis.
-              </p>
-              <div className="inline-flex flex-wrap gap-2 text-xs sm:text-sm text-text-primary/90">
-                <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10">
-                  Saved transcript
-                </span>
-                <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10">
-                  AI coach analysis
-                </span>
-                <span className="rounded-full px-3 py-1 bg-white/5 border border-white/10">
-                  Export / reuse
-                </span>
-              </div>
-            </div>
-
-            <div className="lg:col-span-7">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            <div className="lg:col-span-5 order-2 lg:order-1 flex justify-center lg:justify-start">
               <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, scale: 0.98 }}
+                whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                className="rounded-2xl border border-white/10 bg-[#050607] shadow-[0_26px_60px_rgba(0,0,0,0.7)] overflow-hidden"
+                transition={{ duration: 0.5 }}
+                className="w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[380px]"
               >
-                <div className="px-5 py-3.5 border-b border-white/10 flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-semibold tracking-[0.18em] uppercase text-text-primary">
-                    Transcript · AI coach
-                  </span>
-                  <span className="text-[11px] sm:text-xs text-text-dim font-mono">
-                    Call · 00:18:42
-                  </span>
-                </div>
-                <div className="p-5 sm:p-6 space-y-5">
-                  {/* Animated timeline strip */}
-                  <motion.div
-                    initial={{ width: "0%" }}
-                    whileInView={{ width: "100%" }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 1.4, ease: "easeOut" }}
-                    className="h-1 rounded-full bg-gradient-to-r from-emerald-500 via-green-accent to-emerald-300/60"
-                  />
-
-                  <div className="space-y-3">
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.35, delay: 0.05 }}
-                      className="flex items-start justify-between gap-4"
-                    >
-                      <div>
-                        <span className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-text-primary mb-1.5">
-                          Coach highlights
-                        </span>
-                        <ul className="text-[12px] sm:text-[13px] text-text-secondary leading-snug space-y-0.5">
-                          <li>Pricing and contract terms were a sticking point</li>
-                          <li>Reps worried about extra clicks and new tools</li>
-                          <li>Interest spiked when live, in‑call guidance was shown</li>
-                        </ul>
-                      </div>
-                      <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-200">
-                        From AI coach
-                      </span>
-                    </motion.div>
-
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.35, delay: 0.12 }}
-                      className="flex flex-col gap-2"
-                    >
-                      <div>
-                        <span className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-text-primary mb-1.5">
-                          Analysis summary
-                        </span>
-                        <p className="text-[12px] sm:text-[13px] text-text-secondary leading-snug">
-                          Strong discovery on pain; confirm budget owner and timeline on the next touch.
-                        </p>
-                      </div>
-                      <div>
-                        <span className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-text-primary mb-1.5">
-                          Themes to review
-                        </span>
-                        <p className="text-[12px] sm:text-[13px] text-text-primary leading-snug italic">
-                          “What usually slows rep adoption on new tools?”
-                        </p>
-                      </div>
-                    </motion.div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    <button
-                      type="button"
-                      className="px-4 py-1.5 rounded-lg border border-white/10 bg-white/3 text-[11px] sm:text-xs font-medium text-text-primary hover:bg-white/8 transition-colors"
-                    >
-                      Save transcript
-                    </button>
-                    <button
-                      type="button"
-                      className="px-4 py-1.5 rounded-lg bg-green-primary/20 text-[11px] sm:text-xs font-semibold text-green-accent border border-green-primary/40 hover:bg-green-primary/30 transition-colors"
-                    >
-                      Run AI coach
-                    </button>
-                  </div>
+                <div className="bg-[rgb(0,0,0)] overflow-hidden rounded-2xl">
+                  <video
+                    className="w-full max-h-[min(420px,55vh)] sm:max-h-[min(460px,58vh)] block object-contain bg-[rgb(0,0,0)]"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="auto"
+                    aria-label="Cue, Persuaid's AI agent — looping animation"
+                  >
+                    <source src="/CueVid1.mp4" type="video/mp4" />
+                  </video>
                 </div>
               </motion.div>
+            </div>
+
+            <div className="lg:col-span-7 order-1 lg:order-2 text-center lg:text-left">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-8">
+                Meet{" "}
+                <span className="text-green-accent">Cue</span>
+              </h2>
+              <div className="space-y-6 text-base sm:text-lg text-zinc-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                <p className="text-zinc-100 font-medium text-lg sm:text-xl">
+                  Cue isn&apos;t here to steal your sandwich.
+                </p>
+                <p>
+                  He&apos;s built for one thing — helping you say the right thing and close more deals.
+                </p>
+                <div className="space-y-1.5 text-zinc-400">
+                  <p>When you go off script and your mind goes blank…</p>
+                  <p>when they ask something you weren&apos;t ready for…</p>
+                  <p>when you&apos;re trying to find the right words — and nothing&apos;s coming…</p>
+                </div>
+                <p className="text-zinc-100 font-semibold text-lg sm:text-xl pt-1">
+                  Cue steps in.
+                </p>
+              </div>
             </div>
           </div>
         </motion.div>
