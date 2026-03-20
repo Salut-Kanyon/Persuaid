@@ -376,7 +376,7 @@ export function FollowUpPanel() {
           <div
             className={cn(
               "flex-1 min-h-[min(320px,50vh)] flex flex-col items-center justify-center gap-4 py-10 px-6 rounded-2xl",
-              "border border-green-primary/20 bg-gradient-to-b from-green-primary/10 via-background-elevated/40 to-background-elevated/20",
+              "border border-white/10 bg-neutral-950 shadow-lg",
               "text-center"
             )}
             role="status"
@@ -384,15 +384,15 @@ export function FollowUpPanel() {
             aria-busy="true"
           >
             <span className="inline-flex gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-green-primary/80 animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-green-primary/80 animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-green-primary/80 animate-bounce" />
+              <span className="w-2.5 h-2.5 rounded-full bg-zinc-500 animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-zinc-500 animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-zinc-500 animate-bounce" />
             </span>
             <div className="space-y-2 max-w-sm">
-              <p className="text-sm font-semibold text-text-primary">
+              <p className="text-sm font-semibold text-zinc-100">
                 Generating a new answer…
               </p>
-              <p className="text-xs text-text-dim leading-relaxed">
+              <p className="text-xs text-zinc-400 leading-relaxed">
                 Using your latest transcript. Suggested follow-up and details will appear right after.
               </p>
             </div>
