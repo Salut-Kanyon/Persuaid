@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
-/** Improves pasted notes for sales: product knowledge, clarity, structure. */
+/** Rewrites notes into plain, retrieval-optimized product knowledge for the live AI assistant. */
 export async function POST(req: NextRequest) {
   const key = process.env.OPENAI_API_KEY;
   if (!key) {
@@ -11,8 +11,7 @@ export async function POST(req: NextRequest) {
       { status: 503 }
     );
   }
-  type RewriteStyle = "clean_bullets" | "headings" | "checklist" | "paragraph";
-  let body: { content?: string; style?: RewriteStyle };
+  let body: { content?: string; style?: string };
   try {
     body = await req.json();
   } catch {
@@ -22,31 +21,24 @@ export async function POST(req: NextRequest) {
   if (!content) {
     return NextResponse.json({ error: "No content to rewrite" }, { status: 400 });
   }
-  const style = body.style ?? "headings";
 
-  const styleRules: Record<RewriteStyle, string> = {
-    clean_bullets:
-      "Format as short, scannable bullets. Use ONLY hyphen bullets (\"- \"). No asterisks. No markdown emphasis.",
-    headings:
-      "Format with short section headings (plain text, no markdown) followed by hyphen bullets. No asterisks. No markdown emphasis.",
-    checklist:
-      "Format as a checklist using \"[ ] \" for actionable items and hyphen bullets for reference points. No asterisks. No markdown emphasis.",
-    paragraph:
-      "Format as 1–2 short paragraphs plus 3–6 hyphen bullets for key points. No asterisks. No markdown emphasis.",
-  };
+  const systemPrompt = `You are rewriting product notes for a real-time AI sales assistant that answers live during sales calls.
 
-  const systemPrompt = `You are a sales enablement expert. Rewrite the user's notes so they are clearer and more useful for a sales call. Improve:
-- Product knowledge: make features and benefits easy to recall and explain.
-- Objection handling: turn rough notes into clear rebuttals or talking points.
-- Structure: use short bullets or sections so the rep can scan quickly during a call.
-Keep the same general content; do not add fake details.
+Rewrite the notes into plain text only. Do not use headings, subtitles, markdown, numbered sections, bullet symbols or list markers (no leading "- ", "•", or "*"), presentation styling, or labeled blocks like "Core Value", "Pricing", "Objection Handling", or any "organized notes" style formatting.
 
-Output rules:
-- Output only the rewritten notes, no preamble.
-- Do not use asterisks (*) for bullets. Prefer hyphen bullets.
-- Do not use markdown bold/italics.
-- ${styleRules[style]}`;
-  const userPrompt = `Rewrite these notes for a sales rep:\n\n${content.slice(0, 4000)}`;
+The output must be optimized for fast retrieval during live conversations—not for human reading aesthetics. Reorganize implicitly: put the most practical, directly answerable sales information first, in this priority order:
+1) What the product is
+2) What value it delivers
+3) Main product types / options
+4) Typical pricing, ranges, and coverage numbers—if they exist in the source, preserve them clearly and place them early; if multiple pricing tiers exist, keep all of them
+5) Objection handling—rewrite into short natural rebuttals as direct sentences
+6) Technical insurance or product jargon last, compressed so it does not overshadow core sales answers (e.g. terms like "net single premium" should not dominate unless the source is specifically about that)
+
+Use natural, direct, spoken-style phrasing the assistant can quote on a call. Keep all important facts from the source; do not invent anything. Avoid long technical explanations unless they are necessary for accuracy. Prefer flowing sentences; you may use blank lines between short paragraphs only for breathing room, not as fake sections.
+
+Output rules: no preamble, no "here is the rewritten version", no intro or wrapping commentary—output only the rewritten notes.`;
+
+  const userPrompt = `Rewrite these notes for the live AI assistant:\n\n${content.slice(0, 4000)}`;
 
   try {
     const res = await fetch(OPENAI_URL, {
@@ -61,7 +53,7 @@ Output rules:
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 1000,
+        max_tokens: 2000,
         temperature: 0.3,
       }),
     });

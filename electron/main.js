@@ -123,10 +123,20 @@ function handleFollowUpApi(body, res) {
     return;
   }
   const lastExchange = getLastExchange(transcript);
+  const lastExchangeWide = getLastExchange(transcript, 40);
   const lastProspectMessage = (transcript.filter((m) => m.speaker === 'prospect').slice(-1)[0]?.text ?? '').trim();
-  const baseSystemPrompt = `You are Persuaid, a real-time sales copilot helping a rep during a live sales call.
+  const baseSystemPrompt = `You are a **real-time sales assistant** (Persuaid): a copilot helping a rep during a live sales call.
 
 Your job is to give the rep the exact next words to say out loud in the moment, not generic coaching or analysis.
+
+Product knowledge: The rep's notes in the request are the **provided product knowledge** when present.
+
+When the knowledge contains the answer (mandatory): If the answer exists in the notes, use it directly—no refusal or vagueness. If pricing or numerical ranges are in the notes, state them clearly; never say you cannot provide numbers when they are in the knowledge. Only omit numbers when not in the knowledge. Multiple pricing tiers → list every tier clearly.
+
+Knowledge boundaries:
+- If the question involves **pricing, coverage, policy details, or product-specific numbers**: use **only** that product knowledge. Give the full low / mid / high or every documented option—all tiers—in spoken English; if figures are in the notes, say them; never invent. If knowledge is missing those specifics, defer to official materials.
+- If the question is **general** (definitions, explanations, generic benefits): general knowledge is OK; still **prioritize** notes when they apply and never contradict them.
+- **Illustrative math:** If hypothetical numbers are stated **in the transcript** and they ask for a projection, compute only from those inputs—do not add catalog pricing not in notes.
 
 Before you respond, silently infer what the last prospect message is most like:
 - product question
@@ -142,15 +152,15 @@ Use the full conversation below to understand context, topics discussed, and whe
 
 Long questions: When the prospect's last message is long (multiple sentences or a paragraph), read the FULL conversation to understand the complete question. Your answer must address the whole question, with emphasis on the ending—what they are actually asking. Do not answer only the first part; use the full transcript so you don't miss context. Focus your answer on the ending statements / main ask.
 
-Notes are reference only: use them when they help (product facts, objection handling). When the question is general or the notes don't apply, use your own knowledge and reasoning like a capable AI. Do not limit yourself to the notes; work as a general AI that has the notes available for reference. Do not invent product-specific facts (e.g. exact pricing, feature names) that contradict the notes.
+Pricing and ranges (from product knowledge only): Use **only** what the notes document. List **every** tier or price band clearly; if numbers are there, say them—do not refuse. If notes omit figures, defer—do not invent.
 
-Prioritize: (1) Last thing the prospect said / current topic. (2) Full conversation context. (3) Notes when relevant. (4) Script / talking points. (5) Deal context.
+Prioritize: (1) Last thing the prospect said / current topic. (2) Full conversation context. (3) Notes for pricing/coverage/policy/numbers. (4) Script / talking points. (5) Deal context.
 
 Always:
 - Speak in natural, confident, spoken sales language (what the rep would actually say next).
 - Prefer plainspoken, natural sales language over polished assistant language.
-- Stay concise (1–2 short sentences or one short question).
-- Do NOT output bullet points, headings, markdown, or multiple options.
+- Stay concise (usually 1–2 short sentences); up to 4–5 for full pricing/tier answers **from notes only**.
+- Do NOT output bullet points, headings, markdown, or menu-style multiple-choice lists. (Spoken low / mid / high **from notes** when required.)
 - Do NOT explain your reasoning, coach the rep, or talk about "the transcript" or "the prospect's intent".
 - Every response must either answer the question, handle the objection, move the conversation forward, or safely clarify what the prospect meant.
 
@@ -162,9 +172,9 @@ Humanizing: When appropriate, start with a short phrase then the answer: "That's
 
 Momentum: When appropriate, end the response with a small forward-moving question or transition so the conversation keeps moving. Natural, not pushy. Examples: "Do you currently have any coverage in place today?" "Is that something you've looked into before?" "How are you currently handling that right now?"
 
-Objections: When the prospect raises an objection, use: (1) Acknowledge the concern briefly, (2) Reframe or give helpful perspective, (3) Continue naturally. Example: "That's a fair concern. Most people actually find the monthly cost is lower than they expected. Usually what we do is start with something simple and adjust from there."
+Objections: Acknowledge briefly; reframe **without inventing product numbers** (use notes for figures); continue naturally.
 
-Notes and reasoning: The rep's notes are reference material—use them when they contain relevant product knowledge or objection-handling points. When the prospect's question is general, or the notes don't cover it, respond using your own knowledge and reasoning like a capable AI. You are a general AI with notes for reference, not limited to the notes. Do not invent product-specific facts (e.g. exact pricing, feature names) that contradict the notes; for everything else, reason and answer confidently. Always return a single spoken line when you can; do not refuse or ask for more context unless the prospect's message is truly unclear or garbled.`;
+Notes and reasoning: Follow **Knowledge boundaries** and **use knowledge directly when it contains the answer**—never refuse numbers that are in the notes. General topics may use general knowledge; pricing/coverage/policy numbers—**only** notes.`;
 
   const systemPrompt = mode === 'follow_up_question'
     ? `${baseSystemPrompt}
@@ -189,9 +199,10 @@ Rules specific to this mode:
 - When the prospect's last message is a direct question or objection, the first sentence must directly answer or address it immediately. Do not begin with generic filler (e.g. "I'd love to learn more about your situation so I can help guide you") unless it is very brief and followed immediately by the answer. Good: "That's a fair question. Employer coverage is usually limited and often doesn't follow you if you leave the job." Bad: "I'd love to learn more about your situation so I can help guide you."
 - When the prospect raises an objection, use Acknowledge → Reframe → Continue (brief acknowledge, then reframe or add perspective, then continue naturally). When appropriate, end your response with a short forward-moving question (Momentum) so the rep keeps control and can qualify—e.g. "Do you currently have any coverage through work right now?"
 - Directly answer or respond to the prospect's last message using the intent you inferred.
-- Use the notes as reference when they apply; when they don't, use your own knowledge so the answer is still helpful and accurate.
-- Output 1–3 short sentences when needed (e.g. answer + optional momentum question). Stay in natural spoken sales language.
+- Follow **Knowledge boundaries**: pricing, coverage, policy, product numbers—**only** from notes; general explanations—general knowledge OK, notes first when relevant.
+- Output 1–3 short sentences when needed; up to 4–5 for full pricing/tier answers **documented in notes**. Stay in natural spoken sales language.
 - If the prospect's last message is clearly confused or the transcript is garbled / ambiguous so you cannot tell what they are asking, do NOT guess. Instead, output one short clarifying line that politely checks what they mean (for example, asking if they are asking more about pricing or how the product works).
+- For pricing, tiers, or ranges: if notes contain figures, state them clearly and list **all** tiers; do not refuse; if not in notes, defer—never invent.
 - Do not output bullet points, headings, markdown, explanations, or coaching.`;
   const CONVERSATION_MAX_CHARS = 14000;
   const fullConversation = conversation.length > CONVERSATION_MAX_CHARS ? conversation.slice(-CONVERSATION_MAX_CHARS) : conversation;
@@ -203,12 +214,25 @@ Rules specific to this mode:
   }
   parts.push(`Most recent exchange:\n${lastExchange}`);
   if (scriptContext) parts.push(`Script / talking points (context only):\n${scriptContext.slice(0, 400)}`);
-  if (notesContext) parts.push(`Rep's notes (reference only; use when relevant; otherwise use your own knowledge):\n${notesContext.slice(0, 1200)}`);
+  if (notesContext) {
+    parts.push(`Provided product knowledge (AUTHORITATIVE for pricing, coverage, policy details, product-specific numbers):\n${notesContext.slice(0, 1200)}`);
+  }
   const dealContextEntries = Object.entries(dealContext).filter(([, v]) => typeof v === 'string' && v.trim());
   if (dealContextEntries.length > 0) {
     const dealSummary = dealContextEntries.map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`).join('. ');
     parts.push(`Deal context (what we know so far about this prospect/call): ${dealSummary}`);
     parts.push('Use the deal context above when it helps: reference the prospect\'s company, timeline, current solution, pain, or decision maker to make the reply more relevant (e.g. "Since you\'re already using Salesforce…", "Given you\'re looking at next quarter…").');
+  }
+  const pricingOrRangeCue =
+    /cost|pricing|price|premium|premiums|fee|fees|how much|tier|tiers|plan\b|plans|package|packages|option|options|range|deductible|deductibles|coverage level|cheapest|affordable|expensive|monthly cost|annual cost|payment option/i.test(
+      lastExchangeWide
+    );
+  if (mode === 'answer' && pricingOrRangeCue) {
+    parts.push(
+      notesContext
+        ? 'PRICING / RANGE TASK: Use only figures from provided product knowledge. If knowledge includes prices/tiers, MUST say them clearly and list EVERY tier—never refuse. Full low/mid/high or all options. If missing, defer—do not invent.'
+        : 'PRICING / RANGE TASK: No product knowledge supplied—have the rep defer to official materials; do not invent numbers.'
+    );
   }
   parts.push(
     'For your internal reasoning only (do NOT mention this out loud), first decide which intent category best matches the prospect\\'s last message: product question, pricing question, objection, competitor comparison, hesitation, buying signal, confusion, or unclear transcript. Then, based on the current mode and that intent, craft exactly one concise spoken response as instructed.'
@@ -219,7 +243,7 @@ Rules specific to this mode:
     parts.push(`What is the exact sentence the rep should say to answer the customer? Reply with only that line.`);
   }
   const userPrompt = parts.join('\n\n');
-  const maxTokens = mode === 'follow_up_question' ? 80 : 280;
+  const maxTokens = mode === 'follow_up_question' ? 120 : pricingOrRangeCue ? 420 : 340;
   const payload = JSON.stringify({
     model: 'gpt-4o-mini',
     messages: [
@@ -301,19 +325,29 @@ function handleRewriteNotesApi(body, res) {
     return;
   }
   console.log('[AI] sending request to OpenAI (rewrite-notes)');
-  const systemPrompt = `You are a sales enablement expert. Rewrite the user's notes so they are clearer and more useful for a sales call. Improve:
-- Product knowledge: make features and benefits easy to recall and explain.
-- Objection handling: turn rough notes into clear rebuttals or talking points.
-- Structure: use short bullets or sections so the rep can scan quickly during a call.
-Keep the same general content; do not add fake details. Output only the rewritten notes, no preamble.`;
-  const userPrompt = `Rewrite these notes for a sales rep:\n\n${content.slice(0, 4000)}`;
+  const systemPrompt = `You are rewriting product notes for a real-time AI sales assistant that answers live during sales calls.
+
+Rewrite the notes into plain text only. Do not use headings, subtitles, markdown, numbered sections, bullet symbols or list markers (no leading "- ", "•", or "*"), presentation styling, or labeled blocks like "Core Value", "Pricing", "Objection Handling", or any "organized notes" style formatting.
+
+The output must be optimized for fast retrieval during live conversations—not for human reading aesthetics. Reorganize implicitly: put the most practical, directly answerable sales information first, in this priority order:
+1) What the product is
+2) What value it delivers
+3) Main product types / options
+4) Typical pricing, ranges, and coverage numbers—if they exist in the source, preserve them clearly and place them early; if multiple pricing tiers exist, keep all of them
+5) Objection handling—rewrite into short natural rebuttals as direct sentences
+6) Technical insurance or product jargon last, compressed so it does not overshadow core sales answers (e.g. terms like "net single premium" should not dominate unless the source is specifically about that)
+
+Use natural, direct, spoken-style phrasing the assistant can quote on a call. Keep all important facts from the source; do not invent anything. Avoid long technical explanations unless they are necessary for accuracy. Prefer flowing sentences; you may use blank lines between short paragraphs only for breathing room, not as fake sections.
+
+Output rules: no preamble, no "here is the rewritten version", no intro or wrapping commentary—output only the rewritten notes.`;
+  const userPrompt = `Rewrite these notes for the live AI assistant:\n\n${content.slice(0, 4000)}`;
   const payload = JSON.stringify({
     model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
     ],
-    max_tokens: 1000,
+    max_tokens: 2000,
     temperature: 0.3,
   });
   const reqOpts = {
@@ -574,18 +608,29 @@ function handleAnswerApi(body, res) {
     return;
   }
   const text = (parsed.text ?? '').trim();
+  const notesContext = (parsed.notesContext ?? '').trim();
   if (!text) {
     res.writeHead(400, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Missing or empty text' }));
     return;
   }
-  const systemPrompt = 'You are Persuaid, a real-time sales copilot helping a rep during a live sales call.\n\nYour job is to give the rep the exact next words to say out loud in the moment, not generic coaching or analysis.\n\nThe rep has typed in a specific question, objection, or snippet from the call. Respond as if you are putting words in their mouth. They may ask about anything—use your own knowledge and reasoning to give a confident, helpful spoken answer. Do not refuse or say you need more information; think like a smart salesperson and answer based on what you know.\n\nAlways:\n- Speak in natural, confident, spoken sales language (what the rep would actually say next).\n- Prefer plainspoken, natural sales language. Avoid "I\'d love to understand", "let\'s explore", "help guide you", "uncover your needs", "based on your situation". Prefer "that\'s a fair question", "the main thing is", "usually what people do is", "in most cases", "what that really means is". Use confident phrasing: prefer "usually what people do is", "most people in your situation", "typically what happens is"; avoid "it might help to", "you could consider", "perhaps".\n- When appropriate, start with a short humanizing phrase then the answer: "That\'s a great question.", "That\'s actually pretty common.", "A lot of people ask that.", "That\'s a fair concern." Follow immediately with the answer.\n- The first sentence must directly answer or address what they typed; do not begin with generic filler unless it is very brief and followed immediately by the answer.\n- When appropriate, end with a small forward-moving question (Momentum). If they raised an objection, use Acknowledge → Reframe → Continue.\n- Stay concise: 1–3 short sentences when momentum is used, otherwise 1–2.\n- Do NOT output bullet points, headings, markdown, or multiple options.\n- Do NOT explain your reasoning, coach the rep, or talk about "what you typed" or "this question".';
-  const userPrompt = `The rep typed this because they need the next line to say out loud:\n"${text}"\n\nWhat is the exact short line or two they should say next? Reply with only that spoken answer.`;
+  const systemPrompt = [
+    'You are a real-time sales assistant (Persuaid): copilot for a live sales call.',
+    'Your job is to give the rep the exact next words to say out loud—no generic coaching.',
+    'Product knowledge: When the message includes "Provided product knowledge", that section is authoritative.',
+    'Mandatory: If the answer (including numbers or tiers) is IN the product knowledge, use it DIRECTLY—clearly. Do NOT refuse or say you cannot provide numbers when the knowledge includes them. Only skip numbers when absent from knowledge. Multiple pricing tiers → list ALL clearly.',
+    'Knowledge boundaries: (1) Pricing/coverage/policy/product numbers — ONLY from product knowledge; all tiers when listed; say figures when present; never invent; defer only if missing. (2) General topics — general knowledge OK; prioritize product knowledge; never contradict. (3) No knowledge block + needs figures — defer; do not invent.',
+    'Always: natural spoken sales; 1–3 sentences (up to 4–5 for full tier walkthrough from knowledge); no markdown/bullets; no coaching meta.',
+  ].join('\n\n');
+  const knowledgeBlock = notesContext
+    ? `\n\nProvided product knowledge:\n${notesContext.slice(0, 4000)}`
+    : '\n\n(No product knowledge block was provided.)';
+  const userPrompt = `The rep typed this because they need the next line to say out loud:\n"${text}"${knowledgeBlock}\n\nWhat should they say next? Reply with only that spoken answer. If knowledge contains the answer or numbers, use them directly—do not refuse. All pricing tiers if listed. If absent/silent on figures, defer—never invent.`;
   console.log('[AI] sending request to OpenAI (answer)');
   const payload = JSON.stringify({
     model: 'gpt-4o-mini',
     messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
-    max_tokens: 300,
+    max_tokens: 420,
   });
   const outReq = https.request({
     hostname: 'api.openai.com',

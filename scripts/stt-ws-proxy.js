@@ -18,7 +18,7 @@ const http = require("http");
 const crypto = require("crypto");
 const { WebSocketServer } = require("ws");
 
-const PORT = Number(process.env.STT_PROXY_PORT) || 2998;
+const PORT = Number(process.env.PORT || process.env.STT_PROXY_PORT) || 2998;
 const BIND = (process.env.STT_PROXY_BIND || "127.0.0.1").trim();
 const DEEPGRAM_ORIGIN = "wss://api.deepgram.com";
 
@@ -43,8 +43,22 @@ if (!apiKey) {
 
 const server = http.createServer((req, res) => {
   if (req.url === "/health" || req.url?.startsWith("/health?")) {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ ok: true, service: "persuaid-stt-relay", port: PORT }));
+    const body = JSON.stringify({ ok: true, service: "persuaid-stt-relay", port: PORT });
+    if (req.method === "HEAD") {
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+      });
+      res.end();
+      return;
+    }
+    if (req.method === "GET") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(body);
+      return;
+    }
+    res.writeHead(405);
+    res.end();
     return;
   }
   res.writeHead(404);

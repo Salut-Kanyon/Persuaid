@@ -340,7 +340,24 @@ export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProp
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
               </svg>
             </div>
-            <h2 className="text-sm font-medium text-text-primary tracking-tight">Notes</h2>
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="text-sm font-medium text-text-primary tracking-tight">Notes</h2>
+              <div
+                className="pointer-events-none h-8 w-[15px] sm:h-9 sm:w-[17px] shrink-0 overflow-hidden rounded-[7px] bg-black"
+                aria-hidden
+              >
+                <video
+                  className="h-full w-full object-cover object-center"
+                  autoPlay
+                  muted
+                  playsInline
+                  preload="auto"
+                  aria-label="Cue — plays once"
+                >
+                  <source src="/CueVid1.mp4" type="video/mp4" />
+                </video>
+              </div>
+            </div>
           </>
         }
         actions={

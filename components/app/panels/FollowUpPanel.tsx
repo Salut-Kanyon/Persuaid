@@ -120,6 +120,7 @@ export function FollowUpPanel() {
     setSuggestedFollowUpSource,
     requestFollowUp,
     isRecording,
+    notesContext,
   } = useSession();
   const { canUseProFeatures, openUpgradeModal } = useEntitlements();
 
@@ -216,7 +217,7 @@ export function FollowUpPanel() {
       const res = await fetch("/api/ai/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, notesContext: notesContext?.trim() ?? "" }),
       });
       const data = (await res.json()) as { answer?: string; error?: string };
       if (res.ok && typeof data.answer === "string") {

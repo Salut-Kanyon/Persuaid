@@ -51,12 +51,50 @@ The relay binds to **127.0.0.1** by default (not reachable from your phone).
 
 ## Production
 
-- Deploy the relay (or equivalent) as **`wss://stt.yourdomain.com`** behind TLS.
-- Set:
+**Do not point the STT hostname at Vercel.** Serverless/edge hosts are the wrong fit for a long‑lived browser → relay → Deepgram WebSocket. Use a small always-on VM/container (this repo ships a **Fly.io** layout).
 
-  ```bash
-  NEXT_PUBLIC_STT_PROXY_URL=wss://stt.yourdomain.com
-  ```
+### Fly.io (recommended)
+
+1. Install [Fly CLI](https://fly.io/docs/hands-on/install-flyctl/), ensure Docker is running.
+2. From the repo root, create the app once (name must be globally unique — change `app` in `fly.stt.toml` if this one is taken):
+
+   ```bash
+   fly apps create persuaid-stt-relay
+   ```
+
+3. Set the secret (never commit it):
+
+   ```bash
+   fly secrets set DEEPGRAM_API_KEY=your_key_here -a persuaid-stt-relay
+   ```
+
+4. Deploy:
+
+   ```bash
+   fly deploy -c fly.stt.toml
+   ```
+
+5. **TLS + custom domain** (e.g. `stt.persuaid.app`):
+
+   ```bash
+   fly certs add stt.persuaid.app -a persuaid-stt-relay
+   ```
+
+   At your DNS provider, add a **CNAME** for `stt` to the target Fly shows (usually `persuaid-stt-relay.fly.dev`). **Remove** any Vercel (or other) record that pointed `stt` at a dead deployment — that is what causes `x-vercel-error: DEPLOYMENT_NOT_FOUND`.
+
+6. Verify:
+
+   ```bash
+   curl -sI https://stt.persuaid.app/health
+   ```
+
+   Expect **HTTP 200** and JSON body `{"ok":true,"service":"persuaid-stt-relay",...}` on `GET /health`.
+
+7. In the Next/Vercel project env:
+
+   ```bash
+   NEXT_PUBLIC_STT_PROXY_URL=wss://stt.persuaid.app
+   ```
 
 - Do **not** set `NEXT_PUBLIC_STT_ALLOW_BROWSER_DEEPGRAM` in production unless you accept the operational risk.
 
@@ -73,7 +111,7 @@ Structured JSON logs to stdout:
 | `stt_deepgram_close` | Upstream closed (`transcriptEvents`, `upstreamMessages`) |
 | `stt_client_close` | Browser disconnected |
 
-**Health check:** `GET http://<host>:2998/health` → `{"ok":true,"service":"persuaid-stt-relay",...}`
+**Health check:** `GET /health` (or `HEAD` for `curl -I`) → **200** with `{"ok":true,"service":"persuaid-stt-relay",...}`. Local default port is **2998**; the Fly image listens on **8080** inside the container (only the public hostname matters once deployed).
 
 ## Client behavior
 

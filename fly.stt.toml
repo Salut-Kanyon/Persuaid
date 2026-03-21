@@ -1,0 +1,33 @@
+# STT relay only. Deploy from repo root:
+#   fly apps create persuaid-stt-relay   # once; or pick another unique name and edit `app` below
+#   fly secrets set DEEPGRAM_API_KEY=... -a persuaid-stt-relay
+#   fly deploy -c fly.stt.toml
+#   fly certs add stt.persuaid.app -a persuaid-stt-relay
+# DNS: CNAME stt.persuaid.app → persuaid-stt-relay.fly.dev (remove Vercel / stale STT records)
+
+app = "persuaid-stt-relay"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "Dockerfile.stt-relay"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+    protocol = "http"
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1

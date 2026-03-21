@@ -21,7 +21,7 @@ Persuaid is a Next.js + Electron app that listens to a live call, shows a runnin
 - **Notes panel** with:
   - import from saved notes
   - load from file (`.txt`, `.md`, and other text formats)
-  - AI rewrite with selectable formatting styles
+  - AI rewrite of notes into plain, retrieval-optimized product knowledge
 - **Transcript export** (default format configurable: `.txt` or `.md`)
 - **Scripts / talking points** manager (Supabase) with paste-to-auto-format talking points
 - **Desktop app packaging** (Electron + DMG build pipeline)

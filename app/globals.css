@@ -70,4 +70,17 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Indeterminate bar for “Connect with AI” in Notes panel */
+  @keyframes notes-ai-connect-indeterminate {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(350%);
+    }
+  }
+  .notes-ai-connect-progress {
+    animation: notes-ai-connect-indeterminate 1.15s ease-in-out infinite;
+  }
 }

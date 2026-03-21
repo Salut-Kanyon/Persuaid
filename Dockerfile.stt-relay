@@ -1,0 +1,16 @@
+# STT WebSocket relay (browser → this service → Deepgram). Not for the Next.js app.
+FROM node:20-alpine
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY scripts/stt-ws-proxy.js ./scripts/
+
+ENV NODE_ENV=production
+ENV STT_PROXY_BIND=0.0.0.0
+ENV STT_PROXY_PORT=8080
+
+EXPOSE 8080
+
+CMD ["node", "scripts/stt-ws-proxy.js"]
