@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { cn } from "@/lib/utils";
@@ -72,6 +72,18 @@ export function NotesPanel() {
     }
   }, [myNotes, aiConnectedNotes]);
 
+  /** Drop AI-connected layer so the user reconnects after notes change materially (import, file, clear). */
+  const invalidateAiLayer = useCallback(() => {
+    setAiConnectedNotes("");
+    setNotesView("my");
+    setConnectError(null);
+    try {
+      localStorage.removeItem(STORAGE_AI);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const handleSave = async () => {
     const content = myNotes.trim();
     if (!content) return;
@@ -91,13 +103,7 @@ export function NotesPanel() {
     setSaving(false);
     if (!error) {
       setMyNotes("");
-      setAiConnectedNotes("");
-      setNotesView("my");
-      try {
-        localStorage.removeItem(STORAGE_AI);
-      } catch {
-        // ignore
-      }
+      invalidateAiLayer();
       setSaveMessage("Note saved");
       setTimeout(() => setSaveMessage(null), 2000);
     }
@@ -134,12 +140,10 @@ export function NotesPanel() {
 
   const handleClear = () => {
     setMyNotes("");
-    setAiConnectedNotes("");
+    invalidateAiLayer();
     setNotesContext("");
-    setNotesView("my");
     try {
       localStorage.removeItem(STORAGE_MY);
-      localStorage.removeItem(STORAGE_AI);
     } catch {
       // ignore
     }
@@ -151,7 +155,10 @@ export function NotesPanel() {
     const reader = new FileReader();
     reader.onload = () => {
       const text = reader.result;
-      if (typeof text === "string") setMyNotes(text);
+      if (typeof text === "string") {
+        invalidateAiLayer();
+        setMyNotes(text);
+      }
     };
     reader.readAsText(file);
     e.target.value = "";
@@ -172,6 +179,7 @@ export function NotesPanel() {
   const importNote = (note: SavedNote) => {
     const toAppend = note.content?.trim() || "";
     if (toAppend) {
+      invalidateAiLayer();
       setMyNotes((prev) => (prev.trim() ? prev + "\n\n" + toAppend : toAppend));
     }
     setImportOpen(false);
@@ -212,9 +220,10 @@ export function NotesPanel() {
           onClick={handleConnectWithAi}
           disabled={connecting || !myNotes.trim()}
           className={cn(
-            "px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5",
+            "px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 flex-wrap",
             "bg-green-primary/20 text-green-700 dark:text-green-400 border border-green-primary/30",
-            "hover:bg-green-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            "hover:bg-green-primary/30 disabled:opacity-50 disabled:cursor-not-allowed",
+            hasAiLayer && !connecting && "border-green-primary/55 bg-green-primary/25"
           )}
         >
           {connecting ? (
@@ -223,7 +232,29 @@ export function NotesPanel() {
               <span>Connecting…</span>
             </>
           ) : (
-            "Connect with AI"
+            <>
+              {hasAiLayer && (
+                <svg
+                  className="size-3.5 shrink-0 text-green-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  aria-hidden
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              <span>Connect with AI</span>
+              {!hasAiLayer && myNotes.trim() && (
+                <span
+                  className="ml-0.5 px-1.5 py-px rounded-md text-[10px] font-semibold uppercase tracking-wide bg-white/20 text-white/95 border border-white/55 notes-connect-recommended-blink [text-shadow:0_0_4px_rgba(255,255,255,0.35)]"
+                  title="Connect so the live copilot can use an optimized version of your notes"
+                >
+                  Recommended
+                </span>
+              )}
+            </>
           )}
         </button>
       </div>
@@ -277,7 +308,7 @@ export function NotesPanel() {
         </div>
       )}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div className="flex-shrink-0 px-4 pt-3 pb-2 space-y-2">
+        <div className="flex-shrink-0 px-4 pt-2 pb-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span
               className="text-xs font-medium uppercase tracking-wide text-text-dim"
@@ -308,26 +339,28 @@ export function NotesPanel() {
                 disabled={!hasAiLayer}
                 title={!hasAiLayer ? "Connect with AI first" : "Plain text optimized for the live assistant"}
                 className={cn(
-                  "px-3 py-1.5 text-xs font-medium rounded-[10px] transition-colors",
+                  "px-3 py-1.5 text-xs font-medium rounded-[10px] transition-colors inline-flex items-center gap-1",
                   notesView === "ai"
                     ? "bg-green-primary/15 text-green-700 dark:text-green-400 border border-green-primary/35 shadow-sm"
                     : "text-text-muted hover:text-text-primary",
                   !hasAiLayer && "opacity-40 cursor-not-allowed hover:text-text-muted"
                 )}
               >
+                {hasAiLayer && (
+                  <svg
+                    className="size-3 shrink-0 text-green-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                    aria-hidden
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
                 AI connected
               </button>
             </div>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium text-green-600 dark:text-green-400">
-              Product knowledge
-            </span>
-            <span className="text-xs text-green-600/90 dark:text-green-400/90 leading-snug">
-              {notesView === "my"
-                ? "Bulletins and scratch notes for you. Connect with AI to build a retrieval layer the copilot reads—without changing how you write."
-                : "What the live assistant uses when connected. Edit your wording in My notes, then connect again to refresh."}
-            </span>
           </div>
         </div>
         <textarea

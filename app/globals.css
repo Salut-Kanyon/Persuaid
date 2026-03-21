@@ -83,4 +83,19 @@
   .notes-ai-connect-progress {
     animation: notes-ai-connect-indeterminate 1.15s ease-in-out infinite;
   }
+
+  @keyframes notes-connect-recommended-blink {
+    0%,
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.35);
+    }
+    50% {
+      opacity: 0.65;
+      box-shadow: 0 0 7px rgba(255, 255, 255, 0.5);
+    }
+  }
+  .notes-connect-recommended-blink {
+    animation: notes-connect-recommended-blink 1.35s ease-in-out infinite;
+  }
 }
