@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "stt:proxy": "node scripts/stt-ws-proxy.js",
+    "dev:stt": "concurrently -k -n next,stt -c blue,green \"next dev\" \"node scripts/stt-ws-proxy.js\"",
     "dev:web": "next dev",
     "build": "next build",
     "build:desktop": "cross-env OUTPUT_STATIC=1 next build",

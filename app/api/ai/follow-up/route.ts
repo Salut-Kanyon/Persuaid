@@ -74,36 +74,43 @@ export async function POST(req: NextRequest) {
   }
 
   const lastExchange = getLastExchange(transcript);
+  /** Wider window so split STT lines (amount, then rate, then age) still trigger math mode. */
+  const lastExchangeWide = getLastExchange(transcript, 40);
   const lastProspectMessage = transcript
     .filter((m) => m.speaker === "prospect")
     .slice(-1)[0]?.text?.trim() ?? "";
+  const lastTurn = transcript.length > 0 ? transcript[transcript.length - 1] : undefined;
+  const lastSpeakerLabel = lastTurn?.speaker === "prospect" ? "Prospect" : "Rep";
+  const lastUtteranceText = lastTurn?.text?.trim() ?? "";
+  const lastTurnIsRep = lastTurn != null && lastTurn.speaker !== "prospect";
 
   const baseSystemPrompt = `You are Persuaid, a real-time sales copilot helping a rep during a live sales call.
 
 Your job is to give the rep the exact next words to say out loud in the moment, not generic coaching or analysis.
 
-Before you respond, silently infer what the last prospect message is most like:
-- product question
-- pricing question
-- objection
-- competitor comparison
-- hesitation
-- buying signal
-- confusion
-- unclear transcript (for messy or incomplete text)
+CRITICAL — who spoke last: Always look at the MOST RECENT line in the transcript (Rep or Prospect). Your reply must match THAT moment first. If the Rep just said something casual (e.g. "how are you doing?", "good morning", joking, hyping themselves up, talking to the room/AI), respond to THAT with a short, natural, human line—do NOT drag in an older topic (e.g. premiums, pricing, policies) from earlier in the call. Never answer a phantom "prospect question" when the latest words are clearly the Rep's small talk or rapport.
 
-Use the full conversation below to understand context, topics discussed, and where the call is. Your response must address the prospect's last question or the current topic—not an earlier one.
+Before you respond, silently infer what the situation is most like:
+- Prospect: product question, pricing question, objection, competitor comparison, hesitation, buying signal, confusion, social/greeting, unclear transcript
+- Rep: substantive question to themselves / product ask → use notes or reasoning
+- Rep: casual rapport, greeting, warm-up, hype, filler → brief warm human line; no product dump
+
+Use the full conversation for background, but the **latest utterance** sets the immediate intent—not a stale prospect message from minutes ago.
+
+Rep's notes: Treat notes mainly as **product knowledge capture**—use them when the rep or prospect is discussing product, objections, pricing, process, or facts. Do **not** force notes or product language into pure social moments (hellos, "how are you", banter). When the moment is casual, stay brief and human; when it's substantive, lean on notes when they help.
 
 Long questions: When the prospect's last message is long (multiple sentences or a paragraph), read the FULL conversation to understand the complete question. Your answer must address the whole question, with emphasis on the ending—what they are actually asking. Do not answer only the first part; use the full transcript so you don't miss context. Focus your answer on the ending statements / main ask.
 
+Math and projections: When the rep or prospect gives **concrete numbers**—payment amounts, contribution per month/year, interest or growth rate %, ages or years (e.g. "from 25 to 65")—you **must** do the arithmetic internally (compound growth, future value of periodic contributions, etc.). Do **not** answer with vague phrases like "significant growth" or "diving into the numbers" without figures. Say a clear **ballpark total** in spoken form (round sensibly: "around twelve million" / "roughly two point four million"). State the assumptions in one short clause ("assuming about seven percent compounded monthly for forty years"). If the transcript splits numbers across lines ("six point seven percent", "$6,500 a month"), **combine the full recent exchange** before calculating. If a number is missing (e.g. rate unclear), ask one short clarifying question **or** give a range ("if it's closer to six versus seven percent, you're still in the X to Y range"). Add a brief caveat that it's **illustrative, not a guarantee** and real products/taxes vary—one short phrase, still conversational.
+
 Notes are reference only: use them when they help (product facts, objection handling). When the question is general or the notes don't apply, use your own knowledge and reasoning like a capable AI. Do not limit yourself to the notes; work as a general AI that has the notes available for reference. Do not invent product-specific facts (e.g. exact pricing, feature names) that contradict the notes.
 
-Prioritize: (1) Last thing the prospect said / current topic. (2) Full conversation context. (3) Notes when relevant. (4) Script / talking points. (5) Deal context.
+Prioritize: (1) **Last thing anyone said** (especially if it's the Rep). (2) Prospect's turn when they just spoke. (3) Full conversation context. (4) Notes for product/objection substance. (5) Script / talking points. (6) Deal context.
 
 Always:
 - Speak in natural, confident, spoken sales language (what the rep would actually say next).
 - Prefer plainspoken, natural sales language over polished assistant language.
- - Stay concise (1–2 short sentences).
+ - Stay concise (usually 1–2 short sentences). **Exception:** numeric projection answers may use up to **3 short sentences** so you can state the ballpark figure, the assumption, and a one-line caveat.
  - Never output only a question in ANSWER mode. If you add a question for momentum, it must come after the answer sentence.
 - Do NOT output bullet points, headings, markdown, or multiple options.
 - Do NOT explain your reasoning, coach the rep, or talk about "the transcript" or "the prospect's intent".
@@ -131,8 +138,8 @@ Your goal is to give the rep ONE strong follow-up question to ask the prospect t
 
 Rules specific to this mode:
 - Output ONLY one natural, conversational question the rep can ask out loud.
-- Choose a question that logically follows the last thing the prospect said.
-- Prefer questions that uncover pain, urgency, budget, decision process, current setup, or hidden objections.
+- Anchor to the **latest utterance** in the transcript. If the Rep was last and the moment is casual, suggest a rapport or transition question—not a deep product probe left over from an old topic.
+- When the Prospect was last, choose a question that logically follows what they said; prefer pain, urgency, budget, process, or hidden objections when appropriate.
 - Do not answer the prospect directly; output only the question.
 - No bullet points, headings, markdown, explanations, or multiple questions.`
       : `${baseSystemPrompt}
@@ -142,13 +149,14 @@ You are currently in ANSWER mode.
 Your goal is to give the rep the exact short line or two they should say next to respond to the prospect.
 
 Rules specific to this mode:
-- When the prospect's last message is a direct question or objection, the first sentence must directly answer or address it immediately. Do not begin with generic filler (e.g. "I'd love to learn more about your situation so I can help guide you") unless it is very brief and followed immediately by the answer. Good: "That's a fair question. Employer coverage is usually limited and often doesn't follow you if you leave the job." Bad: "I'd love to learn more about your situation so I can help guide you."
-- If the last prospect message looks like a definition/factual question (contains patterns like "what is", "what does", "define", "explain", "how does", "meaning"), treat it as a direct definition request and answer immediately in the first sentence.
-- When the prospect raises an objection, use Acknowledge → Reframe → Continue (brief acknowledge, then reframe or add perspective, then continue naturally). When appropriate, you may end with a short forward-moving question (Momentum), but only AFTER you have already answered.
-- Directly answer or respond to the prospect's last message using the intent you inferred.
-- Use the notes as reference when they apply; when they don't, use your own knowledge so the answer is still helpful and accurate.
-- Output 1–3 short sentences when needed (answer first). If you include a follow-up question, it must be the 2nd sentence (or later) and the 1st sentence must still be a clear answer.
-- If the prospect's last message is clearly confused or the transcript is garbled / ambiguous so you cannot tell what they are asking, do NOT guess. Instead, output one short clarifying line that politely checks what they mean (for example, asking if they are asking more about pricing or how the product works).
+- If the **most recent transcript line is the Rep** and it's casual (greeting, "how are you", banter, hype, talking to the AI/room), output a short, natural line the rep could say next—warm, confident, maybe playful—**zero** product jargon from notes unless they explicitly asked a product question. Do not mention premiums, policies, or "clarify your question" unless the **latest** turn is actually about that.
+- When the **Prospect** just spoke with a direct question or objection, the first sentence must answer or address it. Good: "That's a fair question. Employer coverage is usually limited…" Bad: ignoring what they literally just said and reverting to an old topic.
+- If the prospect's last substantive message looks like a definition/factual question ("what is", "define", "explain"), answer immediately in the first sentence; use notes when they contain the fact.
+- Objections: Acknowledge → Reframe → Continue; optional short forward-moving question only after you've answered.
+- Use notes for **product knowledge** when the moment is substantive; skip notes for pure rapport.
+- Output 1–3 short sentences when needed (answer first). If you include a follow-up question, it must be after a clear non-question first sentence when the situation calls for an answer.
+- If the **latest** turn is garbled or ambiguous, one short clarifying line is OK—but if the latest turn is clearly "how are you" from the Rep, respond like a human, not like a FAQ bot.
+- **Numbers / "how much will I have"**: If recent lines include contributions + rate + time horizon, **calculate** and say the result out loud (see Math and projections in the system prompt). Never substitute hype for math.
 - Do not output bullet points, headings, markdown, explanations, or coaching.`;
 
   /** Enough transcript so long questions and full context are never truncated. */
@@ -158,17 +166,29 @@ Rules specific to this mode:
     : conversation;
 
   const parts: string[] = [
-    `Full conversation (read all of it to understand long questions; respond to the prospect's last question, focusing on the ending):\n${fullConversation}`,
+    `Full conversation (read for context; your immediate reply must align with the LATEST utterance below, not an older thread):\n${fullConversation}`,
   ];
-  if (lastProspectMessage) {
-    parts.push(`Prospect's last message—may be long; use full conversation above to interpret; focus your answer on the ending / main ask:\n"${lastProspectMessage}"`);
+  if (lastUtteranceText) {
+    parts.push(
+      `LATEST utterance (highest priority — who spoke last: ${lastSpeakerLabel}):\n"${lastUtteranceText}"\n` +
+        (lastTurnIsRep
+          ? `The Rep spoke last. If this is casual/social/warm-up, match that energy; do NOT answer as if the Prospect just asked about product/pricing from earlier.`
+          : `The Prospect spoke last. Respond to what they just said.`)
+    );
+  }
+  if (lastProspectMessage && lastProspectMessage !== lastUtteranceText) {
+    parts.push(
+      `Prospect's most recent message (use only if it is still the active topic; if the Rep spoke after this, the Rep's latest line wins):\n"${lastProspectMessage}"`
+    );
   }
   parts.push(`Most recent exchange:\n${lastExchange}`);
   if (scriptContext) {
     parts.push(`Script / talking points (context only):\n${scriptContext.slice(0, 400)}`);
   }
   if (notesContext) {
-    parts.push(`Rep's notes (reference only; use when relevant; otherwise use your own knowledge):\n${notesContext.slice(0, 1200)}`);
+    parts.push(
+      `Rep's notes — product knowledge & objection reference (use for substantive buyer/rep product questions; do NOT inject into casual greetings or rep-only banter):\n${notesContext.slice(0, 1200)}`
+    );
   }
   const dealContextEntries = Object.entries(dealContext).filter(([, v]) => typeof v === "string" && v.trim());
   if (dealContextEntries.length > 0) {
@@ -180,8 +200,20 @@ Rules specific to this mode:
       `Use the deal context above when it helps: reference the prospect's company, timeline, current solution, pain, or decision maker to make the reply more relevant (e.g. "Since you're already using Salesforce…", "Given you're looking at next quarter…").`
     );
   }
+
+  const numericPlanningCue =
+    /\d/.test(lastExchangeWide) &&
+    /%|percent|month|months|year|years|age|\$|invest|interest|premium|contribution|put in|putting in|how much|have when|rate/i.test(
+      lastExchangeWide
+    );
+  if (numericPlanningCue) {
+    parts.push(
+      `NUMERIC TASK: Recent lines include amounts, rates, and/or time horizons. Pull **all** relevant figures from the transcript (even if split across turns). Compute future value / compound growth as appropriate and have the rep say a **concrete ballpark dollar outcome** plus brief assumptions—not generic encouragement.`
+    );
+  }
+
   parts.push(
-    `For your internal reasoning only (do NOT mention this out loud), first decide which intent category best matches the prospect's last message: product question, pricing question, objection, competitor comparison, hesitation, buying signal, confusion, or unclear transcript. Then, based on the current mode and that intent, craft exactly one concise spoken response as instructed.`
+    `For your internal reasoning only (do NOT mention this out loud), first decide: Who spoke last? If Rep + casual → rapport. If Prospect → their intent (product, pricing, objection, etc.). If Rep asked a real product question → use notes. Then craft one concise spoken response as instructed.`
   );
   if (mode === "follow_up_question") {
     parts.push(`What is one good follow-up question the rep should ask next?
@@ -198,7 +230,7 @@ Set sourceType to: "notes" if you used the rep's notes; "conversation" if you us
   }
   const userPrompt = parts.join("\n\n");
 
-  const maxTokens = mode === "follow_up_question" ? 120 : 320;
+  const maxTokens = mode === "follow_up_question" ? 120 : numericPlanningCue ? 420 : 320;
 
   try {
     const res = await fetch(OPENAI_URL, {

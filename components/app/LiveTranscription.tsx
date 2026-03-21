@@ -31,25 +31,48 @@ function buildDeepgramParams(sampleRate: number): URLSearchParams {
 }
 const KEEPALIVE_INTERVAL_MS = 2000;
 
-function getSttProxyUrl(): string {
-  // 1. If NEXT_PUBLIC_STT_PROXY_URL exists, use that
-  const envProxy = typeof process !== "undefined" ? (process.env.NEXT_PUBLIC_STT_PROXY_URL ?? "").trim() : "";
+type SttConnectionPlan =
+  | { kind: "relay"; baseUrl: string }
+  | { kind: "token" }
+  | { kind: "none"; message: string };
+
+/**
+ * Production path: browser → STT relay only (scripts/stt-ws-proxy.js or your deployed relay).
+ * Direct browser → Deepgram is opt-in: NEXT_PUBLIC_STT_ALLOW_BROWSER_DEEPGRAM=true (not recommended).
+ */
+function resolveSttConnection(): SttConnectionPlan {
+  const envProxy =
+    typeof process !== "undefined"
+      ? (process.env.NEXT_PUBLIC_STT_PROXY_URL ?? "").trim().replace(/\/$/, "")
+      : "";
   if (envProxy) {
-    return envProxy.replace(/\/$/, "");
+    return { kind: "relay", baseUrl: envProxy };
   }
-  // 2. Packaged Electron app: origin http://127.0.0.1:2999 → use in-app proxy on 2998
   if (typeof window !== "undefined" && window.location?.origin?.startsWith("http://127.0.0.1:2999")) {
-    return "ws://127.0.0.1:2998";
+    return { kind: "relay", baseUrl: "ws://127.0.0.1:2998" };
   }
-  // 3. Localhost dev: use local STT proxy by default (no direct Deepgram token mode)
   if (typeof window !== "undefined") {
     const host = window.location?.hostname ?? "";
     if (host === "localhost" || host === "127.0.0.1") {
-      return "ws://127.0.0.1:2998";
+      return { kind: "relay", baseUrl: "ws://127.0.0.1:2998" };
     }
   }
-  // 4. Fallback only: token mode (production web deploy, no proxy available)
-  return "";
+  const allowDirect =
+    typeof process !== "undefined" && process.env.NEXT_PUBLIC_STT_ALLOW_BROWSER_DEEPGRAM === "true";
+  if (allowDirect) {
+    if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[STT] NEXT_PUBLIC_STT_ALLOW_BROWSER_DEEPGRAM is on — prefer relay; direct WebSocket to Deepgram often fails (1006, mobile).",
+      );
+    }
+    return { kind: "token" };
+  }
+  return {
+    kind: "none",
+    message:
+      "Live transcription unavailable: STT relay not configured. Run `npm run stt:proxy` (with DEEPGRAM_API_KEY in .env.local) and use `npm run dev:stt`, or set NEXT_PUBLIC_STT_PROXY_URL to your relay (e.g. ws://127.0.0.1:2998). For phone on Wi‑Fi: start relay with STT_PROXY_BIND=0.0.0.0 and set NEXT_PUBLIC_STT_PROXY_URL to ws://YOUR_LAN_IP:2998. Emergency dev only: NEXT_PUBLIC_STT_ALLOW_BROWSER_DEEPGRAM=true.",
+  };
 }
 
 function connectWebSocket(url: string, protocols?: string[]): Promise<WebSocket> {
@@ -258,7 +281,6 @@ export function LiveTranscription() {
   const keepaliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const rmsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const connectionErrorShownRef = useRef(false);
   /** Buffer for the current in-progress utterance (interim transcript). */
   const phraseBufferRef = useRef<string>("");
   /** For display only: we never commit interim to transcript, only Deepgram finals. */
@@ -267,6 +289,8 @@ export function LiveTranscription() {
   const lastAppendedTextRef = useRef<string>("");
   const lastAppendedSpeakerRef = useRef<"user" | "prospect" | null>(null);
   const lastAppendedAtRef = useRef<number>(0);
+  /** True while tearing down so WS onclose does not trigger reconnect. */
+  const intentionalStopRef = useRef(true);
 
   // Allow other parts of the app (e.g., Q&A) to clear the current phrase buffer.
   useEffect(() => {
@@ -285,6 +309,7 @@ export function LiveTranscription() {
     // Debug: confirm effect runs and isRecording state
     console.log("[STT] LiveTranscription effect fired. isRecording =", isRecording);
     if (!isRecording) {
+      intentionalStopRef.current = true;
       setMicError(null);
       if (wsRef.current) {
         try {
@@ -331,10 +356,15 @@ export function LiveTranscription() {
     }
 
     let mounted = true;
-    connectionErrorShownRef.current = false;
-
+    intentionalStopRef.current = false;
     (async () => {
       try {
+        const conn = resolveSttConnection();
+        if (conn.kind === "none") {
+          setMicError(conn.message);
+          return;
+        }
+
         if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
           setMicError("Microphone not supported in this environment.");
           return;
@@ -405,26 +435,21 @@ export function LiveTranscription() {
         const actualSampleRate = ctx.sampleRate;
         const query = buildDeepgramParams(actualSampleRate).toString();
 
-        const proxyUrl = getSttProxyUrl();
-        const useProxy = !!proxyUrl;
-        const sttMode = useProxy ? "proxy" : "token";
-        const wsUrl = useProxy ? `${proxyUrl}/v1/listen?${query}` : `wss://api.deepgram.com/v1/listen?${query}`;
+        const useRelay = conn.kind === "relay";
+        const wsUrl = useRelay
+          ? `${conn.baseUrl}/v1/listen?${query}`
+          : `wss://api.deepgram.com/v1/listen?${query}`;
         const isDev = typeof window !== "undefined" && (window.location?.hostname === "localhost" || window.location?.hostname === "127.0.0.1");
         console.log(
-          "[STT] Selected STT mode:",
-          sttMode,
-          "| WebSocket URL:",
+          "[STT] Path:",
+          useRelay ? "relay (browser → your server → Deepgram)" : "direct token (legacy)",
+          "| URL:",
           wsUrl,
-          "| Proxy mode:",
-          useProxy,
-          "| Token mode:",
-          !useProxy,
         );
 
         let ws: WebSocket;
 
-        if (proxyUrl) {
-          // Localhost dev or packaged Electron: use local STT proxy. Key in .env.local or app config.
+        if (useRelay) {
           try {
             ws = await connectWebSocket(wsUrl);
           } catch {
@@ -432,7 +457,7 @@ export function LiveTranscription() {
             stream.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
             setMicError(
-              "Could not connect to STT proxy. Run: node scripts/stt-ws-proxy.js (ensure DEEPGRAM_API_KEY is in .env.local). For packaged app, add DEEPGRAM_API_KEY to the app config folder."
+              "Could not connect to the STT relay. Start it with: npm run stt:proxy (DEEPGRAM_API_KEY in .env.local). Or set NEXT_PUBLIC_STT_PROXY_URL to your relay. For Electron, ensure DEEPGRAM_API_KEY is configured."
             );
             return;
           }
@@ -494,10 +519,46 @@ export function LiveTranscription() {
         wsRef.current = ws;
         console.log("[STT] websocket open");
 
-        const showConnectionError = (detail: string) => {
-          if (!mounted || connectionErrorShownRef.current) return;
-          connectionErrorShownRef.current = true;
-          setMicError(`Transcription connection failed. ${detail}`);
+        const stopKeepalive = () => {
+          if (keepaliveRef.current) {
+            clearInterval(keepaliveRef.current);
+            keepaliveRef.current = null;
+          }
+        };
+
+        const fullPipelineTeardown = () => {
+          stopKeepalive();
+          if (pcmProcessorRef.current) {
+            try {
+              pcmProcessorRef.current.disconnect();
+            } catch {
+              // ignore
+            }
+            pcmProcessorRef.current = null;
+          }
+          if (audioContextRef.current) {
+            try {
+              audioContextRef.current.close();
+            } catch {
+              // ignore
+            }
+            audioContextRef.current = null;
+          }
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach((t) => t.stop());
+            streamRef.current = null;
+          }
+          wsRef.current = null;
+        };
+
+        const startKeepaliveForCurrentSocket = () => {
+          stopKeepalive();
+          keepaliveRef.current = setInterval(() => {
+            const s = wsRef.current;
+            if (s?.readyState === WebSocket.OPEN) {
+              s.send(JSON.stringify({ type: "KeepAlive" }));
+            }
+          }, KEEPALIVE_INTERVAL_MS);
         };
 
         // Capture raw PCM at context sample rate and send as linear16 (v1/listen returns real transcripts).
@@ -533,11 +594,7 @@ export function LiveTranscription() {
 
         if (mounted) {
           setSessionId((id) => id || crypto.randomUUID());
-          keepaliveRef.current = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-              ws.send(JSON.stringify({ type: "KeepAlive" }));
-            }
-          }, KEEPALIVE_INTERVAL_MS);
+          startKeepaliveForCurrentSocket();
         }
 
         const handleResultText = (raw: string) => {
@@ -656,40 +713,79 @@ export function LiveTranscription() {
         };
 
         const handleClose = (ev: CloseEvent) => {
-          console.log("[STT] websocket close", ev.code, ev.reason);
-          if (keepaliveRef.current) {
-            clearInterval(keepaliveRef.current);
-            keepaliveRef.current = null;
+          console.log("[STT] websocket close", ev.code, ev.reason, "relay=", useRelay);
+          stopKeepalive();
+          wsRef.current = null;
+
+          if (intentionalStopRef.current || !mounted) {
+            fullPipelineTeardown();
+            return;
           }
-          if (pcmProcessorRef.current) {
-            try {
-              pcmProcessorRef.current.disconnect();
-            } catch {
-              // ignore
-            }
-            pcmProcessorRef.current = null;
-          }
-          if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
-          if (!mounted) return;
-          const unexpected = ev.code !== 1000 && ev.code !== 1005;
-          if (unexpected) {
+
+          if (!useRelay) {
             const reason = (ev.reason || "").trim();
             if (ev.code === 1008 && (reason.includes("DATA") || reason.includes("decode"))) {
-              showConnectionError("Audio format was rejected. Try again.");
+              setMicError("Transcription connection failed. Audio format was rejected. Try again.");
             } else if (ev.code === 1011 && (reason.includes("NET") || reason.includes("timeout"))) {
-              showConnectionError("Connection timed out. Check network and try again.");
+              setMicError("Transcription timed out. Check network, or use the STT relay (recommended).");
             } else if (ev.code === 4401 || ev.code === 4403) {
-              showConnectionError("Token expired or invalid. Stop the call and start again to get a new token.");
-            } else {
-              showConnectionError("Connection closed. Try again.");
+              setMicError("Transcription token invalid. Stop the call and start again.");
+            } else if (ev.code !== 1000 && ev.code !== 1005) {
+              setMicError("Live transcription disconnected. Use NEXT_PUBLIC_STT_PROXY_URL + relay for a stable connection.");
             }
+            fullPipelineTeardown();
+            return;
           }
+
+          // Relay: keep mic + graph; reconnect with backoff
+          void (async () => {
+            const max = 6;
+            for (let attempt = 0; attempt < max; attempt++) {
+              if (intentionalStopRef.current || !mounted) return;
+              const delayMs = Math.min(30_000, 1000 * Math.pow(2, attempt));
+              setMicError(`Live transcription unavailable. Retrying… (${attempt + 1}/${max})`);
+              await new Promise((r) => setTimeout(r, delayMs));
+              if (intentionalStopRef.current || !mounted) return;
+              try {
+                const fresh = await connectWebSocket(wsUrl);
+                if (intentionalStopRef.current || !mounted) {
+                  try {
+                    fresh.close();
+                  } catch {
+                    // ignore
+                  }
+                  return;
+                }
+                wsRef.current = fresh;
+                fresh.onmessage = handleMessage;
+                fresh.onerror = () => {
+                  console.log("[STT] websocket error (reconnect)");
+                  if (!intentionalStopRef.current && mounted) {
+                    setMicError("Transcription connection error. Retrying…");
+                  }
+                };
+                fresh.onclose = handleClose;
+                startKeepaliveForCurrentSocket();
+                setMicError(null);
+                return;
+              } catch {
+                // try next backoff
+              }
+            }
+            if (!mounted) return;
+            setMicError(
+              "Live transcription couldn't reconnect. Stop the call and start again, or check that the STT relay is running and reachable.",
+            );
+            fullPipelineTeardown();
+          })();
         };
 
         ws.onmessage = handleMessage;
         ws.onerror = () => {
           console.log("[STT] websocket error");
-          showConnectionError("Check your network and try again.");
+          if (!intentionalStopRef.current && mounted) {
+            setMicError("Transcription connection error. Check your STT relay or network.");
+          }
         };
         ws.onclose = handleClose;
       } catch (err) {
@@ -722,6 +818,7 @@ export function LiveTranscription() {
 
     return () => {
       mounted = false;
+      intentionalStopRef.current = true;
       lastAppendedSpeakerRef.current = null;
     };
   }, [isRecording, audioInputDeviceId, appendTranscript, setSessionId, setMicError, setInterimTranscript, setInterimSpeakerId, setDiarizationSpeakerIds, diarizationMeSpeakerId]);
