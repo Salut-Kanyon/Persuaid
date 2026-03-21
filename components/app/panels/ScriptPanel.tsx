@@ -87,10 +87,12 @@ export function ScriptPanel() {
     <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Script selector */}
       <div className="flex-shrink-0 px-4 py-3 border-b border-border/8">
-        <label className="text-[10px] font-medium text-text-dim/60 uppercase tracking-wider block mb-1.5">
+        <label htmlFor="active-script-select" className="text-[10px] font-medium text-text-dim/60 uppercase tracking-wider block mb-1.5">
           Active script
         </label>
         <select
+          id="active-script-select"
+          name="activeScriptId"
           value={selectedId ?? ""}
           onChange={(e) => setSelectedId(e.target.value || null)}
           className="w-full px-3 py-2 rounded-xl bg-background-surface/50 border border-border/50 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-green-primary/40"

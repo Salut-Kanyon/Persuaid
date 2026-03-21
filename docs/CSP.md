@@ -2,7 +2,7 @@
 
 If live transcription works on `localhost` but fails on the deployed site with **CSP / `unsafe-eval` / script-src blocked**:
 
-1. **This repo** sets a CSP in `next.config.js` that allows what Next.js and the mic/WebSocket stack typically need (`script-src` includes `'unsafe-eval'` and `'unsafe-inline'`, `connect-src` allows `https:` / `wss:` / `ws:` for APIs and STT).
+1. **This repo** sets a CSP in `next.config.js` that allows what Next.js and the mic/WebSocket stack typically need (`script-src` includes `'unsafe-eval'`, `'wasm-unsafe-eval'`, `'unsafe-inline'`, and `blob:` for bundled/chunk scripts, `connect-src` allows `https:` / `wss:` / `ws:` for APIs and STT).
 
 2. **If you still see CSP errors**, another layer may be adding a **second** CSP (stricter). Browsers apply **all** CSPs — every policy must be satisfied — so a Cloudflare / reverse-proxy / GitHub rule without `'unsafe-eval'` can still block scripts.
    - Check **Cloudflare** → Security → Settings (disable “Replace insecure JS” experiments if any).

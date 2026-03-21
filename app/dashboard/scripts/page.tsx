@@ -266,7 +266,10 @@ export default function ScriptsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
+              id="scripts-list-search"
+              name="q"
               type="search"
+              autoComplete="off"
               placeholder="Search scripts…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -402,9 +405,14 @@ export default function ScriptsPage() {
             </div>
             <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-5">
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1.5">Title</label>
+                <label htmlFor="script-form-title" className="block text-xs font-medium text-text-muted mb-1.5">
+                  Title
+                </label>
                 <input
+                  id="script-form-title"
+                  name="title"
                   type="text"
+                  autoComplete="off"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="e.g. Cold call opening"
@@ -413,9 +421,14 @@ export default function ScriptsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1.5">Description</label>
+                <label htmlFor="script-form-description" className="block text-xs font-medium text-text-muted mb-1.5">
+                  Description
+                </label>
                 <input
+                  id="script-form-description"
+                  name="description"
                   type="text"
+                  autoComplete="off"
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="Short description of when to use this script"
@@ -423,8 +436,12 @@ export default function ScriptsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1.5">Category</label>
+                <label htmlFor="script-form-category" className="block text-xs font-medium text-text-muted mb-1.5">
+                  Category
+                </label>
                 <select
+                  id="script-form-category"
+                  name="category"
                   value={formCategory}
                   onChange={(e) => setFormCategory(e.target.value as ScriptCategory)}
                   className="w-full px-4 py-2.5 rounded-xl bg-background-surface/60 border border-border text-text-primary focus:outline-none focus:ring-2 focus:ring-green-primary/40 text-sm"
@@ -446,7 +463,10 @@ export default function ScriptsPage() {
                     <div key={section.id} className="rounded-xl bg-background-surface/50 border border-border/50 p-4 space-y-3">
                       <div className="flex items-center gap-2">
                         <input
+                          id={`script-section-${sIdx}-title`}
+                          name={`sectionTitle_${sIdx}`}
                           type="text"
+                          autoComplete="off"
                           value={section.title}
                           onChange={(e) => updateSection(sIdx, { title: e.target.value })}
                           placeholder="Section title"
@@ -467,7 +487,10 @@ export default function ScriptsPage() {
                         {(section.items || [""]).map((item, iIdx) => (
                           <div key={iIdx} className="flex gap-2">
                             <input
+                              id={`script-section-${sIdx}-item-${iIdx}`}
+                              name={`talkingPoint_${sIdx}_${iIdx}`}
                               type="text"
+                              autoComplete="off"
                               value={item}
                               onChange={(e) => setItem(sIdx, iIdx, e.target.value)}
                               onPaste={(e) => {

@@ -153,7 +153,9 @@ export default function SettingsPage() {
                 </label>
                 <input
                   id="displayName"
+                  name="displayName"
                   type="text"
+                  autoComplete="name"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Your name"
@@ -166,7 +168,9 @@ export default function SettingsPage() {
                 </label>
                 <input
                   id="email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   value={user?.email ?? ""}
                   readOnly
                   className="w-full px-4 py-2.5 rounded-xl bg-background-elevated/50 border border-border text-text-primary text-sm cursor-not-allowed"
@@ -196,14 +200,20 @@ export default function SettingsPage() {
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
+                    id="settings-new-password"
+                    name="newPassword"
                     type="password"
+                    autoComplete="new-password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="New password"
                     className="w-full px-4 py-2.5 rounded-xl bg-background-elevated/50 border border-border text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/50 focus:border-green-primary/30 text-sm"
                   />
                   <input
+                    id="settings-confirm-password"
+                    name="confirmPassword"
                     type="password"
+                    autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm password"
@@ -259,6 +269,8 @@ export default function SettingsPage() {
           <SettingsSection title="Preferences" description="Personalize the app experience">
             <DropdownSetting<ThemePreference>
               label="Theme"
+              id="settings-theme"
+              name="theme"
               description="Choose Light, Dark, or match your system setting."
               value={settings.theme}
               onChange={(v) => update("theme", v)}
@@ -279,6 +291,8 @@ export default function SettingsPage() {
             />
             <DropdownSetting<ExportFormat>
               label="Default export format"
+              id="settings-default-export-format"
+              name="defaultExportFormat"
               description="Used when you save a transcript."
               value={settings.defaultExportFormat}
               onChange={(v) => update("defaultExportFormat", v)}

@@ -153,6 +153,8 @@ export function NotesPanel() {
     <div className="h-full w-full flex flex-col overflow-hidden">
       <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border/30 flex-wrap">
         <input
+          id="notes-import-file"
+          name="notesImportFile"
           ref={fileInputRef}
           type="file"
           accept=".txt,.md,text/plain,text/markdown,text/*"
@@ -173,9 +175,11 @@ export function NotesPanel() {
         >
           Import from my notes
         </button>
-        <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background-surface/40 border border-border/40 text-xs text-text-muted">
+        <label htmlFor="notes-rewrite-style" className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background-surface/40 border border-border/40 text-xs text-text-muted">
           Style
           <select
+            id="notes-rewrite-style"
+            name="rewriteStyle"
             value={rewriteStyle}
             onChange={(e) => setRewriteStyle(e.target.value as typeof rewriteStyle)}
             className="rounded-md border border-border/60 bg-background-elevated/60 px-2 py-1 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-green-primary/40"
@@ -249,6 +253,9 @@ export function NotesPanel() {
           <span className="text-xs text-green-600/90 dark:text-green-400/90">— Connected to the AI assistant, tailored to your case.</span>
         </div>
         <textarea
+          id="notes-panel-editor"
+          name="productNotes"
+          autoComplete="off"
           value={currentNote}
           onChange={(e) => setCurrentNote(e.target.value)}
           placeholder="Paste or type notes. Use Rewrite with AI to improve for the call."

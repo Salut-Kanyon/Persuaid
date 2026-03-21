@@ -94,6 +94,8 @@ export function LiveTranscriptPanel() {
       <div className="flex-shrink-0 px-3 py-1.5 border-b border-border/30 flex items-center justify-between gap-2">
         {diarizationSpeakerIds.length >= 2 ? (
           <select
+            id="diarization-me-speaker"
+            name="diarizationMeSpeakerId"
             value={diarizationMeSpeakerId === null ? "" : String(diarizationMeSpeakerId)}
             onChange={(e) =>
               setDiarizationMeSpeakerId(e.target.value === "" ? null : Number(e.target.value))

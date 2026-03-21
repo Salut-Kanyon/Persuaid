@@ -65,9 +65,14 @@ export default function SignInPage() {
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">Email</label>
+              <label htmlFor="sign-in-email" className="block text-sm font-medium text-text-secondary mb-2">
+                Email
+              </label>
               <input
+                id="sign-in-email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 placeholder="Your email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -77,10 +82,15 @@ export default function SignInPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">Password</label>
+              <label htmlFor="sign-in-password" className="block text-sm font-medium text-text-secondary mb-2">
+                Password
+              </label>
               <div className="relative">
                 <input
+                  id="sign-in-password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete={isSignUp ? "new-password" : "current-password"}
                   placeholder="Your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

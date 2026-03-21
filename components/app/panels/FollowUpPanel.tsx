@@ -457,7 +457,10 @@ export function FollowUpPanel() {
       <div className="flex-shrink-0 border-t border-border/30 bg-background-surface/50 p-3 space-y-2">
         <div className="flex gap-2">
           <input
+            id="follow-up-chat-input"
+            name="followUpMessage"
             type="text"
+            autoComplete="off"
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}

@@ -78,6 +78,7 @@ export function Header() {
           </label>
           <select
             id="header-audio-input"
+            name="audioInputDevice"
             value={audioInputDeviceId ?? ""}
             onChange={(e) => handleAudioInputChange(e.target.value)}
             className="rounded-lg border border-border/60 bg-background-surface/60 px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-green-primary/40 max-w-[180px]"

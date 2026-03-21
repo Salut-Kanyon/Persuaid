@@ -193,7 +193,10 @@ export default function NotesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
+              id="notes-list-search"
+              name="q"
               type="search"
+              autoComplete="off"
               placeholder="Search notes…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -345,9 +348,14 @@ export default function NotesPage() {
             </div>
             <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-5">
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1.5">Title (optional)</label>
+                <label htmlFor="note-form-title" className="block text-xs font-medium text-text-muted mb-1.5">
+                  Title (optional)
+                </label>
                 <input
+                  id="note-form-title"
+                  name="title"
                   type="text"
+                  autoComplete="off"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="e.g. Call with Acme Corp"
@@ -355,8 +363,13 @@ export default function NotesPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-text-muted mb-1.5">Content</label>
+                <label htmlFor="note-form-content" className="block text-xs font-medium text-text-muted mb-1.5">
+                  Content
+                </label>
                 <textarea
+                  id="note-form-content"
+                  name="content"
+                  autoComplete="off"
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
                   placeholder="Note content…"

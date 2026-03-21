@@ -136,6 +136,7 @@ export function TranscriptPanel() {
         </label>
         <select
           id="audio-input-select"
+          name="audioInputDevice"
           value={audioInputDeviceId ?? ""}
           onChange={(e) => handleAudioInputChange(e.target.value)}
           className="rounded-lg border border-border/60 bg-background-elevated/60 px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-green-primary/40"

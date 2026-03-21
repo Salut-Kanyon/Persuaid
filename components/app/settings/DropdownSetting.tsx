@@ -9,6 +9,8 @@ export function DropdownSetting<T extends string>({
   onChange,
   options,
   disabled,
+  id,
+  name,
 }: {
   label: string;
   description?: string;
@@ -16,13 +18,25 @@ export function DropdownSetting<T extends string>({
   onChange: (v: T) => void;
   options: Array<{ value: T; label: string }>;
   disabled?: boolean;
+  /** Stable id for label association and autofill tooling */
+  id?: string;
+  name?: string;
 }) {
+  const slug = label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const fieldId = id ?? `dropdown-setting-${slug}`;
+  const fieldName = name ?? slug;
+
   return (
     <SettingsItem
       label={label}
       description={description}
       control={
         <select
+          id={fieldId}
+          name={fieldName}
           value={value}
           onChange={(e) => onChange(e.target.value as T)}
           disabled={disabled}

@@ -246,7 +246,10 @@ export default function AnalyzePage() {
             ) : (
               <>
                 <input
+                  id="analyze-saved-calls-search"
+                  name="q"
                   type="search"
+                  autoComplete="off"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by title or date…"
@@ -502,7 +505,10 @@ export default function AnalyzePage() {
               Rename call
             </h2>
             <input
+              id="rename-call-title-input"
+              name="callTitle"
               type="text"
+              autoComplete="off"
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
               onKeyDown={(e) => {
