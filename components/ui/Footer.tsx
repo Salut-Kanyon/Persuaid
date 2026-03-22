@@ -4,6 +4,7 @@ export function Footer() {
   const footerLinks = {
     Product: [
       { label: "Pricing", href: "/pricing" },
+      { label: "Tutorial", href: "/tutorial" },
       { label: "Our Message", href: "/manifesto" },
     ],
     Support: [
