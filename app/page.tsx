@@ -10,6 +10,7 @@ import { ProductPreview } from "@/components/ui/ProductPreview";
 import { CTAButton } from "@/components/ui/CTAButton";
 import { Footer } from "@/components/ui/Footer";
 import { FAQSection } from "@/components/ui/FAQSection";
+import { TryWorkspaceDemo } from "@/components/landing/TryWorkspaceDemo";
 
 function formatTimer(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -249,12 +250,16 @@ function Step04MiniUI() {
 }
 
 export default function Home() {
+  const [demoOpen, setDemoOpen] = useState(false);
+
   return (
     <main className="min-h-screen">
       <Navbar />
 
-      {/* Hero Section */}
-      <Hero />
+      {/* Hero: video and interactive demo share one slot */}
+      <Hero demoOpen={demoOpen} onDemoOpenChange={setDemoOpen}>
+        <TryWorkspaceDemo variant="heroSlot" open={demoOpen} onOpenChange={setDemoOpen} />
+      </Hero>
 
       {/* Product Overview Section */}
       <Section id="product">
