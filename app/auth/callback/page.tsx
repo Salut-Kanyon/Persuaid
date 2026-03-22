@@ -12,7 +12,7 @@ export default function AuthCallbackPage() {
       if (session) {
         router.replace("/dashboard");
       } else {
-        router.replace("/sign-in");
+        router.replace("/sign-in?signin=1");
       }
     });
   }, [router]);

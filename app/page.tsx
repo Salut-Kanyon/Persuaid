@@ -65,10 +65,19 @@ function Step02MiniUI() {
             exit={{ opacity: 0 }}
             animate={{ scale: justClicked ? 0.92 : 1 }}
             transition={{ duration: 0.15 }}
-            className="flex items-center gap-2 rounded-2xl bg-black border border-green-primary/60 px-5 py-2 text-sm font-semibold text-white shadow-lg"
+            className="relative flex items-center gap-2 overflow-hidden rounded-2xl border border-white/25 bg-gradient-to-br from-[#5eead4] via-[#20D3A6] to-[#0f766e] px-5 py-2.5 text-sm font-bold tracking-tight text-[#04110D] shadow-[0_6px_28px_rgba(32,211,166,0.45),0_0_40px_-8px_rgba(45,212,191,0.55),inset_0_1px_0_rgba(255,255,255,0.35)] ring-2 ring-[#20D3A6]/60 ring-offset-2 ring-offset-background"
           >
-            <img src="/PersuaidLogo.png" alt="" className="w-4 h-4 flex-shrink-0 object-contain" aria-hidden />
-            <span>Start Call</span>
+            <span
+              className="pointer-events-none absolute -left-1/4 top-0 h-full w-1/2 skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-80"
+              aria-hidden
+            />
+            <span className="relative z-[1]">Start Call</span>
+            <span
+              className="relative z-[1] inline-flex h-2 w-2 shrink-0 rounded-full bg-[#04110D]/25 shadow-[0_0_10px_rgba(4,17,13,0.4)]"
+              aria-hidden
+            >
+              <span className="absolute inset-0 animate-ping rounded-full bg-[#04110D]/20" />
+            </span>
           </motion.div>
         ) : (
           <motion.div
@@ -469,11 +478,11 @@ export default function Home() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
-                className="w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[380px]"
+                className="w-full max-w-[340px] sm:max-w-[400px] lg:max-w-[460px]"
               >
-                <div className="bg-[rgb(0,0,0)] overflow-hidden rounded-2xl">
+                <div className="overflow-hidden rounded-2xl bg-black">
                   <video
-                    className="w-full max-h-[min(420px,55vh)] sm:max-h-[min(460px,58vh)] block object-contain bg-[rgb(0,0,0)]"
+                    className="w-full max-h-[min(420px,55vh)] sm:max-h-[min(460px,58vh)] lg:max-h-[min(500px,60vh)] block object-contain bg-black"
                     autoPlay
                     loop
                     muted
@@ -548,10 +557,10 @@ export default function Home() {
           </div>
           {/* Right: video with small AI transcript overlay */}
           <div className="flex-1 min-w-0 flex items-center justify-center mt-6 lg:mt-8">
-            <div className="relative w-full max-w-2xl aspect-video min-h-[280px] sm:min-h-[320px] rounded-2xl overflow-hidden border border-white/10 bg-[#0d0d0d] shadow-2xl shadow-black/50 ring-1 ring-white/5">
+            <div className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden border border-white/10 bg-[#0d0d0d] shadow-2xl shadow-black/50 ring-1 ring-white/5">
               <video
                 src="/VideoAd.mp4"
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 h-full w-full object-contain object-center bg-[#0d0d0d]"
                 autoPlay
                 muted
                 loop

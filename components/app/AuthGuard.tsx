@@ -23,13 +23,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       .getSession()
       .then(({ data: { session } }) => {
         if (!session) {
-          router.replace("/sign-in");
+          router.replace("/sign-in?signin=1");
           return;
         }
         signedInAtRef.current = Date.now();
         resolve(true);
       })
-      .catch(() => router.replace("/sign-in"));
+      .catch(() => router.replace("/sign-in?signin=1"));
 
     const {
       data: { subscription },
@@ -45,12 +45,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       const signedInAt = signedInAtRef.current;
       const withinGrace = signedInAt && Date.now() - signedInAt < graceMs;
       if (event === "SIGNED_OUT" || !withinGrace) {
-        router.replace("/sign-in");
+        router.replace("/sign-in?signin=1");
       }
     });
     // Fallback: if getSession hangs (e.g. desktop app, network), redirect after 6s
     const t = setTimeout(() => {
-      if (!cancelled && !resolvedRef.current) router.replace("/sign-in");
+      if (!cancelled && !resolvedRef.current) router.replace("/sign-in?signin=1");
     }, 6000);
     return () => {
       cancelled = true;

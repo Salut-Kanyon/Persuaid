@@ -5,8 +5,9 @@
  *
  * Design intent (maintenance):
  * - One elevated panel reads as a single product, not a 3-step wizard.
- * - Accent #20D3A6 is reserved for primary actions + payoff (response) emphasis.
- * - Typography and spacing carry hierarchy; borders are quiet (white/8) unless “active”.
+ * - Accent #20D3A6 matches primary CTAs (Start talking, Request answer) and outlines every
+ *   field/control the user must use (type, click, talk) so affordances read as one system.
+ * - Typography and spacing carry hierarchy; shell border stays neutral (white/8).
  * - Motion is entry + micro-interaction only — no decorative loops except listening pulse.
  */
 
@@ -18,6 +19,12 @@ import { Section } from "@/components/ui/Section";
 const MAX_NOTES = 1200;
 const LISTEN_SECONDS = 60;
 const CLIENT_AI_CAP = 2;
+
+/** Three columns share the same vertical bands on md+ (header → action row → main panel). */
+const COL_HEADER_DESC_LINES = "min-h-[2.5rem] line-clamp-2";
+const ACTION_BAND = "flex min-h-[5.5rem] shrink-0 flex-col justify-center gap-2";
+const MAIN_PANEL_BOX =
+  "h-[220px] min-h-[220px] overflow-y-auto overflow-x-hidden sm:h-[236px] sm:min-h-[236px] md:h-[240px] md:min-h-[240px]";
 
 /** Persuaid demo palette (matches product marketing spec) */
 const demo = {
@@ -31,6 +38,8 @@ const demo = {
   accentHover: "#19BE95",
   accentGlow: "rgba(32, 211, 166, 0.18)",
   accentBorder: "rgba(32, 211, 166, 0.28)",
+  /** Outlines for inputs & action controls — same hue as Start talking / Request answer */
+  actionBorder: "rgba(32, 211, 166, 0.52)",
   border: "rgba(255,255,255,0.08)",
   btnText: "#04110D",
 } as const;
@@ -282,18 +291,37 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
           <div className={cn(isHero ? "min-h-0" : "overflow-hidden min-h-0")}>
             <header
               className={cn(
-                "text-center max-w-2xl mx-auto",
-                isHero ? "mb-5 md:mb-6" : "mb-8 md:mb-10"
+                "text-center mx-auto text-balance",
+                isHero ? "mb-6 md:mb-8 max-w-3xl" : "mb-8 md:mb-10 max-w-2xl"
               )}
             >
+              <h2
+                className={cn(
+                  "font-semibold tracking-[-0.03em] leading-[1.15]",
+                  isHero
+                    ? "text-[1.35rem] sm:text-2xl md:text-3xl lg:text-[2rem]"
+                    : "text-xl sm:text-2xl md:text-[1.75rem]"
+                )}
+                style={{ color: demo.text }}
+              >
+                Demo to see the intelligence
+              </h2>
               <p
                 className={cn(
-                  "font-medium uppercase tracking-[0.22em]",
-                  isHero ? "text-xs sm:text-[13px] tracking-[0.24em]" : "text-[11px] sm:text-xs"
+                  "mt-2 md:mt-2.5 leading-relaxed",
+                  isHero ? "text-sm sm:text-[15px]" : "text-sm md:text-[15px]"
                 )}
                 style={{ color: demo.textMuted }}
               >
-                Try it out
+                The real app is faster and more optimized.
+              </p>
+              <p
+                className={cn(
+                  "mt-4 text-center text-[10px] sm:text-[11px] font-semibold tracking-[0.2em] uppercase",
+                  isHero && "mt-5"
+                )}
+              >
+                <span style={{ color: demo.accent }}>Steps</span>
               </p>
             </header>
 
@@ -324,12 +352,12 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
               transition={{ type: "spring", stiffness: 140, damping: 24 }}
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 md:divide-x md:divide-[rgba(255,255,255,0.08)]">
-            {/* Context: background knowledge — visually secondary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 md:items-stretch md:divide-x md:divide-[rgba(255,255,255,0.08)]">
+            {/* Context */}
             <motion.div
               className={cn(
-                "flex flex-col border-b md:border-b-0",
-                isHero ? "p-8 md:p-10 lg:p-11 md:min-h-0" : "p-7 md:p-9 md:min-h-[440px]"
+                "flex min-h-0 flex-col border-b md:h-full md:border-b-0",
+                isHero ? "p-6 md:p-8 lg:p-9" : "p-6 md:p-8"
               )}
               style={{ borderColor: demo.border }}
               animate={
@@ -339,47 +367,47 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
               }
               transition={{ duration: 1.2, times: [0, 0.5, 1] }}
             >
-              <div className={cn("mb-4 md:mb-5", isHero && "mb-5 md:mb-6")}>
-                <h3
-                  className={cn("font-medium tracking-tight mb-2", isHero ? "text-base md:text-lg" : "text-[15px]")}
-                  style={{ color: demo.text }}
-                >
+              <div className="mb-4 shrink-0">
+                <h3 className="text-[15px] font-medium tracking-tight" style={{ color: demo.text }}>
                   Context
                 </h3>
                 <p
-                  className={cn("leading-relaxed", isHero ? "text-sm md:text-[15px]" : "text-[13px]")}
+                  className={cn("mt-1 text-[12px] leading-snug md:text-[13px]", COL_HEADER_DESC_LINES)}
                   style={{ color: demo.textMuted }}
                 >
-                  Paste pricing, objections, or product notes
+                  Product knowledge — pricing, objections, notes
                 </p>
               </div>
+
+              <div className={ACTION_BAND} aria-hidden />
+
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value.slice(0, MAX_NOTES))}
                 placeholder="Example: pricing, common objections, competitor differences, who we help…"
                 className={cn(
-                  "w-full rounded-[14px] px-4 py-3.5 leading-relaxed resize-none transition-[border-color,box-shadow] duration-200",
-                  "placeholder:text-[#7E8888]/80 focus:outline-none",
-                  isHero ? "min-h-[260px] md:min-h-[280px] text-[15px] md:text-base" : "flex-1 min-h-[200px] text-[14px]"
+                  MAIN_PANEL_BOX,
+                  "w-full shrink-0 rounded-[12px] px-3.5 py-3 text-[13px] leading-relaxed md:text-[14px] resize-none transition-[border-color,box-shadow] duration-200",
+                  "placeholder:text-[#7E8888]/80 focus:outline-none"
                 )}
                 style={{
                   color: demo.text,
                   backgroundColor: demo.bgPanel,
-                  border: `1px solid ${notesLinkedToAi ? demo.accentBorder : demo.border}`,
+                  border: `1px solid ${notesLinkedToAi ? demo.accentBorder : demo.actionBorder}`,
                   boxShadow: notesLinkedToAi ? `0 0 0 1px ${demo.accentGlow}` : undefined,
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = demo.accentBorder;
-                  e.target.style.boxShadow = `0 0 0 1px ${demo.accentBorder}`;
+                  e.target.style.borderColor = demo.accent;
+                  e.target.style.boxShadow = `0 0 0 1px ${demo.accentGlow}`;
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = notesLinkedToAi ? demo.accentBorder : demo.border;
+                  e.target.style.borderColor = notesLinkedToAi ? demo.accentBorder : demo.actionBorder;
                   e.target.style.boxShadow = notesLinkedToAi ? `0 0 0 1px ${demo.accentGlow}` : "none";
                 }}
               />
-              <div className="mt-3 flex flex-col gap-2.5">
-                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                  <p className="tabular-nums text-[11px] sm:order-first" style={{ color: demo.textMuted }}>
+              <div className="mt-auto flex flex-col gap-3 pt-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="tabular-nums text-[11px]" style={{ color: demo.textMuted }}>
                     {notes.length}/{MAX_NOTES}
                   </p>
                   <motion.button
@@ -390,46 +418,29 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                     whileTap={notesLinkedToAi ? undefined : { scale: 0.98 }}
                     transition={{ type: "spring", stiffness: 400, damping: 28 }}
                     className={cn(
-                      "inline-flex min-h-[44px] w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-full px-5 text-[13px] font-medium tracking-tight transition-colors duration-200",
+                      "inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-full px-4 text-[12px] font-medium tracking-tight transition-colors duration-200 sm:w-auto sm:min-w-0",
                       notesLinkedToAi
                         ? "cursor-default border border-[#20D3A6]/35 bg-[#20D3A6]/12 text-[#20D3A6]"
-                        : "border border-white/12 bg-white/[0.04] text-[#E8EDED] hover:border-white/18 hover:bg-white/[0.07]"
+                        : "border border-[#20D3A6]/45 bg-[#20D3A6]/10 text-[#20D3A6] hover:border-[#20D3A6]/60 hover:bg-[#20D3A6]/16"
                     )}
                   >
-                    <motion.span
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border text-[11px]"
-                      style={{ borderColor: notesLinkedToAi ? demo.accent : "rgba(255,255,255,0.22)" }}
-                      initial={false}
-                      animate={notesLinkedToAi ? { scale: [1, 1.12, 1] } : {}}
-                      transition={{ duration: 0.45 }}
+                    <span
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px]"
+                      style={{ borderColor: notesLinkedToAi ? demo.accent : "rgba(32, 211, 166, 0.45)" }}
                     >
                       {notesLinkedToAi ? "✓" : "↗"}
-                    </motion.span>
-                    {notesLinkedToAi ? "Notes connected" : "Connect to AI"}
+                    </span>
+                    {notesLinkedToAi ? "Connected" : "Connect to AI"}
                   </motion.button>
                 </div>
-                <AnimatePresence>
-                  {notesLinkedToAi && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      className="text-center text-[12px] leading-relaxed md:text-left"
-                      style={{ color: demo.textSecondary }}
-                    >
-                      Suggestions will use these notes together with what you say on the call.
-                    </motion.p>
-                  )}
-                </AnimatePresence>
               </div>
             </motion.div>
 
-            {/* Talk: primary CTA lives here — largest touch target + listening affordance */}
+            {/* Talk */}
             <motion.div
               className={cn(
-                "flex flex-col border-b md:border-b-0 relative transition-shadow duration-300",
-                isHero ? "p-8 md:p-10 lg:p-11 md:min-h-0" : "p-7 md:p-9 md:min-h-[440px]",
+                "relative flex min-h-0 flex-col border-b md:h-full md:border-b-0 transition-shadow duration-300",
+                isHero ? "p-6 md:p-8 lg:p-9" : "p-6 md:p-8",
                 listening && "shadow-[inset_0_0_0_1px_rgba(32,211,166,0.15)]"
               )}
               style={{ borderColor: demo.border }}
@@ -446,22 +457,19 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
               }
               transition={listening ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
             >
-              <div className={cn("mb-4 md:mb-5", isHero && "mb-5 md:mb-6")}>
-                <h3
-                  className={cn("font-medium tracking-tight mb-1", isHero ? "text-base md:text-lg" : "text-[15px]")}
-                  style={{ color: demo.text }}
-                >
+              <div className="mb-4 shrink-0">
+                <h3 className="text-[15px] font-medium tracking-tight" style={{ color: demo.text }}>
                   Talk
                 </h3>
                 <p
-                  className={cn("leading-relaxed", isHero ? "text-sm md:text-[15px]" : "text-[13px]")}
+                  className={cn("mt-1 text-[12px] leading-snug md:text-[13px]", COL_HEADER_DESC_LINES)}
                   style={{ color: demo.textMuted }}
                 >
-                  We listen and draft your next line
+                  Live transcript — you or them
                 </p>
               </div>
 
-              <div className={cn(isHero ? "mb-6 md:mb-8" : "mb-5 md:mb-6")}>
+              <div className={ACTION_BAND}>
                 {!listening ? (
                   <motion.button
                     type="button"
@@ -470,12 +478,7 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                     whileHover={{ scale: speechSupported === false ? 1 : 1.02 }}
                     whileTap={{ scale: speechSupported === false ? 1 : 0.98 }}
                     transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                    className={cn(
-                      "w-full rounded-full font-semibold tracking-tight transition-colors duration-200",
-                      "bg-[#20D3A6] text-[#04110D] hover:bg-[#19BE95] shadow-[0_8px_32px_rgba(32,211,166,0.18)]",
-                      "disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#20D3A6]",
-                      isHero ? "min-h-[52px] py-4 text-base md:text-[17px]" : "min-h-[48px] py-3.5 text-[15px]"
-                    )}
+                    className="w-full min-h-[44px] rounded-full bg-[#20D3A6] py-3 text-[14px] font-semibold tracking-tight text-[#04110D] shadow-[0_8px_32px_rgba(32,211,166,0.18)] transition-colors hover:bg-[#19BE95] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#20D3A6]"
                   >
                     Start talking
                   </motion.button>
@@ -485,44 +488,30 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                     onClick={stopRecognition}
                     whileTap={{ scale: 0.98 }}
                     transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                    className={cn(
-                      "w-full rounded-full font-medium border transition-colors",
-                      isHero ? "min-h-[52px] py-4 text-base" : "min-h-[48px] py-3.5 text-[15px]"
-                    )}
-                    style={{
-                      color: demo.text,
-                      borderColor: demo.border,
-                      backgroundColor: demo.bgPanel,
-                    }}
+                    className="w-full min-h-[44px] rounded-full border border-red-500/45 bg-gradient-to-b from-red-500 to-red-600 py-3 text-[14px] font-semibold tracking-tight text-white shadow-[0_4px_20px_rgba(220,38,38,0.35),inset_0_1px_0_rgba(255,255,255,0.15)] transition-[filter,box-shadow] duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-[0_6px_24px_rgba(220,38,38,0.4)] active:brightness-95"
                   >
                     Stop · {String(Math.floor(listenLeft / 60)).padStart(2, "0")}:{String(listenLeft % 60).padStart(2, "0")}
                   </motion.button>
                 )}
-                <p
-                  className={cn("mt-4 text-center leading-relaxed", isHero ? "text-sm md:text-[15px]" : "text-[12px]")}
-                  style={{ color: demo.textMuted }}
-                >
-                  Try saying:{" "}
-                  <span style={{ color: demo.textSecondary }}>&ldquo;It&rsquo;s too expensive&rdquo;</span>
+                <p className="text-center text-[11px] leading-snug" style={{ color: demo.textMuted }}>
+                  Try: <span style={{ color: demo.textSecondary }}>&ldquo;Too expensive&rdquo;</span>
                 </p>
               </div>
 
               <div
                 className={cn(
-                  "mb-5 rounded-[14px] px-3.5 py-3 leading-relaxed transition-[border-color] duration-300",
-                  isHero
-                    ? "min-h-[180px] md:min-h-[200px] py-4 px-4 text-sm md:text-[15px]"
-                    : "flex-1 min-h-[120px] max-h-[168px] overflow-y-auto text-[12px]"
+                  MAIN_PANEL_BOX,
+                  "mb-4 shrink-0 rounded-[12px] px-3.5 py-3 text-[12px] leading-relaxed transition-[border-color] duration-300 md:text-[13px]"
                 )}
                 style={{
                   backgroundColor: demo.bgPanel,
-                  border: `1px solid ${hasTranscript ? demo.accentBorder : demo.border}`,
+                  border: `1px solid ${hasTranscript ? demo.accentBorder : demo.actionBorder}`,
                   color: demo.textSecondary,
                   ...(hasTranscript ? { boxShadow: `0 0 0 1px ${demo.accentGlow}` } : {}),
                 }}
               >
                 {!hasTranscript ? (
-                  <span style={{ color: demo.textMuted }}>Transcript appears as you speak.</span>
+                  <span style={{ color: demo.textMuted }}>Live lines appear here.</span>
                 ) : (
                   lines.map((l, i) => (
                     <p key={i} className="mb-1.5 last:mb-0">
@@ -538,51 +527,32 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                 )}
               </div>
 
-              <div className={cn("flex gap-2.5", isHero ? "mt-5 md:mt-6 pt-1" : "mt-auto pt-2")}>
+              <div className="mt-auto flex gap-2 pt-3">
                 <input
                   value={prospectDraft}
                   onChange={(e) => setProspectDraft(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addProspectLine())}
-                  placeholder="What they said (optional)"
-                  className={cn(
-                    "min-w-0 flex-1 rounded-full px-3.5 focus:outline-none transition-colors",
-                    isHero ? "py-3 text-sm md:text-[15px]" : "py-2.5 text-[12px]"
-                  )}
-                  style={{
-                    color: demo.textSecondary,
-                    backgroundColor: demo.bgPage,
-                    border: `1px solid ${demo.border}`,
-                  }}
+                  placeholder="Their line (optional)"
+                  className="min-w-0 flex-1 rounded-full border border-[rgba(32,211,166,0.52)] bg-[#050505] px-3 py-2 text-[12px] text-[#B7C0C0] transition-colors placeholder:text-[#7E8888]/80 focus:border-[#20D3A6] focus:outline-none focus:ring-1 focus:ring-[#20D3A6]/35 md:text-[13px]"
                 />
                 <button
                   type="button"
                   onClick={addProspectLine}
-                  className={cn(
-                    "shrink-0 rounded-full px-4 font-medium transition-colors hover:bg-white/[0.04]",
-                    isHero ? "py-3 text-sm md:text-[15px]" : "py-2.5 text-[12px]"
-                  )}
-                  style={{
-                    color: demo.textSecondary,
-                    border: `1px solid ${demo.border}`,
-                    backgroundColor: "transparent",
-                  }}
+                  className="shrink-0 rounded-full border border-[rgba(32,211,166,0.52)] bg-transparent px-3 py-2 text-[12px] font-medium text-[#20D3A6] transition-colors hover:border-[#20D3A6]/70 hover:bg-[#20D3A6]/10 md:text-[13px]"
                 >
                   Add
                 </button>
               </div>
               {speechSupported === false && (
-                <p className="mt-3 text-[11px]" style={{ color: demo.textMuted }}>
-                  Use Chrome or Edge for microphone access.
+                <p className="mt-2 text-[10px]" style={{ color: demo.textMuted }}>
+                  Mic: Chrome or Edge
                 </p>
               )}
             </motion.div>
 
-            {/* Response: payoff — accent ring when content lands */}
+            {/* Response */}
             <motion.div
-              className={cn(
-                "flex flex-col",
-                isHero ? "p-8 md:p-10 lg:p-11 md:min-h-0" : "p-7 md:p-9 md:min-h-[440px]"
-              )}
+              className={cn("flex min-h-0 flex-col md:h-full", isHero ? "p-6 md:p-8 lg:p-9" : "p-6 md:p-8")}
               animate={
                 notesLinkedToAi
                   ? { boxShadow: [`0 0 0 0 ${demo.accentGlow}`, `0 0 32px -10px ${demo.accentGlow}`, `0 0 0 0 ${demo.accentGlow}`] }
@@ -590,38 +560,29 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
               }
               transition={{ duration: 1.2, delay: 0.15, times: [0, 0.5, 1] }}
             >
-              <div className={cn("mb-4 md:mb-5", isHero && "mb-5 md:mb-6")}>
-                <h3
-                  className={cn("font-medium tracking-tight mb-2", isHero ? "text-base md:text-lg" : "text-[15px]")}
-                  style={{ color: demo.text }}
-                >
+              <div className="mb-4 shrink-0">
+                <h3 className="text-[15px] font-medium tracking-tight" style={{ color: demo.text }}>
                   Response
                 </h3>
-                <motion.p
-                  key={notesLinkedToAi ? "linked" : "default"}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  className={cn("leading-relaxed", isHero ? "text-sm md:text-[15px]" : "text-[13px]")}
+                <p
+                  className={cn("mt-1 text-[12px] leading-snug md:text-[13px]", COL_HEADER_DESC_LINES)}
                   style={{ color: demo.textMuted }}
                 >
-                  {notesLinkedToAi
-                    ? "Uses your notes together with the live conversation"
-                    : "Connect notes on the left, then talk — we’ll combine both"}
-                </motion.p>
+                  {notesLinkedToAi ? "Notes + live talk → reply" : "Notes + talk → suggested reply"}
+                </p>
               </div>
+
+              <div className={ACTION_BAND} aria-hidden />
 
               <div
                 className={cn(
-                  "rounded-[14px] px-4 py-4 leading-relaxed mb-5 transition-[border-color,box-shadow] duration-300",
-                  isHero
-                    ? "min-h-[240px] md:min-h-[260px] py-5 px-5 text-[15px] md:text-base"
-                    : "flex-1 min-h-[176px] text-[14px]"
+                  MAIN_PANEL_BOX,
+                  "mb-4 shrink-0 rounded-[12px] px-3.5 py-3 text-[13px] leading-relaxed transition-[border-color,box-shadow] duration-300 md:text-[14px]"
                 )}
                 style={{
                   color: demo.text,
                   backgroundColor: demo.bgPanel,
-                  border: `1px solid ${hasResponse ? demo.accentBorder : demo.border}`,
+                  border: `1px solid ${hasResponse ? demo.accentBorder : demo.actionBorder}`,
                   ...(hasResponse ? { boxShadow: "0 0 28px -14px rgba(32, 211, 166, 0.12)" } : {}),
                 }}
               >
@@ -632,7 +593,7 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                 ) : hasResponse ? (
                   <p className="whitespace-pre-wrap">{aiText}</p>
                 ) : (
-                  <span style={{ color: demo.textMuted }}>Your suggested reply shows here</span>
+                  <span style={{ color: demo.textMuted }}>Suggested reply</span>
                 )}
               </div>
 
@@ -642,50 +603,46 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                 </p>
               )}
 
-              <motion.button
-                type="button"
-                onClick={fetchAi}
-                disabled={getAnswerDisabled}
-                whileHover={canGetAnswer ? { scale: 1.02 } : {}}
-                whileTap={canGetAnswer ? { scale: 0.98 } : {}}
-                transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                className={cn(
-                  "w-full rounded-full font-semibold border transition-colors duration-200 disabled:cursor-not-allowed",
-                  isHero ? "min-h-[52px] py-4 text-[15px] md:text-base" : "min-h-[48px] py-3.5 text-[14px]",
-                  getAnswerDisabled && !aiLoading
-                    ? "border-[rgba(255,255,255,0.08)] bg-[#0a0c0c] text-[#7E8888] opacity-90 ring-1 ring-white/[0.06]"
-                    : "border-transparent bg-[#20D3A6] text-[#04110D] hover:bg-[#19BE95] shadow-[0_4px_24px_rgba(32,211,166,0.18)]"
+              <div className="mt-auto flex flex-col gap-3">
+                <motion.button
+                  type="button"
+                  onClick={fetchAi}
+                  disabled={getAnswerDisabled}
+                  whileHover={canGetAnswer ? { scale: 1.02 } : {}}
+                  whileTap={canGetAnswer ? { scale: 0.98 } : {}}
+                  transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                  className={cn(
+                    "w-full min-h-[44px] rounded-full border py-3 text-[14px] font-semibold transition-colors duration-200 disabled:cursor-not-allowed",
+                    getAnswerDisabled && !aiLoading
+                      ? "border-[rgba(255,255,255,0.08)] bg-[#0a0c0c] text-[#7E8888] opacity-90 ring-1 ring-white/[0.06]"
+                      : "border-transparent bg-[#20D3A6] text-[#04110D] hover:bg-[#19BE95] shadow-[0_4px_24px_rgba(32,211,166,0.18)]"
+                  )}
+                >
+                  {aiRemaining <= 0 ? "Limit reached" : aiLoading ? "…" : "Request answer"}
+                </motion.button>
+
+                {lines.length === 0 && aiRemaining > 0 && (
+                  <p className="text-center text-[10px] leading-relaxed" style={{ color: demo.textMuted }}>
+                    Add a line in Talk first.
+                  </p>
                 )}
-              >
-                {aiRemaining <= 0 ? "Limit reached" : aiLoading ? "…" : "Get response"}
-              </motion.button>
 
-              {lines.length === 0 && aiRemaining > 0 && (
-                <p className="mt-3 text-center text-[11px] leading-relaxed" style={{ color: demo.textMuted }}>
-                  Add something to the conversation first.
+                <p className="text-center tabular-nums text-[10px]" style={{ color: demo.textMuted }}>
+                  {aiRemaining}/{CLIENT_AI_CAP} demo replies ·{" "}
+                  <a href="/sign-in" className="font-medium underline-offset-2 hover:underline" style={{ color: demo.textSecondary }}>
+                    Full app
+                  </a>
                 </p>
-              )}
-
-              <p className="mt-5 text-center tabular-nums text-[11px]" style={{ color: demo.textMuted }}>
-                {aiRemaining} of {CLIENT_AI_CAP} responses left
-              </p>
-
-              <a
-                href="/sign-in"
-                className="mt-6 block text-center text-[12px] font-medium transition-opacity hover:opacity-90"
-                style={{ color: demo.textSecondary }}
-              >
-                Full product →
-              </a>
+              </div>
             </motion.div>
           </div>
         </div>
 
             <p
-              className={cn("text-center text-[12px] leading-relaxed", isHero ? "mt-6 md:mt-8" : "mt-8 md:mt-10")}
+              className={cn("text-center text-[11px] leading-relaxed", isHero ? "mt-5 md:mt-6" : "mt-6 md:mt-8")}
               style={{ color: demo.textMuted }}
             >
-              Free in-browser demo · 2 responses per day
+              Browser demo · {CLIENT_AI_CAP} replies / day
             </p>
           </div>
         </div>

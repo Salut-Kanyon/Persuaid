@@ -53,12 +53,21 @@ export function ProductPreview({ className }: ProductPreviewProps) {
         </div>
         <motion.button
           type="button"
-          className="relative flex items-center gap-2 rounded-2xl bg-black border border-green-primary/60 px-5 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:bg-gray-900 hover:border-green-primary/80 hover:shadow-xl"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          className="group relative flex items-center gap-2 overflow-hidden rounded-2xl border border-white/25 bg-gradient-to-br from-[#5eead4] via-[#20D3A6] to-[#0f766e] px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-bold tracking-tight text-[#04110D] shadow-[0_6px_28px_rgba(32,211,166,0.4),0_0_36px_-6px_rgba(45,212,191,0.5),inset_0_1px_0_rgba(255,255,255,0.35)] ring-2 ring-[#20D3A6]/55 ring-offset-2 ring-offset-[#0a0c0c] transition-[transform,filter,box-shadow] duration-300 hover:brightness-[1.06] hover:shadow-[0_8px_36px_rgba(32,211,166,0.55),0_0_48px_-4px_rgba(45,212,191,0.55),inset_0_1px_0_rgba(255,255,255,0.45)]"
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
         >
-          <img src="/PersuaidLogo.png" alt="" className="w-4 h-4 flex-shrink-0 object-contain" aria-hidden />
-          <span>Start Call</span>
+          <span
+            className="pointer-events-none absolute -left-1/4 top-0 h-full w-1/2 skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-70 transition-opacity duration-300 group-hover:opacity-100"
+            aria-hidden
+          />
+          <span className="relative z-[1]">Start Call</span>
+          <span
+            className="relative z-[1] inline-flex h-2 w-2 shrink-0 rounded-full bg-[#04110D]/30"
+            aria-hidden
+          >
+            <span className="absolute inset-0 animate-ping rounded-full bg-[#04110D]/25" />
+          </span>
         </motion.button>
       </div>
 

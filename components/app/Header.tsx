@@ -98,25 +98,35 @@ export function Header() {
           type="button"
           onClick={() => setRecording(!isRecording)}
           className={cn(
-            "px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 flex items-center gap-2 shadow-lg",
+            "group relative overflow-hidden rounded-xl px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-bold tracking-tight transition-[filter,box-shadow] duration-300 flex items-center gap-1.5",
             isRecording
-              ? "bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/15"
-              : "bg-black border border-green-primary/60 text-white hover:bg-gray-900 hover:border-green-primary/80 hover:shadow-xl"
+              ? "bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/15 shadow-md"
+              : [
+                  "border border-white/25 bg-gradient-to-br from-[#5eead4] via-[#20D3A6] to-[#0f766e] text-[#04110D]",
+                  "shadow-[0_4px_18px_rgba(32,211,166,0.35),0_0_24px_-8px_rgba(45,212,191,0.45),inset_0_1px_0_rgba(255,255,255,0.35)]",
+                  "ring-1 ring-[#20D3A6]/50 ring-offset-1 ring-offset-background",
+                  "hover:brightness-[1.05] hover:shadow-[0_6px_26px_rgba(32,211,166,0.45),0_0_32px_-4px_rgba(45,212,191,0.5),inset_0_1px_0_rgba(255,255,255,0.4)]",
+                ]
           )}
         >
           {isRecording ? (
             <>
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
               <span>Pause</span>
             </>
           ) : (
             <>
-              <img
-                src="/PersuaidLogo.png"
-                alt="Persuaid"
-                className="w-4 h-4 flex-shrink-0 object-contain"
+              <span
+                className="pointer-events-none absolute -left-1/4 top-0 h-full w-1/2 skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-70 transition-opacity duration-300 group-hover:opacity-100"
+                aria-hidden
               />
-              <span className="text-white">Start Call</span>
+              <span className="relative z-[1]">Start Call</span>
+              <span
+                className="relative z-[1] inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[#04110D]/30"
+                aria-hidden
+              >
+                <span className="absolute inset-0 animate-ping rounded-full bg-[#04110D]/25" />
+              </span>
             </>
           )}
         </button>

@@ -9,21 +9,23 @@ const HERO_CAROUSEL_VIDEOS = ["/otherid3.mp4", "/VideoAI.mp4"] as const;
 const FADE_START = 0;
 const FADE_END = 950;
 
-/** After hero copy settles, image eases toward this opacity (× scroll factor). */
+/** After hero copy settles, image eases to fully transparent (× scroll factor; hidden when demo open). */
 const INTRO_BG_DELAY_MS = 2200;
 const INTRO_BG_DURATION_MS = 5200;
-const INTRO_BG_END = 0.34;
+const INTRO_BG_END = 0;
 
 function easeOutCubic(t: number) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-const HERO_TITLE =
-  "Never lose a deal because you didn't know what to say.";
-const HERO_SUBTITLE =
-  "Persuaid listens to your sales calls and feeds you winning responses, objection handling, and next moves live, while you're talking.";
+const HERO_TITLE_LINE1 = "Know exactly what to say,";
+const HERO_TITLE_LINE2 = "in the moment.";
+const HERO_LINE1_WORDS = HERO_TITLE_LINE1.split(" ");
+const HERO_LINE2_WORDS = HERO_TITLE_LINE2.split(" ");
 
-const HERO_WORDS = HERO_TITLE.split(" ");
+const HERO_SUBTITLE_BEFORE =
+  "Listens to your sales calls and gives you the right words in real time, ";
+const HERO_SUBTITLE_AFTER = " handles objections naturally and keeps the deal moving.";
 
 const TRANSCRIPT_LINES = [
   { who: "Rep", whoClass: "text-emerald-300/95", text: "Thanks for your time. I'll keep this focused on how we can help your team sell better." },
@@ -256,31 +258,41 @@ function LiveTranscriptVideo({ show }: { show: boolean }) {
   );
 }
 
-function HeroTitleWords() {
+function HeroTitleTwoLines() {
   const reduce = useReducedMotion();
+  const words1 = HERO_LINE1_WORDS;
+  const words2 = HERO_LINE2_WORDS;
+  const lineClass =
+    "block whitespace-nowrap text-[clamp(1.2rem,4.8vw,2.75rem)] leading-[1.08] font-semibold text-text-primary tracking-[-0.03em]";
+
+  const renderLine = (words: string[], baseIndex: number) =>
+    words.map((word, i) => {
+      const index = baseIndex + i;
+      const isPersuaid = word.replace(/[.,!?]/g, "") === "Persuaid";
+      return (
+        <span key={`${baseIndex}-${i}`} className="inline-block whitespace-pre">
+          <motion.span
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: reduce ? 0.01 : 0.4,
+              delay: reduce ? 0 : index * 0.09,
+              ease: [0.25, 0.1, 0.25, 1],
+            }}
+            className={isPersuaid ? "text-green-primary" : ""}
+          >
+            {word}
+          </motion.span>
+          {i < words.length - 1 ? " " : ""}
+        </span>
+      );
+    });
+
   return (
-    <>
-      {HERO_WORDS.map((word, index) => {
-        const isPersuaid = word.replace(/[.,!?]/g, "") === "Persuaid";
-        return (
-          <span key={index} className="inline-block whitespace-pre">
-            <motion.span
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: reduce ? 0.01 : 0.4,
-                delay: reduce ? 0 : index * 0.09,
-                ease: [0.25, 0.1, 0.25, 1],
-              }}
-              className={isPersuaid ? "text-green-primary" : ""}
-            >
-              {word}
-            </motion.span>
-            {index < HERO_WORDS.length - 1 ? " " : ""}
-          </span>
-        );
-      })}
-    </>
+    <span className="flex flex-col items-center gap-1 sm:gap-1.5">
+      <span className={lineClass}>{renderLine(words1, 0)}</span>
+      <span className={lineClass}>{renderLine(words2, words1.length)}</span>
+    </span>
   );
 }
 
@@ -340,20 +352,22 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
     };
   }, []);
 
+  const bgOpacity = demoOpen ? 0 : introFade * scrollFade;
+
   return (
     <div
       className={cn(
-        "relative min-h-screen flex justify-center items-start pt-6 sm:pt-8 lg:pt-10 pb-16 sm:pb-20",
+        "relative min-h-screen bg-background-near-black flex justify-center items-start pt-6 sm:pt-8 lg:pt-10 pb-16 sm:pb-20",
         demoOpen ? "overflow-x-hidden overflow-y-visible" : "overflow-hidden"
       )}
     >
-      {/* Landing background image — dims in after load, then fades further on scroll */}
+      {/* Landing background image — fades to fully off after load; instant off when demo opens */}
       <div
-        className="absolute inset-0 pointer-events-none bg-cover bg-no-repeat"
+        className="absolute inset-0 pointer-events-none bg-cover bg-no-repeat transition-opacity duration-700 ease-out"
         style={{
           backgroundImage: "url(/MGBack.png)",
           backgroundPosition: "center 125%",
-          opacity: introFade * scrollFade,
+          opacity: bgOpacity,
         }}
         aria-hidden
       />
@@ -371,9 +385,16 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
             transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
             className="text-center w-full max-w-[42rem] mx-auto"
           >
-            <h1 className="text-3xl sm:text-[2.125rem] sm:leading-[1.12] lg:text-[2.75rem] lg:leading-[1.08] font-semibold text-text-primary tracking-[-0.03em] mb-4 sm:mb-5">
-              <HeroTitleWords />
+            <h1 className="text-center">
+              <HeroTitleTwoLines />
             </h1>
+
+            <div
+              className="mx-auto mt-4 max-w-[min(24rem,90vw)] px-2 sm:mt-5 sm:max-w-xl"
+              aria-hidden
+            >
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.2] to-transparent" />
+            </div>
 
             <motion.p
               initial={{ opacity: 0, y: reduceMotion ? 0 : 6 }}
@@ -382,9 +403,11 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                 y: reduceMotion ? 0 : showSubtitle ? 0 : 6,
               }}
               transition={{ duration: reduceMotion ? 0.01 : 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-              className="text-[15px] sm:text-[17px] text-text-secondary/95 mb-6 sm:mb-8 max-w-[26rem] sm:max-w-xl mx-auto leading-[1.5] font-normal"
+              className="mt-5 text-[15px] sm:mt-6 sm:text-[17px] text-text-secondary/95 mb-6 sm:mb-8 max-w-[26rem] sm:max-w-xl mx-auto leading-[1.5] font-normal text-balance"
             >
-              {HERO_SUBTITLE}
+              {HERO_SUBTITLE_BEFORE}
+              <span className="font-medium text-green-primary">Persuaid</span>
+              {HERO_SUBTITLE_AFTER}
             </motion.p>
 
             <motion.div
@@ -399,7 +422,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                     : { staggerChildren: 0.06, delayChildren: 0.04 },
                 },
               }}
-              className="flex flex-col items-center w-full max-w-md sm:max-w-lg mx-auto"
+              className="mx-auto flex w-full max-w-2xl flex-col items-center"
             >
               <motion.div
                 variants={{
@@ -413,16 +436,26 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                     },
                   },
                 }}
-                className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4"
+                className="flex w-full max-w-xl flex-row flex-nowrap items-stretch justify-center gap-3 sm:mx-auto sm:gap-4"
               >
                 <motion.a
                   href="/sign-in"
-                  whileHover={reduceMotion ? undefined : { scale: 1.02 }}
-                  whileTap={reduceMotion ? undefined : { scale: 0.97 }}
-                  transition={{ type: "spring", stiffness: 520, damping: 28 }}
-                  className="inline-flex min-h-[52px] sm:min-h-[56px] flex-1 items-center justify-center rounded-full border border-transparent bg-[#20D3A6] px-8 sm:px-10 text-[16px] sm:text-[17px] font-semibold tracking-[-0.01em] text-[#04110D] shadow-[0_4px_24px_rgba(32,211,166,0.35)] transition-[box-shadow,filter] duration-200 hover:bg-[#19BE95] hover:shadow-[0_6px_28px_rgba(32,211,166,0.42)] active:brightness-[0.97] sm:min-w-[11rem]"
+                  whileHover={reduceMotion ? undefined : { scale: 1.01 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.985 }}
+                  transition={{ type: "spring", stiffness: 520, damping: 32 }}
+                  className={cn(
+                    "group inline-flex min-h-[50px] flex-1 items-center justify-center rounded-full px-8 text-[17px] font-medium tracking-[-0.022em]",
+                    "border border-white/15 bg-gradient-to-br from-[#20D3A6] via-[#1db896] to-[#0f766e] text-[#061210]",
+                    "shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.22)]",
+                    "transition-[transform,box-shadow,border-color,filter] duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
+                    "hover:border-cyan-300/40 hover:bg-gradient-to-br hover:from-[#5eead4] hover:via-[#2dd4bf] hover:to-[#0d9488]",
+                    "hover:shadow-[0_4px_32px_rgba(45,212,191,0.45),inset_0_1px_0_rgba(255,255,255,0.35)] hover:brightness-[1.03]",
+                    "active:brightness-95",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[transparent]",
+                    "min-w-0 sm:min-h-[52px] sm:min-w-[10.75rem]"
+                  )}
                 >
-                  Join Now
+                  Get started
                 </motion.a>
                 {onDemoOpenChange && (
                   <motion.button
@@ -430,10 +463,21 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                     onClick={() => onDemoOpenChange(!demoOpen)}
                     aria-expanded={demoOpen}
                     aria-controls="hero-demo-panel"
-                    whileHover={reduceMotion ? undefined : { scale: 1.02 }}
-                    whileTap={reduceMotion ? undefined : { scale: 0.97 }}
-                    transition={{ type: "spring", stiffness: 520, damping: 28 }}
-                    className="inline-flex min-h-[52px] sm:min-h-[56px] flex-1 items-center justify-center rounded-full border border-white/20 bg-white px-8 sm:px-10 text-[16px] sm:text-[17px] font-medium tracking-[-0.01em] text-neutral-950 shadow-[0_1px_2px_rgba(0,0,0,0.12)] ring-1 ring-white/25 transition-[box-shadow] duration-200 hover:shadow-[0_4px_20px_rgba(255,255,255,0.14)] hover:brightness-[1.02] active:brightness-[0.98] sm:min-w-[11rem]"
+                    whileHover={reduceMotion ? undefined : { scale: 1.01 }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.985 }}
+                    transition={{ type: "spring", stiffness: 520, damping: 32 }}
+                    className={cn(
+                      "inline-flex min-h-[50px] flex-1 items-center justify-center rounded-full px-8 text-[17px] font-medium tracking-[-0.022em]",
+                      "border border-white/20 bg-white/[0.08] text-white/[0.95] backdrop-blur-xl backdrop-saturate-150",
+                      "bg-gradient-to-br from-white/[0.12] to-white/[0.05]",
+                      "shadow-[inset_0_0.5px_0_rgba(255,255,255,0.35),0_1px_3px_rgba(0,0,0,0.12)]",
+                      "transition-[transform,background,background-color,border-color,box-shadow,color] duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
+                      "hover:border-fuchsia-400/35 hover:from-fuchsia-500/25 hover:via-violet-500/20 hover:to-cyan-500/15",
+                      "hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_24px_rgba(192,132,252,0.2)]",
+                      "active:from-white/10 active:to-white/5",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[transparent]",
+                      "min-w-0 sm:min-h-[52px] sm:min-w-[10.75rem]"
+                    )}
                   >
                     {demoOpen ? "Back" : "Try free"}
                   </motion.button>
@@ -456,7 +500,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
               ease: [0.16, 1, 0.3, 1],
             }}
             className={cn(
-              "relative mt-10 sm:mt-12 lg:mt-14 w-full max-w-full self-stretch",
+              "relative mt-6 sm:mt-8 lg:mt-10 w-full max-w-full self-stretch",
               demoOpen ? "min-h-0 max-h-none" : "min-h-[min(52vh,480px)] max-h-[min(70vh,640px)]"
             )}
             id="hero-demo-panel"
