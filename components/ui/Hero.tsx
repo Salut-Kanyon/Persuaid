@@ -1,10 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
-const HERO_CAROUSEL_VIDEOS = ["/otherid3.mp4", "/VideoAI.mp4"] as const;
+import { LandingTestimonials } from "@/components/landing/LandingTestimonials";
+import { LandingHeroVideo } from "@/components/landing/LandingHeroVideo";
 
 const FADE_START = 0;
 const FADE_END = 950;
@@ -18,257 +19,27 @@ function easeOutCubic(t: number) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-const HERO_TITLE_LINE1 = "Know exactly what to say,";
-const HERO_TITLE_LINE2 = "in the moment.";
+const HERO_TITLE_LINE1 = "# 1 AI training tool";
+const HERO_TITLE_LINE2 = "for new agents";
 const HERO_LINE1_WORDS = HERO_TITLE_LINE1.split(" ");
 const HERO_LINE2_WORDS = HERO_TITLE_LINE2.split(" ");
 
-const HERO_SUBTITLE_BEFORE =
-  "Listens to your sales calls and gives you the right words in real time, ";
-const HERO_SUBTITLE_AFTER = " handles objections naturally and keeps the deal moving.";
-
-const TRANSCRIPT_LINES = [
-  { who: "Rep", whoClass: "text-emerald-300/95", text: "Thanks for your time. I'll keep this focused on how we can help your team sell better." },
-  { who: "Prospect", whoClass: "text-sky-200/95", text: "We've tried a few tools—they ended up adding more work for reps." },
-  { who: "AI", whoClass: "text-green-primary", text: "Suggested: \"That's exactly what we're built to fix. Real-time help, no extra steps.\"" },
-  { who: "Rep", whoClass: "text-emerald-300/95", text: "You talk, Persuaid listens and suggests the next line. Press Enter when you need it." },
-];
-
-const DRAFTING_LINE = { who: "AI", whoClass: "text-green-primary", text: "Drafting next line…" };
-
-const LIVE_EXTRA_LINES = [
-  { who: "AI", whoClass: "text-green-primary", text: "Try this: \"Teams like yours want the right line in the moment—and a clear recap after. Persuaid helps during the call and when it's over.\"" },
-  { who: "AI", whoClass: "text-green-primary", text: "Follow-up: \"What would need to be true for a tool like this to actually get used by your reps every day?\"" },
-  { who: "AI", whoClass: "text-green-primary", text: "Objection handled. Suggest: \"We sit next to your dialer and listen. No new meeting links, no bots on the call—just the next line when you need it.\"" },
-  { who: "AI", whoClass: "text-green-primary", text: "Strong close: \"Want to run one real call with Persuaid on and see what it suggests? Takes two minutes to try.\"" },
-];
-
-const DRAFTING_MS = 2800;
-const SUGGESTION_MS = 7200;
-const PAUSE_BETWEEN_MS = 4200;
-
-/** Transcript mock — remount with key when carousel returns to slide 2 so the animation restarts. */
-function HeroTranscriptOverlay({ show }: { show: boolean }) {
-  const [visibleCount, setVisibleCount] = useState(0);
-  const [liveLine, setLiveLine] = useState<(typeof LIVE_EXTRA_LINES)[0] | typeof DRAFTING_LINE | null>(null);
-  const [liveKey, setLiveKey] = useState(0);
-  const [isDraftingPhase, setIsDraftingPhase] = useState(false);
-
-  useEffect(() => {
-    if (!show) return;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    TRANSCRIPT_LINES.forEach((_, i) => {
-      timers.push(setTimeout(() => setVisibleCount((c) => c + 1), 500 + i * 1200));
-    });
-    return () => timers.forEach(clearTimeout);
-  }, [show]);
-
-  useEffect(() => {
-    if (visibleCount < TRANSCRIPT_LINES.length) return;
-    const t = setTimeout(() => {
-      setIsDraftingPhase(true);
-      setLiveLine(DRAFTING_LINE);
-    }, 3200);
-    return () => clearTimeout(t);
-  }, [visibleCount]);
-
-  useEffect(() => {
-    if (!liveLine || !isDraftingPhase) return;
-    const t = setTimeout(() => {
-      setIsDraftingPhase(false);
-      setLiveLine(LIVE_EXTRA_LINES[liveKey % LIVE_EXTRA_LINES.length]);
-      setLiveKey((k) => k + 1);
-    }, DRAFTING_MS);
-    return () => clearTimeout(t);
-  }, [liveLine, isDraftingPhase, liveKey]);
-
-  useEffect(() => {
-    if (!liveLine || isDraftingPhase) return;
-    const t = setTimeout(() => setLiveLine(null), SUGGESTION_MS);
-    return () => clearTimeout(t);
-  }, [liveLine, isDraftingPhase]);
-
-  useEffect(() => {
-    if (liveLine !== null || visibleCount < TRANSCRIPT_LINES.length || liveKey === 0) return;
-    const t = setTimeout(() => {
-      setIsDraftingPhase(true);
-      setLiveLine(DRAFTING_LINE);
-    }, PAUSE_BETWEEN_MS);
-    return () => clearTimeout(t);
-  }, [liveLine, visibleCount, liveKey]);
-
-  return (
-    <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-black/50 shadow-2xl overflow-hidden flex flex-col backdrop-blur-sm">
-        <div className="px-4 py-2.5 border-b border-white/10 flex items-center justify-between bg-black/40 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-primary animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-            <span className="text-sm font-semibold text-text-primary tracking-tight">Live AI transcript</span>
-          </div>
-          <span className="text-xs text-text-dim font-mono tabular-nums">00:18:42</span>
-        </div>
-        <div className="p-4 space-y-3 text-left h-[220px] sm:h-[260px] overflow-y-auto overflow-x-hidden flex flex-col bg-black/35">
-          <div className="space-y-4 flex-1 min-h-0">
-            {TRANSCRIPT_LINES.slice(0, visibleCount).map((line, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="flex gap-3 shrink-0"
-              >
-                <span className={`text-[10px] font-semibold shrink-0 ${line.whoClass}`}>{line.who}</span>
-                <p className="text-xs sm:text-sm text-text-primary leading-relaxed">{line.text}</p>
-              </motion.div>
-            ))}
-            <div className="min-h-[56px] flex flex-col justify-end">
-              <AnimatePresence mode="wait">
-                {liveLine ? (
-                  <motion.div
-                    key={`live-${liveKey}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.35 }}
-                    className="flex gap-2 rounded-lg bg-black/45 border border-green-primary/30 pl-2 py-1.5 pr-2 shrink-0 min-h-[56px] border-white/10"
-                  >
-                    <span className={`text-[10px] font-semibold shrink-0 ${liveLine.whoClass}`}>{liveLine.who}</span>
-                    <p className="text-xs sm:text-sm text-text-primary leading-relaxed">{liveLine.text}</p>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="live-placeholder"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="min-h-[56px]"
-                    aria-hidden
-                  />
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Two hero clips in one frame: when the active video fires `ended`, advance to the other (no loop).
- * Second clip shows the transcript overlay; first is full-bleed.
- */
-function LiveTranscriptVideo({ show }: { show: boolean }) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [transcriptCycle, setTranscriptCycle] = useState(0);
-  const prevIndex = useRef(0);
-  const video0 = useRef<HTMLVideoElement>(null);
-  const video1 = useRef<HTMLVideoElement>(null);
-
-  const advance = useCallback(() => {
-    setActiveIndex((i) => (i + 1) % HERO_CAROUSEL_VIDEOS.length);
-  }, []);
-
-  useEffect(() => {
-    if (!show) {
-      video0.current?.pause();
-      video1.current?.pause();
-      return;
-    }
-    if (prevIndex.current !== 1 && activeIndex === 1) {
-      setTranscriptCycle((c) => c + 1);
-    }
-    prevIndex.current = activeIndex;
-
-    const refs = [video0, video1];
-    refs.forEach((r, i) => {
-      const el = r.current;
-      if (!el) return;
-      if (i === activeIndex) {
-        el.currentTime = 0;
-        void el.play().catch(() => {});
-      } else {
-        el.pause();
-      }
-    });
-  }, [show, activeIndex]);
-
-  useEffect(() => {
-    if (show) setActiveIndex(0);
-  }, [show]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: show ? 1 : 0, y: show ? 0 : 24 }}
-      transition={{ duration: 0.7, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-      className="flex h-full w-full max-w-4xl flex-1 flex-col xl:max-w-5xl mx-auto px-3 sm:px-4"
-    >
-      <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-black shadow-[0_40px_100px_rgba(0,0,0,0.65)] shadow-green-950/20 ring-1 ring-white/5">
-        {/*
-          Fixed max height + contain keeps both clips readable without heavy cropping.
-          Letterboxing is black to match the frame.
-        */}
-        <div className="relative w-full aspect-[16/10] max-h-[min(58vh,520px)] min-h-[220px] sm:min-h-[260px] sm:max-h-[min(56vh,560px)]">
-          <video
-            ref={video0}
-            src={HERO_CAROUSEL_VIDEOS[0]}
-            className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-500 ease-out ${
-              activeIndex === 0 ? "z-[1] opacity-100" : "z-0 opacity-0 pointer-events-none"
-            }`}
-            muted
-            playsInline
-            preload="metadata"
-            onEnded={advance}
-            aria-hidden
-          />
-          <video
-            ref={video1}
-            src={HERO_CAROUSEL_VIDEOS[1]}
-            className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-500 ease-out ${
-              activeIndex === 1 ? "z-[1] opacity-100" : "z-0 opacity-0 pointer-events-none"
-            }`}
-            muted
-            playsInline
-            preload="metadata"
-            onEnded={advance}
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-black/30 to-black/40 z-[2]"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute inset-0 rounded-2xl z-[2]"
-            style={{
-              background:
-                "radial-gradient(ellipse 85% 80% at 50% 50%, transparent 40%, rgba(5,7,8,0.5) 75%, rgba(5,7,8,0.95) 100%)",
-              boxShadow: "inset 0 0 80px 20px rgba(5,7,8,0.3)",
-            }}
-            aria-hidden
-          />
-          {activeIndex === 1 && (
-            <div className="absolute inset-0 z-[3]">
-              <HeroTranscriptOverlay key={transcriptCycle} show={show} />
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
+const HERO_SUBTITLE_LINE1 = "Knowing your product builds confidence, and that takes time.";
+const HERO_SUBTITLE_LINE2_AFTER = " gives reps that confidence from day one while they learn.";
 
 function HeroTitleTwoLines() {
   const reduce = useReducedMotion();
   const words1 = HERO_LINE1_WORDS;
   const words2 = HERO_LINE2_WORDS;
   const lineClass =
-    "block whitespace-nowrap text-[clamp(1.2rem,4.8vw,2.75rem)] leading-[1.08] font-semibold text-text-primary tracking-[-0.03em]";
+    "block whitespace-nowrap text-[clamp(1.65rem,7.5vw,4.25rem)] leading-[1.05] font-bold text-text-primary tracking-[-0.035em]";
 
   const renderLine = (words: string[], baseIndex: number) =>
     words.map((word, i) => {
       const index = baseIndex + i;
-      const isPersuaid = word.replace(/[.,!?]/g, "") === "Persuaid";
+      const stripped = word.replace(/[.,!?]/g, "");
+      const isPersuaid = stripped === "Persuaid";
+      const isAi = stripped === "AI";
       return (
         <span key={`${baseIndex}-${i}`} className="inline-block whitespace-pre">
           <motion.span
@@ -279,7 +50,7 @@ function HeroTitleTwoLines() {
               delay: reduce ? 0 : index * 0.09,
               ease: [0.25, 0.1, 0.25, 1],
             }}
-            className={isPersuaid ? "text-green-primary" : ""}
+            className={cn((isPersuaid || isAi) && "text-green-primary")}
           >
             {word}
           </motion.span>
@@ -289,7 +60,7 @@ function HeroTitleTwoLines() {
     });
 
   return (
-    <span className="flex flex-col items-center gap-1 sm:gap-1.5">
+    <span className="flex flex-col items-center gap-1.5 sm:gap-2">
       <span className={lineClass}>{renderLine(words1, 0)}</span>
       <span className={lineClass}>{renderLine(words2, words1.length)}</span>
     </span>
@@ -358,7 +129,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
     <div
       className={cn(
         "relative min-h-screen bg-background-near-black flex justify-center items-start pt-6 sm:pt-8 lg:pt-10 pb-16 sm:pb-20",
-        demoOpen ? "overflow-x-hidden overflow-y-visible" : "overflow-hidden"
+        "overflow-x-hidden overflow-y-visible"
       )}
     >
       {/* Landing background image — fades to fully off after load; instant off when demo opens */}
@@ -371,6 +142,8 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
         }}
         aria-hidden
       />
+
+      <LandingTestimonials demoOpen={demoOpen} />
 
       <div
         className={cn(
@@ -405,9 +178,11 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
               transition={{ duration: reduceMotion ? 0.01 : 0.5, ease: [0.25, 0.1, 0.25, 1] }}
               className="mt-5 text-[15px] sm:mt-6 sm:text-[17px] text-text-secondary/95 mb-6 sm:mb-8 max-w-[26rem] sm:max-w-xl mx-auto leading-[1.5] font-normal text-balance"
             >
-              {HERO_SUBTITLE_BEFORE}
-              <span className="font-medium text-green-primary">Persuaid</span>
-              {HERO_SUBTITLE_AFTER}
+              <span className="block">
+                {HERO_SUBTITLE_LINE1}{" "}
+                <span className="font-medium text-green-primary">Persuaid</span>
+                {HERO_SUBTITLE_LINE2_AFTER}
+              </span>
             </motion.p>
 
             <motion.div
@@ -455,7 +230,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                     "min-w-0 sm:min-h-[52px] sm:min-w-[10.75rem]"
                   )}
                 >
-                  Get started
+                  Join now
                 </motion.a>
                 {onDemoOpenChange && (
                   <motion.button
@@ -479,7 +254,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                       "min-w-0 sm:min-h-[52px] sm:min-w-[10.75rem]"
                     )}
                   >
-                    {demoOpen ? "Back" : "Try free"}
+                    {demoOpen ? "Back" : "Free Live Demo"}
                   </motion.button>
                 )}
               </motion.div>
@@ -501,7 +276,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
             }}
             className={cn(
               "relative mt-6 sm:mt-8 lg:mt-10 w-full max-w-full self-stretch",
-              demoOpen ? "min-h-0 max-h-none" : "min-h-[min(52vh,480px)] max-h-[min(70vh,640px)]"
+              demoOpen ? "min-h-0 max-h-none" : "min-h-[min(58vh,560px)] max-h-[min(80vh,840px)]"
             )}
             id="hero-demo-panel"
           >
@@ -522,12 +297,12 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
               className={cn(
                 "flex flex-col transition-opacity duration-300 ease-out",
                 !demoOpen
-                  ? "relative z-10 h-full min-h-[min(52vh,280px)] max-h-[min(70vh,640px)] opacity-100"
-                  : "absolute inset-0 z-0 h-full min-h-[280px] max-h-[min(70vh,640px)] opacity-0 pointer-events-none overflow-hidden"
+                  ? "relative z-10 h-full min-h-[min(58vh,320px)] max-h-[min(80vh,840px)] opacity-100"
+                  : "absolute inset-0 z-0 h-full min-h-[320px] max-h-[min(80vh,840px)] opacity-0 pointer-events-none overflow-hidden"
               )}
               aria-hidden={demoOpen}
             >
-              <LiveTranscriptVideo show={showCTA} />
+              <LandingHeroVideo show={showCTA} />
             </div>
           </motion.div>
         </div>

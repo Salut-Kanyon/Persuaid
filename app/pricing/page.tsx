@@ -157,7 +157,7 @@ export default function PricingPage() {
               <div className="flex-1 min-h-0" aria-hidden />
               <div className="w-full shrink-0 pt-8">
                 <CTAButton variant="secondary" className="w-full" href="/dashboard">
-                  Get started
+                  Join now
                 </CTAButton>
               </div>
             </div>

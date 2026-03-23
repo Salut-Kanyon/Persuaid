@@ -552,7 +552,7 @@ export default function Home() {
                 className="w-5 h-5 flex-shrink-0 object-contain group-hover:scale-110 transition-transform duration-300"
                 aria-hidden
               />
-              <span>Try it on your next call</span>
+              <span>Try Free</span>
             </a>
           </div>
           {/* Right: video with small AI transcript overlay */}

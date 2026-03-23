@@ -113,7 +113,7 @@ export default function WelcomePage() {
             href="/sign-in"
             className="flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-xl font-semibold text-white text-base bg-green-primary hover:bg-green-dark transition-all duration-200 shadow-button hover:shadow-button-hover focus:outline-none focus:ring-2 focus:ring-green-primary focus:ring-offset-2 focus:ring-offset-background-near-black"
           >
-            Get started
+            Join now
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>

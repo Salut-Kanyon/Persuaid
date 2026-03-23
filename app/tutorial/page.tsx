@@ -154,7 +154,7 @@ export default function TutorialPage() {
               href="/sign-in"
               className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-[15px] font-semibold text-[#04110D] bg-white border border-white/20 shadow-[0_1px_2px_rgba(0,0,0,0.2)] ring-1 ring-white/15 hover:brightness-[1.03] transition-[filter]"
             >
-              Get started
+              Join now
               <svg className="w-4 h-4 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>

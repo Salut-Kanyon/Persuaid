@@ -1,0 +1,15 @@
+WEBVTT
+
+NOTE
+Hero video is public/LandingVid/newv.mp4 (replace file in place; bump ?v= in LandingHeroVideo when you do).
+Edit cue text and timestamps whenever the narration changes.
+Tools: https://www.vtt-creator.com or Descript / Premiere export to WebVTT.
+
+00:00:00.000 --> 00:00:05.000
+Persuaid product walkthrough.
+
+00:00:05.000 --> 00:00:12.000
+See how live guidance fits into a real sales workflow.
+
+00:00:12.000 --> 00:00:20.000
+Replace this line with what’s actually said in newv.mp4.

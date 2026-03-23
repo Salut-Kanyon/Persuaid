@@ -37,7 +37,7 @@ export function Navbar() {
               alt="Persuaid"
               className="w-4 h-4 flex-shrink-0 object-contain"
             />
-            <span>Try for Free</span>
+            <span>Try Free</span>
           </a>
         </div>
       )}
