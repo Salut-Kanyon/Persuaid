@@ -242,13 +242,8 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
               ease: [0.16, 1, 0.3, 1],
             }}
             className={cn(
-<<<<<<< Updated upstream
-              "relative mt-4 sm:mt-5 lg:mt-6 w-full max-w-full self-stretch",
+              "relative mt-4 scroll-mt-24 sm:mt-5 sm:scroll-mt-28 lg:mt-6 w-full max-w-full self-stretch",
               demoOpen ? "min-h-0 max-h-none" : "min-h-[min(42vh,400px)] max-h-[min(72vh,720px)]"
-=======
-              "relative mt-6 scroll-mt-24 sm:mt-8 sm:scroll-mt-28 lg:mt-10 w-full max-w-full self-stretch",
-              demoOpen ? "min-h-0 max-h-none" : "min-h-[min(58vh,560px)] max-h-[min(80vh,840px)]"
->>>>>>> Stashed changes
             )}
             id="hero-demo-panel"
           >
