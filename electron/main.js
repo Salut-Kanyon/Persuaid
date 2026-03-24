@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session, protocol } = require('electron');
+const { app, BrowserWindow, session, protocol, Menu, ipcMain, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -74,6 +74,177 @@ console.log('Electron startup:', {
 });
 
 let mainWindow;
+/** Saved window bounds before shrinking to the compact call strip (macOS-style top pill). */
+let preCompactBounds = null;
+/** Saved bounds / maximize state before live-call HUD resize. */
+let preCallHudBounds = null;
+let preCallHudMaximized = false;
+let callHudActive = false;
+/** Call HUD: panel “open” for legacy sync handler (bounds no longer change on hide). */
+let hudPanelVisible = true;
+/** Fixed floating HUD size (renderer no longer syncs dynamic size). */
+const HUD_FIXED_WIDTH = 460;
+const HUD_FIXED_HEIGHT = 880;
+
+/** macOS: window-level vibrancy for live-call HUD only (cleared when false). */
+ipcMain.handle('persuaid-set-vibrancy', (_event, enabled) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (process.platform !== 'darwin') return;
+  try {
+    mainWindow.setVibrancy(enabled ? 'hud' : null);
+  } catch (e) {
+    console.error('[persuaid-set-vibrancy]', e && e.message);
+  }
+});
+
+ipcMain.handle('persuaid-window', (_event, action) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  try {
+    if (action === 'minimize') mainWindow.minimize();
+    else if (action === 'close') mainWindow.close();
+    else if (action === 'toggle-maximize') {
+      if (mainWindow.isMaximized()) mainWindow.unmaximize();
+      else mainWindow.maximize();
+    }
+  } catch (e) {
+    console.error('[persuaid-window]', e && e.message);
+  }
+});
+
+/**
+ * Live call: shrink BrowserWindow to a compact floating HUD (pill + panel), centered.
+ * Restores prior bounds (or re-maximizes) when disabled.
+ */
+ipcMain.handle('persuaid-call-hud', (_event, enabled) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  try {
+    if (enabled) {
+      if (callHudActive) return;
+      preCallHudMaximized = mainWindow.isMaximized();
+      if (preCallHudMaximized) {
+        mainWindow.unmaximize();
+      }
+      preCallHudBounds = mainWindow.getBounds();
+
+      const { workArea } = screen.getPrimaryDisplay();
+      hudPanelVisible = true;
+      const hudW = Math.min(HUD_FIXED_WIDTH, workArea.width - 24);
+      const hudH = Math.min(HUD_FIXED_HEIGHT, workArea.height - 24);
+      const bx = workArea.x + Math.round((workArea.width - hudW) / 2);
+      const by = workArea.y + Math.round((workArea.height - hudH) / 2);
+
+      mainWindow.setBounds({ x: bx, y: by, width: hudW, height: hudH });
+      try {
+        mainWindow.setAlwaysOnTop(true, 'floating');
+      } catch (_) {
+        try {
+          mainWindow.setAlwaysOnTop(true);
+        } catch (_) {}
+      }
+      mainWindow.setResizable(false);
+      try {
+        mainWindow.setHasShadow(false);
+      } catch (_) {}
+      try {
+        mainWindow.setBackgroundColor('#00000000');
+      } catch (_) {}
+
+      callHudActive = true;
+    } else {
+      if (!callHudActive) return;
+      callHudActive = false;
+      hudPanelVisible = true;
+
+      mainWindow.setAlwaysOnTop(false);
+      mainWindow.setResizable(true);
+      try {
+        mainWindow.setHasShadow(true);
+      } catch (_) {}
+
+      const isMac = process.platform === 'darwin';
+      try {
+        mainWindow.setBackgroundColor(isMac ? '#00000000' : '#000000');
+      } catch (_) {}
+
+      if (preCallHudMaximized) {
+        preCallHudMaximized = false;
+        preCallHudBounds = null;
+        mainWindow.maximize();
+      } else if (preCallHudBounds) {
+        mainWindow.setBounds(preCallHudBounds);
+        preCallHudBounds = null;
+      } else {
+        mainWindow.maximize();
+      }
+    }
+  } catch (e) {
+    console.error('[persuaid-call-hud]', e && e.message);
+  }
+});
+
+ipcMain.handle('persuaid-call-hud-panel', (_event, open) => {
+  if (!mainWindow || mainWindow.isDestroyed() || !callHudActive) return;
+  try {
+    hudPanelVisible = !!open;
+    /* Window size stays fixed; renderer only toggles visibility. */
+  } catch (e) {
+    console.error('[persuaid-call-hud-panel]', e && e.message);
+  }
+});
+
+ipcMain.handle('persuaid-call-hud-sync-size', (_event, size) => {
+  if (!mainWindow || mainWindow.isDestroyed() || !callHudActive) return;
+  try {
+    const h = Number(size && size.height);
+    if (!Number.isFinite(h) || h < 1) return;
+    const { workArea } = screen.getPrimaryDisplay();
+    const b = mainWindow.getBounds();
+    const maxH = Math.max(160, workArea.height - 24);
+    const nextH = Math.round(Math.min(Math.max(h, 72), maxH));
+    /* Top edge fixed so the pill stays put; blur/vibrancy window matches content height. */
+    mainWindow.setBounds({ x: b.x, y: b.y, width: b.width, height: nextH });
+  } catch (e) {
+    console.error('[persuaid-call-hud-sync-size]', e && e.message);
+  }
+});
+
+ipcMain.handle('call-compact-layout', (_event, compact) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  try {
+    if (compact) {
+      if (!preCompactBounds) {
+        preCompactBounds = mainWindow.getBounds();
+      }
+      const { workArea } = screen.getPrimaryDisplay();
+      // macOS title bar + webview needs ~90px+; 56px was too short and clipped the pill to a sliver.
+      const barH = 120;
+      const barW = Math.min(420, Math.max(280, workArea.width - 48));
+      const bx = workArea.x + Math.round((workArea.width - barW) / 2);
+      const by = workArea.y;
+      mainWindow.setBounds({ x: bx, y: by, width: barW, height: barH });
+      mainWindow.setAlwaysOnTop(true, 'floating');
+      mainWindow.setResizable(false);
+      // Apple-like dark gray (not pure black) behind the web frosted layer.
+      try {
+        mainWindow.setBackgroundColor('#2c2c2e');
+      } catch (_) {}
+    } else {
+      mainWindow.setAlwaysOnTop(false);
+      mainWindow.setResizable(true);
+      try {
+        mainWindow.setBackgroundColor('#000000');
+      } catch (_) {}
+      if (preCompactBounds) {
+        mainWindow.setBounds(preCompactBounds);
+        preCompactBounds = null;
+      } else {
+        mainWindow.maximize();
+      }
+    }
+  } catch (e) {
+    console.error('[call-compact-layout]', e && e.message);
+  }
+});
 
 // Desktop entry: welcome first (handles auth check with timeout), then sign-in → dashboard.
 const DESKTOP_ENTRY_PATH = '/welcome';
@@ -92,6 +263,42 @@ function getLastExchange(transcript, n = 16) {
   return last
     .map((m) => `${m.speaker === 'prospect' ? 'Prospect' : 'Rep'}: ${m.text}`)
     .join('\n');
+}
+
+/** Matches lib/ai-moment-context.ts — live clock for "what time is it" / calendar questions. */
+function buildAiMomentContextBlock(timeZone) {
+  let tz = typeof timeZone === 'string' && timeZone.trim().length > 0 ? timeZone.trim() : 'UTC';
+  try {
+    new Intl.DateTimeFormat(undefined, { timeZone: tz });
+  } catch (_) {
+    tz = 'UTC';
+  }
+  const now = new Date();
+  const localFull = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short',
+  }).format(now);
+  const calendarDate = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(now);
+  return (
+    'Real-time clock (authoritative for: what time it is, what day/date/today/tomorrow is, calendar scheduling, or how long until a specific date):\n' +
+    `- Rep's local time (${tz}): ${localFull}\n` +
+    `- Calendar date in that timezone: ${calendarDate}\n` +
+    `- Same instant in UTC (ISO 8601): ${now.toISOString()}\n` +
+    "When the rep or prospect asks about time or dates, use the lines above. Answer in the rep's local sense unless they explicitly ask for another timezone."
+  );
 }
 
 /** In-app handler for POST /api/ai/follow-up: mode=answer (Enter) or mode=follow_up_question (button). */
@@ -116,6 +323,7 @@ function handleFollowUpApi(body, res) {
   const notesContext = (parsed.notesContext ?? '').trim();
   const dealContext = parsed.dealContext ?? {};
   const mode = parsed.mode === 'follow_up_question' ? 'follow_up_question' : 'answer';
+  const momentBlock = buildAiMomentContextBlock(parsed.timeZone);
   const conversation = buildConversation(transcript);
   if (!conversation.trim()) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -204,6 +412,7 @@ Rules specific to this mode:
 - If the prospect's last message is clearly confused or the transcript is garbled / ambiguous so you cannot tell what they are asking, do NOT guess. Instead, output one short clarifying line that politely checks what they mean (for example, asking if they are asking more about pricing or how the product works).
 - For pricing, tiers, or ranges: if notes contain figures, state them clearly and list **all** tiers; do not refuse; if not in notes, defer—never invent.
 - Do not output bullet points, headings, markdown, explanations, or coaching.`;
+  const systemPromptWithMoment = `${systemPrompt}\n\n${momentBlock}`;
   const CONVERSATION_MAX_CHARS = 14000;
   const fullConversation = conversation.length > CONVERSATION_MAX_CHARS ? conversation.slice(-CONVERSATION_MAX_CHARS) : conversation;
   const parts = [
@@ -235,7 +444,7 @@ Rules specific to this mode:
     );
   }
   parts.push(
-    'For your internal reasoning only (do NOT mention this out loud), first decide which intent category best matches the prospect\\'s last message: product question, pricing question, objection, competitor comparison, hesitation, buying signal, confusion, or unclear transcript. Then, based on the current mode and that intent, craft exactly one concise spoken response as instructed.'
+    "For your internal reasoning only (do NOT mention this out loud), first decide which intent category best matches the prospect's last message: product question, pricing question, objection, competitor comparison, hesitation, buying signal, confusion, or unclear transcript. Then, based on the current mode and that intent, craft exactly one concise spoken response as instructed."
   );
   if (mode === 'follow_up_question') {
     parts.push(`What is one good follow-up question the rep should ask next? Reply with only that question.`);
@@ -247,7 +456,7 @@ Rules specific to this mode:
   const payload = JSON.stringify({
     model: 'gpt-4o-mini',
     messages: [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: systemPromptWithMoment },
       { role: 'user', content: userPrompt },
     ],
     max_tokens: maxTokens,
@@ -614,6 +823,7 @@ function handleAnswerApi(body, res) {
     res.end(JSON.stringify({ error: 'Missing or empty text' }));
     return;
   }
+  const momentBlock = buildAiMomentContextBlock(parsed.timeZone);
   const systemPrompt = [
     'You are a real-time sales assistant (Persuaid): copilot for a live sales call.',
     'Your job is to give the rep the exact next words to say out loud—no generic coaching.',
@@ -621,6 +831,7 @@ function handleAnswerApi(body, res) {
     'Mandatory: If the answer (including numbers or tiers) is IN the product knowledge, use it DIRECTLY—clearly. Do NOT refuse or say you cannot provide numbers when the knowledge includes them. Only skip numbers when absent from knowledge. Multiple pricing tiers → list ALL clearly.',
     'Knowledge boundaries: (1) Pricing/coverage/policy/product numbers — ONLY from product knowledge; all tiers when listed; say figures when present; never invent; defer only if missing. (2) General topics — general knowledge OK; prioritize product knowledge; never contradict. (3) No knowledge block + needs figures — defer; do not invent.',
     'Always: natural spoken sales; 1–3 sentences (up to 4–5 for full tier walkthrough from knowledge); no markdown/bullets; no coaching meta.',
+    momentBlock,
   ].join('\n\n');
   const knowledgeBlock = notesContext
     ? `\n\nProvided product knowledge:\n${notesContext.slice(0, 4000)}`
@@ -949,15 +1160,26 @@ function startSttProxy(apiKey) {
     });
   });
 
+  // Register before listen — otherwise EADDRINUSE can throw before a handler exists.
+  server.on('error', (err) => {
+    debugLog('[STT] Proxy server error:', err && err.message);
+    if (err && err.code === 'EADDRINUSE') {
+      debugLog(
+        '[STT] Port',
+        STT_PROXY_PORT,
+        'already in use (e.g. `npm run stt:proxy` or another Persuaid window). Reusing that proxy is OK; in-app STT proxy not started.'
+      );
+    }
+    try {
+      server.close();
+    } catch (_) {}
+    if (sttProxyServer === server) sttProxyServer = null;
+  });
+
   server.listen(STT_PROXY_PORT, '127.0.0.1', () => {
+    sttProxyServer = server;
     debugLog('[STT] Proxy listening on ws://127.0.0.1:' + STT_PROXY_PORT);
   });
-
-  server.on('error', (err) => {
-    debugLog('[STT] Proxy server error:', err.message);
-  });
-
-  sttProxyServer = server;
 }
 
 /** Serve app bundle via app://persuaid/ (unpacked only). Packaged app uses HTTP server so DMG loads correctly. */
@@ -996,24 +1218,84 @@ function registerAppProtocol() {
 
 const preloadPath = path.join(__dirname, 'preload.js');
 
+/** Menu + optional auto-open so you can inspect renderer errors (Console) when debugging Start Call, STT, etc. */
+function setupInspectorSupport(win) {
+  if (process.env.ELECTRON_OPEN_DEVTOOLS === '1') {
+    win.webContents.once('did-finish-load', () => {
+      try {
+        win.webContents.openDevTools({ mode: 'detach' });
+      } catch (_) {}
+    });
+  }
+  const showDevMenu =
+    !app.isPackaged ||
+    process.env.DESKTOP_DEV === '1' ||
+    process.env.ELECTRON_OPEN_DEVTOOLS === '1';
+  if (!showDevMenu) return;
+  const isMac = process.platform === 'darwin';
+  const template = [];
+  if (isMac) {
+    template.push({
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    });
+  } else {
+    template.push({
+      label: 'File',
+      submenu: [{ role: 'quit' }],
+    });
+  }
+  template.push({
+    label: 'View',
+    submenu: [
+      { role: 'reload' },
+      { type: 'separator' },
+      {
+        label: 'Toggle Developer Tools',
+        role: 'toggleDevTools',
+        accelerator: isMac ? 'Alt+Command+I' : 'Ctrl+Shift+I',
+      },
+    ],
+  });
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 function createWindow() {
+  const isMac = process.platform === 'darwin';
+  /** Frameless + transparent on macOS so the app can look like a floating glass HUD (no native title bar). */
+  const framelessMac = isMac;
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    frame: !framelessMac,
+    transparent: framelessMac,
+    backgroundColor: framelessMac ? '#00000000' : '#000000',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       partition: 'persist:persuaid',
       preload: fs.existsSync(preloadPath) ? preloadPath : undefined,
       webSecurity: false, // Allow loading local files
+      // Helps Web Audio / mic capture when DevTools is open or window is in the background.
+      backgroundThrottling: false,
     },
     title: 'Persuaid',
   });
 
+  if (framelessMac) {
+    try {
+      mainWindow.setBackgroundColor('#00000000');
+    } catch (_) {}
+  }
+
   // Start maximized (full screen) when entering the workspace / app
   mainWindow.maximize();
-  
-  // DevTools: open manually if needed (Cmd+Option+I). Auto-open can show noisy "Failed to fetch" from DevTools internals.
+
+  setupInspectorSupport(mainWindow);
 
   function loadBundle() {
     const entryFile = path.join(OUT_DIR, DESKTOP_ENTRY_FILE);
@@ -1067,8 +1349,11 @@ function createWindow() {
 
   // In dev mode, load Next.js dev server so /api (token, suggestions) work. Run "npm run dev" in another terminal first.
   if (forceDevServer) {
-    const devUrl = 'http://localhost:3000/welcome';
-    console.log('Desktop dev: loading', devUrl, '(ensure npm run dev is running)');
+    const devPort = (process.env.NEXT_DEV_PORT || process.env.PORT || '3000').replace(/^:/, '').trim() || '3000';
+    // Use localhost (not 127.0.0.1): Next dev treats them as different origins; 127.0.0.1 triggers
+    // "Cross origin request … to /_next/*" and can break HMR/chunks in a future Next major.
+    const devUrl = `http://localhost:${devPort}/welcome`;
+    console.log('Desktop dev: loading', devUrl, '(set NEXT_DEV_PORT if Next is not on this port)');
     mainWindow.loadURL(devUrl);
     mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
       if (errorCode !== -3) console.error('Failed to load:', validatedURL, errorCode, errorDescription);

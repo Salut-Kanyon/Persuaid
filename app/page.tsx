@@ -326,7 +326,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen">
-      <Navbar />
+      <Navbar liveDemo={{ isOpen: demoOpen, onOpenChange: setDemoOpen }} />
 
       {/* Hero: video and interactive demo share one slot */}
       <Hero demoOpen={demoOpen} onDemoOpenChange={setDemoOpen}>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { loadSettings } from "@/lib/settings";
 import { supabase } from "@/lib/supabase/client";
@@ -24,7 +23,6 @@ export function LiveTranscriptPanel() {
     clearTranscript,
   } = useSession();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
   const [savingForAnalyze, setSavingForAnalyze] = useState(false);
   const [saveAnalyzeError, setSaveAnalyzeError] = useState<string | null>(null);
   const [justSavedSessionId, setJustSavedSessionId] = useState<string | null>(null);
@@ -159,13 +157,13 @@ export function LiveTranscriptPanel() {
         <div className="flex-shrink-0 px-4 pb-2 pt-1 space-y-1">
           {justSavedSessionId ? (
             <>
-              <p className="text-xs text-green-accent font-medium">Done saving.</p>
+              <p className="text-xs font-medium text-green-accent">Transcript saved.</p>
               <button
                 type="button"
-                onClick={() => router.push(`/dashboard/analyze?session=${justSavedSessionId}`)}
-                className="w-full px-3 py-2 rounded-xl bg-green-primary/20 border border-green-primary/40 text-green-accent text-sm font-medium hover:bg-green-primary/30 transition-colors"
+                onClick={() => setJustSavedSessionId(null)}
+                className="w-full rounded-xl border border-border/50 bg-background-surface/60 px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-background-surface/80 hover:text-text-primary"
               >
-                Go to AI Coach
+                Done
               </button>
             </>
           ) : (

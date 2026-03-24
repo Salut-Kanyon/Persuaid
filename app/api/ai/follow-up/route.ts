@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { buildAiMomentContextForPrompt } from "@/lib/ai-moment-context";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
     notesContext?: string;
     dealContext?: Record<string, string>;
     mode?: FollowUpMode;
+    timeZone?: string;
   };
   try {
     body = await req.json();
@@ -72,6 +74,10 @@ export async function POST(req: NextRequest) {
   if (!conversation.trim()) {
     return NextResponse.json({ text: "Say something so I can suggest what to say next." });
   }
+
+  const momentBlock = buildAiMomentContextForPrompt(
+    typeof body.timeZone === "string" ? body.timeZone : undefined
+  );
 
   const lastExchange = getLastExchange(transcript);
   /** Wider window so split STT lines (amount, then rate, then age) still trigger math mode. */
@@ -172,6 +178,8 @@ Rules specific to this mode:
 - **Numbers / "how much will I have" (hypothetical):** If recent lines state contributions + rate + time in the **conversation**, **calculate** per Math and projections—do not add catalog pricing not in notes.
 - **Pricing / tiers / ranges / coverage / policy:** **Only** from the rep's notes. If the notes contain the figures, **say them clearly**—**all** tiers when multiple exist; **do not** refuse or claim you cannot give numbers. If not in notes, defer to confirming materials—**never** invent figures.
 - Do not output bullet points, headings, markdown, explanations, or coaching.`;
+
+  const systemPromptWithMoment = `${systemPrompt}\n\n${momentBlock}`;
 
   /** Enough transcript so long questions and full context are never truncated. */
   const CONVERSATION_MAX_CHARS = 14000;
@@ -274,7 +282,7 @@ Set sourceType to: "notes" if you used the rep's notes; "conversation" if you us
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: systemPromptWithMoment },
           { role: "user", content: userPrompt },
         ],
         max_tokens: maxTokens,
@@ -306,7 +314,7 @@ Set sourceType to: "notes" if you used the rep's notes; "conversation" if you us
     // Safety: in ANSWER mode, never allow “question-only” outputs.
     // If the model returns a question without any declarative answer, re-prompt once.
     if (mode === "answer" && looksLikeQuestionOnly(text)) {
-      const rewriteSystemPrompt = `${systemPrompt}
+      const rewriteSystemPrompt = `${systemPromptWithMoment}
 
 Safety rewrite rules (ANSWER mode):
 - You MUST include a direct answer sentence first (declarative; NOT a question).

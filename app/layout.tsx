@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ClearLegacyThemeClass } from "@/components/ClearLegacyThemeClass";
+import { ElectronFramelessChrome } from "@/components/app/ElectronFramelessChrome";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,9 +27,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body>
-        <ClearLegacyThemeClass />
-        {children}
-        <Analytics />
+        <div id="app-shell" className="relative flex min-h-[100dvh] w-full flex-col">
+          <ElectronFramelessChrome />
+          <ClearLegacyThemeClass />
+          {children}
+          <Analytics />
+        </div>
       </body>
     </html>
   );

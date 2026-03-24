@@ -39,8 +39,18 @@ type SttConnectionPlan =
 /**
  * Production path: browser → STT relay only (scripts/stt-ws-proxy.js or your deployed relay).
  * Direct browser → Deepgram is opt-in: NEXT_PUBLIC_STT_ALLOW_BROWSER_DEEPGRAM=true (not recommended).
+ *
+ * Electron: `electron/preload.js` exposes `window.persuaid.sttProxyUrl` → in-app proxy on 2998.
+ * That wins before `NEXT_PUBLIC_STT_PROXY_URL`, so a web-only relay URL in .env cannot break desktop.
  */
 function resolveSttConnection(): SttConnectionPlan {
+  if (typeof window !== "undefined") {
+    const fromPreload = (window as Window & { persuaid?: { sttProxyUrl?: string } }).persuaid?.sttProxyUrl;
+    const electronRelay = typeof fromPreload === "string" ? fromPreload.trim().replace(/\/$/, "") : "";
+    if (electronRelay) {
+      return { kind: "relay", baseUrl: electronRelay };
+    }
+  }
   const envProxy =
     typeof process !== "undefined"
       ? (process.env.NEXT_PUBLIC_STT_PROXY_URL ?? "").trim().replace(/\/$/, "")
@@ -277,7 +287,7 @@ export function LiveTranscription() {
   } = useSession();
   const wsRef = useRef<WebSocket | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const pcmProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const pcmProcessorRef = useRef<AudioNode | null>(null);
   const keepaliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const rmsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -562,35 +572,72 @@ export function LiveTranscription() {
         };
 
         // Capture raw PCM at context sample rate and send as linear16 (v1/listen returns real transcripts).
-        // Smaller buffer (1024) = ~64ms chunks = faster capture and send = fewer dropped first words.
-        const src = ctx.createMediaStreamSource(stream);
-        const bufferLength = 1024;
-        const processor = ctx.createScriptProcessor(bufferLength, 1, 1);
-        pcmProcessorRef.current = processor;
-        let onAudioProcessCount = 0;
+        // AudioWorklet is reliable in Electron/Chromium; ScriptProcessorNode often never fires onaudioprocess there.
+        const pcmSrc = ctx.createMediaStreamSource(stream);
         let pcmSendCount = 0;
-        processor.onaudioprocess = (e: AudioProcessingEvent) => {
-          onAudioProcessCount++;
-          if (onAudioProcessCount <= 5) console.log("[STT] onaudioprocess fired");
-          if (!mounted || wsRef.current?.readyState !== WebSocket.OPEN) return;
-          const input = e.inputBuffer.getChannelData(0);
 
-          const pcm = new Int16Array(input.length);
-          for (let i = 0; i < input.length; i++) {
-            const s = Math.max(-1, Math.min(1, input[i]));
-            pcm[i] = s < 0 ? s * 32768 : s * 32767;
-          }
-          wsRef.current.send(pcm.buffer);
-          pcmSendCount++;
-          if (pcmSendCount === 1 || pcmSendCount % 100 === 0) {
-            console.log("[STT] sending PCM bytes:", pcm.byteLength);
-          }
+        const attachScriptProcessorFallback = () => {
+          const bufferLength = 4096;
+          const processor = ctx.createScriptProcessor(bufferLength, 1, 1);
+          pcmProcessorRef.current = processor;
+          let onAudioProcessCount = 0;
+          processor.onaudioprocess = (e: AudioProcessingEvent) => {
+            onAudioProcessCount++;
+            if (onAudioProcessCount <= 5) console.log("[STT] onaudioprocess fired (ScriptProcessor fallback)");
+            if (!mounted || wsRef.current?.readyState !== WebSocket.OPEN) return;
+            const input = e.inputBuffer.getChannelData(0);
+            const pcm = new Int16Array(input.length);
+            for (let i = 0; i < input.length; i++) {
+              const s = Math.max(-1, Math.min(1, input[i]));
+              pcm[i] = s < 0 ? s * 32768 : s * 32767;
+            }
+            wsRef.current.send(pcm.buffer);
+            pcmSendCount++;
+            if (pcmSendCount === 1 || pcmSendCount % 100 === 0) {
+              console.log("[STT] sending PCM bytes (ScriptProcessor):", pcm.byteLength);
+            }
+          };
+          pcmSrc.connect(processor);
+          const silentGain = ctx.createGain();
+          silentGain.gain.value = 0;
+          processor.connect(silentGain);
+          silentGain.connect(ctx.destination);
         };
-        src.connect(processor);
-        const silentGain = ctx.createGain();
-        silentGain.gain.value = 0;
-        processor.connect(silentGain);
-        silentGain.connect(ctx.destination);
+
+        try {
+          const workletUrl = new URL("/stt-pcm-processor.js", window.location.origin).href;
+          await ctx.audioWorklet.addModule(workletUrl);
+          if (!mounted) {
+            pcmSrc.disconnect();
+            return;
+          }
+          const workletNode = new AudioWorkletNode(ctx, "stt-pcm-processor", {
+            numberOfInputs: 1,
+            numberOfOutputs: 1,
+            channelCount: 1,
+            channelCountMode: "explicit",
+            outputChannelCount: [1],
+          });
+          pcmProcessorRef.current = workletNode;
+          workletNode.port.onmessage = (ev: MessageEvent<ArrayBuffer>) => {
+            if (!mounted || wsRef.current?.readyState !== WebSocket.OPEN) return;
+            wsRef.current.send(ev.data);
+            pcmSendCount++;
+            if (pcmSendCount === 1 || pcmSendCount % 200 === 0) {
+              console.log("[STT] sending PCM bytes (AudioWorklet):", ev.data.byteLength);
+            }
+          };
+          pcmSrc.connect(workletNode);
+          const silentGainW = ctx.createGain();
+          silentGainW.gain.value = 0;
+          workletNode.connect(silentGainW);
+          silentGainW.connect(ctx.destination);
+          console.log("[STT] PCM capture via AudioWorklet");
+        } catch (workletErr) {
+          console.warn("[STT] AudioWorklet failed, using ScriptProcessor fallback:", workletErr);
+          if (!mounted) return;
+          attachScriptProcessorFallback();
+        }
 
         if (mounted) {
           setSessionId((id) => id || crypto.randomUUID());

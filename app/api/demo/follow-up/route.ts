@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { buildAiMomentContextForPrompt } from "@/lib/ai-moment-context";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
     transcript?: TranscriptMessage[];
     notesContext?: string;
     mode?: "answer" | "follow_up_question";
+    timeZone?: string;
   };
   try {
     body = await req.json();
@@ -69,6 +71,9 @@ export async function POST(req: NextRequest) {
   const transcript = Array.isArray(body.transcript) ? body.transcript : [];
   const notesContext = String(body.notesContext ?? "").trim().slice(0, 4000);
   const mode = body.mode === "follow_up_question" ? "follow_up_question" : "answer";
+  const momentBlock = buildAiMomentContextForPrompt(
+    typeof body.timeZone === "string" ? body.timeZone : undefined
+  );
 
   if (transcript.length > 40) {
     return NextResponse.json({ error: "Transcript too long for demo" }, { status: 400 });
@@ -109,7 +114,9 @@ Rules:
 - Use "Product knowledge" for product, pricing, objections, and numbers. Never invent specific numbers, prices, or policies not in the knowledge.
 - Stay in the rep's voice (first person). No meta commentary about limits or APIs.
 
-Reply with JSON only: {"text":"...","sourceType":"notes"|"conversation"|"web"}`;
+Reply with JSON only: {"text":"...","sourceType":"notes"|"conversation"|"web"}
+
+${momentBlock}`;
 
   const user =
     mode === "follow_up_question"

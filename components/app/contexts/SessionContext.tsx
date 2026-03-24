@@ -67,9 +67,15 @@ interface SessionContextValue {
   setSelectedScriptId: (id: string | null) => void;
   scriptContext: string;
   setScriptContext: (s: string) => void;
-  /** Notes content from the Notes panel; used as context for follow-up suggestions. */
+  /**
+   * Text sent to AI (AI-connected layer when present, otherwise same as My notes).
+   * Use `notesUserPlain` when the UI must always show the user’s draft, not the rewrite.
+   */
   notesContext: string;
   setNotesContext: (s: string) => void;
+  /** Raw “My notes” only — never the AI-connected rewrite; for display (e.g. call HUD). */
+  notesUserPlain: string;
+  setNotesUserPlain: (s: string) => void;
   /** Deal context extracted from transcript (company, pain, timeline, etc.); used for smarter AI responses. */
   dealContext: DealContext;
   setDealContext: (update: DealContext | ((prev: DealContext) => DealContext)) => void;
@@ -168,6 +174,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [scriptContext, setScriptContext] = useState("");
   const [notesContext, setNotesContext] = useState("");
+  const [notesUserPlain, setNotesUserPlain] = useState("");
   const [dealContext, setDealContext] = useState<DealContext>({});
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
@@ -420,6 +427,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setScriptContext,
       notesContext,
       setNotesContext,
+      notesUserPlain,
+      setNotesUserPlain,
       dealContext,
       setDealContext,
       sessionId,
@@ -468,6 +477,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       selectedScriptId,
       scriptContext,
       notesContext,
+      notesUserPlain,
       dealContext,
       sessionId,
       clearRecentSpeech,

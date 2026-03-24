@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
+import { getClientIanaTimeZone } from "@/lib/client-timezone";
 
 /** Send enough of the transcript so the AI sees long questions and full context (paragraph-style). */
 const MAX_MESSAGES = 150;
@@ -113,6 +114,7 @@ export function FollowUpFetcher() {
             notesContext: notesContext || undefined,
             dealContext: Object.keys(dealContext).length ? dealContext : undefined,
             mode: "answer",
+            timeZone: getClientIanaTimeZone(),
           }),
         });
         const data = (await res.json()) as { text?: string; sourceType?: string; error?: string };
@@ -229,6 +231,7 @@ export function FollowUpFetcher() {
             notesContext: notesContext || undefined,
             dealContext: Object.keys(dealContext).length ? dealContext : undefined,
             mode: "follow_up_question",
+            timeZone: getClientIanaTimeZone(),
           }),
         });
         const data = (await res.json()) as { text?: string; sourceType?: string; error?: string };

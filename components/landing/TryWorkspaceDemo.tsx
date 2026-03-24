@@ -9,6 +9,7 @@
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { getClientIanaTimeZone } from "@/lib/client-timezone";
 import { Section } from "@/components/ui/Section";
 
 const MAX_NOTES = 1200;
@@ -249,6 +250,7 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
           })),
           notesContext: notes,
           mode: "answer",
+          timeZone: getClientIanaTimeZone(),
         }),
       });
       const data = (await res.json()) as { text?: string; sourceType?: string; error?: string; code?: string };

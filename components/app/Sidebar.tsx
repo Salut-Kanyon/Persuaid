@@ -30,27 +30,6 @@ const navigation = [
     ),
   },
   {
-    name: "AI Coach",
-    href: "/dashboard/analyze",
-    icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v1.5M6 6h12a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2z" />
-        <circle cx="9.5" cy="11" r="1.25" />
-        <circle cx="14.5" cy="11" r="1.25" />
-        <path d="M9.5 15.5q2.5 2 5 0" />
-      </svg>
-    ),
-  },
-  {
-    name: "Scripts",
-    href: "/dashboard/scripts",
-    icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-  },
-  {
     name: "Notes",
     href: "/dashboard/notes",
     icon: (
@@ -162,7 +141,7 @@ export function Sidebar() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setProfileOpen(false);
-    router.replace("/");
+    router.replace("/welcome");
   };
 
   const displayName = user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? "Signed in";
@@ -172,21 +151,21 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "bg-background-elevated/35 backdrop-blur-2xl border-r border-border/8 flex flex-col transition-[width] duration-200 ease-out overflow-hidden",
+        "flex flex-col overflow-hidden bg-white/[0.03] backdrop-blur-3xl backdrop-saturate-150 transition-[width] duration-300 ease-out",
         collapsed ? "w-[3.5rem]" : "w-52"
       )}
     >
       {/* Logo + collapse arrow: when collapsed, stack so logo has full width and can be larger */}
       <div
         className={cn(
-          "shrink-0 pt-4 pb-2",
+          "shrink-0 pb-2 pt-3",
           collapsed ? "flex flex-col items-center gap-1 px-1" : "flex items-center gap-0 px-2"
         )}
       >
         <Link
           href="/"
           className={cn(
-            "flex items-end gap-0 group min-w-0 transition-all duration-200",
+            "group flex min-w-0 items-end gap-0 transition-colors duration-300 ease-out",
             collapsed ? "flex-none justify-center" : "flex-1"
           )}
         >
@@ -199,7 +178,7 @@ export function Sidebar() {
             )}
           />
           {!collapsed && (
-            <span className="text-lg font-semibold text-text-primary tracking-tight -ml-1 translate-y-3 group-hover:text-green-accent transition-colors">
+            <span className="-ml-1 translate-y-3 text-lg font-medium tracking-tight text-text-primary transition-colors duration-300 ease-out group-hover:text-text-secondary">
               ersuaid
             </span>
           )}
@@ -209,7 +188,7 @@ export function Sidebar() {
           onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={cn(
-            "flex-shrink-0 p-1.5 rounded-lg text-text-dim hover:text-text-primary hover:bg-background-surface/30 transition-all",
+            "flex-shrink-0 rounded-lg p-1.5 text-text-dim transition-colors duration-300 ease-out hover:bg-white/[0.06] hover:text-text-primary",
             collapsed && "mt-0.5"
           )}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -228,7 +207,7 @@ export function Sidebar() {
         </button>
       </div>
       {/* Navigation */}
-      <nav className={cn("flex-1 px-2.5 py-4 space-y-1", collapsed && "px-2")}>
+      <nav className={cn("flex-1 space-y-0.5 px-2.5 py-3", collapsed && "px-2")}>
         {navigation.map((item) => {
           const isActive =
             item.href === "/dashboard"
@@ -240,16 +219,16 @@ export function Sidebar() {
               href={item.href}
               title={collapsed ? item.name : undefined}
               className={cn(
-                "flex items-center gap-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative",
-                collapsed ? "justify-center px-0 py-2.5" : "px-2.5 py-2",
+                "group relative flex items-center gap-2.5 rounded-lg text-sm transition-colors duration-300 ease-out",
+                collapsed ? "justify-center px-0 py-2" : "px-2.5 py-1.5",
                 isActive
-                  ? "bg-green-primary/8 text-text-primary shadow-[0_0_0_1px_rgba(16,185,129,0.08)]"
-                  : "text-text-primary hover:bg-background-surface/25"
+                  ? "bg-white/[0.06] font-medium text-text-primary"
+                  : "font-normal text-text-primary/90 hover:bg-white/[0.04]"
               )}
             >
               <span className={cn(
                 "transition-colors w-4 h-4 flex-shrink-0",
-                isActive ? "text-green-primary/90" : "text-text-dim/60 group-hover:text-text-muted"
+                isActive ? "text-text-primary" : "text-text-dim/60 group-hover:text-text-muted"
               )}>
                 {item.icon}
               </span>
@@ -257,7 +236,7 @@ export function Sidebar() {
                 <>
                   <span className="flex-1 truncate">{item.name}</span>
                   {isActive && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-primary/80 shadow-[0_0_6px_rgba(16,185,129,0.4)] flex-shrink-0" />
+                    <div className="h-1 w-1 flex-shrink-0 rounded-full bg-white/45" />
                   )}
                 </>
               )}
@@ -267,26 +246,28 @@ export function Sidebar() {
       </nav>
 
       {/* User profile */}
-      <div className={cn("p-2.5 border-t border-border/6 relative shrink-0", collapsed && "p-2")} ref={profileRef}>
+      <div className={cn("relative shrink-0 p-2.5 pt-3", collapsed && "p-2 pt-2.5")} ref={profileRef}>
         <button
           type="button"
           onClick={() => setProfileOpen((o) => !o)}
           title={collapsed ? displayName : undefined}
           className={cn(
-            "w-full flex items-center gap-2 rounded-xl hover:bg-background-surface/25 transition-all duration-300 cursor-pointer group text-left",
-            collapsed ? "justify-center px-0 py-2" : "px-2.5 py-2"
+            "group flex w-full cursor-pointer items-center gap-2 rounded-lg text-left transition-colors duration-300 ease-out hover:bg-white/[0.04]",
+            collapsed ? "justify-center px-0 py-1.5" : "px-2 py-1.5"
           )}
         >
-          <div className="w-8 h-8 rounded-full bg-green-primary/20 border border-green-primary/30 flex items-center justify-center flex-shrink-0">
-            <span className="text-green-primary text-sm font-semibold">{initial}</span>
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06]">
+            <span className="text-sm font-medium text-text-primary">{initial}</span>
           </div>
           {!collapsed && (
             <>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium text-text-primary truncate">{displayName}</div>
-                <div className="text-[10px] text-text-dim/60 truncate">{email || "Signed in"}</div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-xs font-medium text-text-primary">{displayName}</div>
+                <div className="truncate text-[10px] font-normal tracking-label text-text-dim/55">
+                  {email || "Signed in"}
+                </div>
               </div>
-              <svg className={cn("w-4 h-4 text-text-dim/50 flex-shrink-0 transition-transform", profileOpen && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className={cn("w-4 h-4 flex-shrink-0 text-text-dim/45 transition-transform duration-300 ease-out", profileOpen && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </>
@@ -296,8 +277,8 @@ export function Sidebar() {
         {profileOpen && (
           <div
             className={cn(
-              "absolute bottom-full mb-1 py-1 rounded-xl bg-background-elevated border border-border shadow-lg z-50 min-w-[11rem]",
-              collapsed ? "left-full top-1/2 -translate-y-1/2 bottom-auto ml-1" : "left-2.5 right-2.5"
+              "absolute bottom-full z-50 mb-1 min-w-[11rem] rounded-xl border border-white/[0.08] bg-background-elevated/92 py-1 backdrop-blur-2xl",
+              collapsed ? "bottom-auto left-full top-1/2 ml-1 -translate-y-1/2" : "left-2.5 right-2.5"
             )}
           >
             <Link
@@ -313,7 +294,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors rounded-b-xl"
+              className="flex w-full items-center gap-2 rounded-b-xl px-3 py-2 text-sm font-normal text-red-400/90 transition-colors duration-200 ease-out hover:bg-red-500/[0.08]"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

@@ -186,7 +186,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                   whileTap={reduceMotion ? undefined : { scale: 0.985 }}
                   transition={{ type: "spring", stiffness: 520, damping: 32 }}
                   className={cn(
-                    "group inline-flex min-h-[50px] flex-1 items-center justify-center rounded-full px-8 text-[17px] font-medium tracking-[-0.022em]",
+                    "group inline-flex min-h-[50px] flex-1 items-center justify-center rounded-full px-4 text-center text-[14px] leading-snug font-medium tracking-[-0.02em] sm:px-8 sm:text-[16px] sm:leading-tight",
                     "border border-white/15 bg-gradient-to-br from-[#20D3A6] via-[#1db896] to-[#0f766e] text-[#061210]",
                     "shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.22)]",
                     "transition-[transform,box-shadow,border-color,filter] duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
@@ -197,7 +197,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                     "min-w-0 sm:min-h-[52px] sm:min-w-[10.75rem]"
                   )}
                 >
-                  Join now
+                  Try it on your next call
                 </motion.a>
                 {onDemoOpenChange && (
                   <motion.button
@@ -221,7 +221,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                       "min-w-0 sm:min-h-[52px] sm:min-w-[10.75rem]"
                     )}
                   >
-                    {demoOpen ? "Back" : "Free Live Demo"}
+                    {demoOpen ? "Back" : "Free demo"}
                   </motion.button>
                 )}
               </motion.div>
@@ -242,8 +242,13 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
               ease: [0.16, 1, 0.3, 1],
             }}
             className={cn(
+<<<<<<< Updated upstream
               "relative mt-4 sm:mt-5 lg:mt-6 w-full max-w-full self-stretch",
               demoOpen ? "min-h-0 max-h-none" : "min-h-[min(42vh,400px)] max-h-[min(72vh,720px)]"
+=======
+              "relative mt-6 scroll-mt-24 sm:mt-8 sm:scroll-mt-28 lg:mt-10 w-full max-w-full self-stretch",
+              demoOpen ? "min-h-0 max-h-none" : "min-h-[min(58vh,560px)] max-h-[min(80vh,840px)]"
+>>>>>>> Stashed changes
             )}
             id="hero-demo-panel"
           >
