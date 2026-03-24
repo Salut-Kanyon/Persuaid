@@ -84,7 +84,7 @@ function getInsightStyles(type: CoachingInsight["type"]) {
 export default function AnalyzePage() {
   const searchParams = useSearchParams();
   const sessionIdFromUrl = searchParams.get("session");
-  const { canUseProFeatures, openUpgradeModal } = useEntitlements();
+  const { canUseAiCoach, openUpgradeModal } = useEntitlements();
   const [sessions, setSessions] = useState<AnalyzableSession[]>([]);
   const [selected, setSelected] = useState<AnalyzableSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -390,7 +390,7 @@ export default function AnalyzePage() {
                         <button
                           type="button"
                           onClick={() => {
-                            if (!canUseProFeatures) {
+                            if (!canUseAiCoach) {
                               openUpgradeModal();
                               return;
                             }
@@ -417,7 +417,7 @@ export default function AnalyzePage() {
                       <button
                         type="button"
                         onClick={() => {
-                          if (!canUseProFeatures) {
+                          if (!canUseAiCoach) {
                             openUpgradeModal();
                             return;
                           }

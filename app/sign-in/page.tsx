@@ -11,6 +11,7 @@ function SignInForm() {
   const searchParams = useSearchParams();
   const signinParam = searchParams.get("signin");
   const openSignIn = signinParam === "1" || signinParam === "true";
+  const guestUnavailable = searchParams.get("guest") === "1";
 
   const reduceMotion = useReducedMotion();
   const [email, setEmail] = useState("");
@@ -150,6 +151,12 @@ function SignInForm() {
                 />
               </>
             )}
+
+            {guestUnavailable ? (
+              <p className="text-sm text-amber-400/95 mb-4 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2.5">
+                We couldn&apos;t start a guest session. Create a free account below to use the dashboard.
+              </p>
+            ) : null}
 
             {/* Mode toggle */}
             <div

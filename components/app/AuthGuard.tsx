@@ -4,32 +4,55 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
+/**
+ * Dashboard access: uses Supabase anonymous auth when there is no session so RLS and APIs still get a JWT.
+ * Enable "Anonymous sign-ins" in Supabase → Authentication → Providers.
+ */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const router = useRouter();
   const signedInAtRef = useRef<number | null>(null);
   const resolvedRef = useRef(false);
+  /** While true, ignore null-session auth events so INITIAL_SESSION does not race ahead of signInAnonymously(). */
+  const bootstrapPendingRef = useRef(true);
 
   useEffect(() => {
     let cancelled = false;
     resolvedRef.current = false;
+    bootstrapPendingRef.current = true;
     const resolve = (readyState: boolean) => {
       if (!cancelled) {
         resolvedRef.current = true;
         setReady(readyState);
       }
     };
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        if (!session) {
-          router.replace("/sign-in?signin=1");
+
+    (async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (session) {
+          signedInAtRef.current = Date.now();
+          resolve(true);
+          return;
+        }
+        const { data, error } = await supabase.auth.signInAnonymously();
+        if (cancelled) return;
+        if (error || !data.session) {
+          console.warn("[AuthGuard] Anonymous sign-in failed:", error?.message);
+          router.replace("/sign-in?guest=1");
           return;
         }
         signedInAtRef.current = Date.now();
         resolve(true);
-      })
-      .catch(() => router.replace("/sign-in?signin=1"));
+      } catch {
+        if (!cancelled) router.replace("/");
+      } finally {
+        if (!cancelled) bootstrapPendingRef.current = false;
+      }
+    })();
 
     const {
       data: { subscription },
@@ -39,19 +62,19 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         resolve(true);
         return;
       }
-      // Session null: only redirect if it's an explicit sign-out, or we're past the grace period.
-      // Token refresh can briefly fire with null; ignore for ~5s after we had a session.
+      if (bootstrapPendingRef.current) return;
       const graceMs = 5000;
       const signedInAt = signedInAtRef.current;
       const withinGrace = signedInAt && Date.now() - signedInAt < graceMs;
       if (event === "SIGNED_OUT" || !withinGrace) {
-        router.replace("/sign-in?signin=1");
+        router.replace("/");
       }
     });
-    // Fallback: if getSession hangs (e.g. desktop app, network), redirect after 6s
+
     const t = setTimeout(() => {
-      if (!cancelled && !resolvedRef.current) router.replace("/sign-in?signin=1");
-    }, 6000);
+      if (!cancelled && !resolvedRef.current) router.replace("/");
+    }, 12000);
+
     return () => {
       cancelled = true;
       clearTimeout(t);

@@ -10,13 +10,23 @@ import { ToggleSetting } from "@/components/app/settings/ToggleSetting";
 import { DropdownSetting } from "@/components/app/settings/DropdownSetting";
 import { useSettings } from "@/components/app/settings/useSettings";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
-import type { ExportFormat, ThemePreference } from "@/lib/settings";
+import type { ExportFormat } from "@/lib/settings";
 
 function getEmailInitial(email: string | undefined): string {
   if (!email) return "?";
   const first = email.trim().charAt(0);
   return first ? first.toUpperCase() : "?";
 }
+
+type UsagePayload = {
+  limitMinutes: number;
+  usedMinutes: number;
+  remainingMinutes: number;
+  periodLabel: string;
+  usedLabel: string;
+  remainingLabel: string;
+  limitLabel: string;
+};
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -32,6 +42,63 @@ export default function SettingsPage() {
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const { settings, update } = useSettings();
   const { plan } = useEntitlements();
+  const [usage, setUsage] = useState<UsagePayload | null>(null);
+  const [usageLoading, setUsageLoading] = useState(true);
+  const [usageError, setUsageError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setUsageLoading(true);
+      setUsageError(null);
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) {
+          if (!cancelled) {
+            setUsage(null);
+            setUsageLoading(false);
+          }
+          return;
+        }
+        const res = await fetch("/api/me/usage", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = (await res.json()) as UsagePayload & { error?: string };
+        if (!res.ok) {
+          if (!cancelled) {
+            setUsage(null);
+            setUsageError(json.error || "Could not load usage");
+          }
+          return;
+        }
+        if (!cancelled) {
+          setUsage({
+            limitMinutes: json.limitMinutes,
+            usedMinutes: json.usedMinutes,
+            remainingMinutes: json.remainingMinutes,
+            periodLabel: json.periodLabel,
+            usedLabel: json.usedLabel,
+            remainingLabel: json.remainingLabel,
+            limitLabel: json.limitLabel,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setUsage(null);
+          setUsageError("Could not load usage");
+        }
+      } finally {
+        if (!cancelled) setUsageLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => {
@@ -125,7 +192,7 @@ export default function SettingsPage() {
       <header className="flex-shrink-0 px-6 py-4 border-b border-border">
         <h1 className="text-lg font-semibold text-text-primary">Settings</h1>
         <p className="text-sm text-text-muted mt-0.5">
-          Manage your account and preferences
+          Manage your account and app settings
         </p>
       </header>
 
@@ -253,6 +320,32 @@ export default function SettingsPage() {
               }
             />
             <SettingsItem
+              label="Live session time"
+              description={
+                usage
+                  ? `${usage.usedLabel} used of ${usage.limitLabel} this month (${usage.periodLabel}, UTC). Totals use duration saved on your Analytics sessions.`
+                  : "Monthly allowance for live AI sessions. Totals use duration saved on your Analytics sessions."
+              }
+              control={
+                usageLoading ? (
+                  <span className="text-xs text-text-muted">Loading…</span>
+                ) : usageError ? (
+                  <span className="text-xs text-amber-400/90">{usageError}</span>
+                ) : usage ? (
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-green-accent tabular-nums">
+                      {usage.remainingLabel} left
+                    </p>
+                    <p className="text-[11px] text-text-muted mt-0.5">
+                      of {usage.limitLabel} included
+                    </p>
+                  </div>
+                ) : (
+                  <span className="text-xs text-text-muted">—</span>
+                )
+              }
+            />
+            <SettingsItem
               label="Manage subscription"
               description="Upgrade, downgrade, or view plan details."
               control={
@@ -263,22 +356,6 @@ export default function SettingsPage() {
                   Manage
                 </a>
               }
-            />
-          </SettingsSection>
-
-          <SettingsSection title="Preferences" description="Personalize the app experience">
-            <DropdownSetting<ThemePreference>
-              label="Theme"
-              id="settings-theme"
-              name="theme"
-              description="Choose Light, Dark, or match your system setting."
-              value={settings.theme}
-              onChange={(v) => update("theme", v)}
-              options={[
-                { value: "system", label: "System" },
-                { value: "dark", label: "Dark" },
-                { value: "light", label: "Light" },
-              ]}
             />
           </SettingsSection>
 

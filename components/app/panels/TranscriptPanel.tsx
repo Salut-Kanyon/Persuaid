@@ -55,7 +55,7 @@ function formatTime(iso: string): string {
 
 export function TranscriptPanel() {
   const { transcript, isRecording, micError, setMicError, setRecording, audioInputDeviceId, setAudioInputDeviceId, requestSuggestions } = useSession();
-  const { canUseProFeatures, openUpgradeModal } = useEntitlements();
+  const { canUseAiCoach, openUpgradeModal } = useEntitlements();
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
   const [showNoSpeechHint, setShowNoSpeechHint] = useState(false);
@@ -117,7 +117,7 @@ export function TranscriptPanel() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
-        if (!canUseProFeatures) {
+        if (!canUseAiCoach) {
           openUpgradeModal();
           return;
         }
@@ -126,7 +126,7 @@ export function TranscriptPanel() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isRecording, requestSuggestions, canUseProFeatures, openUpgradeModal]);
+  }, [isRecording, requestSuggestions, canUseAiCoach, openUpgradeModal]);
 
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">

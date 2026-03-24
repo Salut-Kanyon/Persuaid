@@ -19,13 +19,13 @@ function easeOutCubic(t: number) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-const HERO_TITLE_LINE1 = "# 1 AI training tool";
-const HERO_TITLE_LINE2 = "for new agents";
+const HERO_TITLE_LINE1 = "Sound like a top performer";
+const HERO_TITLE_LINE2 = "from day one.";
 const HERO_LINE1_WORDS = HERO_TITLE_LINE1.split(" ");
 const HERO_LINE2_WORDS = HERO_TITLE_LINE2.split(" ");
 
-const HERO_SUBTITLE_LINE1 = "Knowing your product builds confidence, and that takes time.";
-const HERO_SUBTITLE_LINE2_AFTER = " gives reps that confidence from day one while they learn.";
+const HERO_SUBTITLE_LINE1 = "Great sales reps sound prepared, not lucky.";
+const HERO_SUBTITLE_LINE2_AFTER = " backs you with the right detail in real time when the conversation turns.";
 
 function HeroTitleTwoLines() {
   const reduce = useReducedMotion();

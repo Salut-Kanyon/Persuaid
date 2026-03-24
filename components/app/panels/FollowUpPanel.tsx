@@ -122,7 +122,7 @@ export function FollowUpPanel() {
     isRecording,
     notesContext,
   } = useSession();
-  const { canUseProFeatures, openUpgradeModal } = useEntitlements();
+  const { canUseAiCoach, openUpgradeModal } = useEntitlements();
 
   const [chatInput, setChatInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -178,7 +178,7 @@ export function FollowUpPanel() {
       const target = e.target as HTMLElement;
       if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
       e.preventDefault();
-      if (!canUseProFeatures) {
+      if (!canUseAiCoach) {
         openUpgradeModal();
         return;
       }
@@ -186,19 +186,19 @@ export function FollowUpPanel() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [requestFollowUp, canUseProFeatures, openUpgradeModal]);
+  }, [requestFollowUp, canUseAiCoach, openUpgradeModal]);
 
   const handleSend = useCallback(async () => {
     const text = chatInput.trim();
     if (!text) {
-      if (!canUseProFeatures) {
+      if (!canUseAiCoach) {
         openUpgradeModal();
         return;
       }
       requestFollowUp("answer");
       return;
     }
-    if (!canUseProFeatures) {
+    if (!canUseAiCoach) {
       openUpgradeModal();
       return;
     }
@@ -254,7 +254,7 @@ export function FollowUpPanel() {
     setSuggestedFollowUpText,
     setSuggestedFollowUpSource,
     requestFollowUp,
-    canUseProFeatures,
+    canUseAiCoach,
     openUpgradeModal,
   ]);
 
@@ -336,7 +336,7 @@ export function FollowUpPanel() {
 
   // Auto-generate suggested follow-up after a valid answer (separate request + separate state).
   useEffect(() => {
-    if (!canUseProFeatures) return;
+    if (!canUseAiCoach) return;
     if (uiMode !== "answered") return;
     if (!hasTranscript) return;
     if (!lockedAnswer.trim()) return;
@@ -348,7 +348,7 @@ export function FollowUpPanel() {
     lockedAnswer,
     suggestedFollowUpText,
     hasTranscript,
-    canUseProFeatures,
+    canUseAiCoach,
     requestFollowUp,
   ]);
 

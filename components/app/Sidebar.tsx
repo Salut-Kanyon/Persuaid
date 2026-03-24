@@ -60,6 +60,15 @@ const navigation = [
     ),
   },
   {
+    name: "Analytics",
+    href: "/dashboard/analytics",
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+  },
+  {
     name: "Settings",
     href: "/dashboard/settings",
     icon: (
@@ -153,7 +162,7 @@ export function Sidebar() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setProfileOpen(false);
-    router.replace("/welcome");
+    router.replace("/");
   };
 
   const displayName = user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? "Signed in";
@@ -221,7 +230,10 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className={cn("flex-1 px-2.5 py-4 space-y-1", collapsed && "px-2")}>
         {navigation.map((item) => {
-          const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+          const isActive =
+            item.href === "/dashboard"
+              ? pathname === "/dashboard" || pathname === "/dashboard/"
+              : pathname === item.href || pathname?.startsWith(item.href + "/");
           return (
             <Link
               key={item.name}

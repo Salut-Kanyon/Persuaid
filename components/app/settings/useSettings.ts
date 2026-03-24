@@ -2,13 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { AppSettings } from "@/lib/settings";
-import { applyMotionQuality, applyTheme, loadSettings, saveSettings } from "@/lib/settings";
+import { applyMotionQuality, loadSettings, saveSettings } from "@/lib/settings";
 
 export function useSettings() {
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
 
   useEffect(() => {
-    applyTheme(settings.theme);
     applyMotionQuality(settings.animationQuality);
     saveSettings(settings);
   }, [settings]);

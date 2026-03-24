@@ -5,7 +5,6 @@ import { useAnalytics } from "@/components/app/analytics/useAnalytics";
 import { AnalyticsCard } from "@/components/app/analytics/AnalyticsCard";
 import { AnalyticsChart } from "@/components/app/analytics/AnalyticsChart";
 import { CallInsightsPanel } from "@/components/app/analytics/CallInsightsPanel";
-import { RecentCallsTable } from "@/components/app/analytics/RecentCallsTable";
 
 type ChartRange = 7 | 30 | 90;
 
@@ -34,7 +33,6 @@ const ICON_TAG = (
 export default function AnalyticsPage() {
   const {
     loading,
-    sessions,
     summary,
     callsOverTime,
     callInsights,
@@ -128,11 +126,6 @@ export default function AnalyticsPage() {
           {/* Conversation insights */}
           <section className="grid grid-cols-1 gap-8">
             <CallInsightsPanel insights={callInsights} />
-          </section>
-
-          {/* Recent calls table */}
-          <section>
-            <RecentCallsTable sessions={sessions} />
           </section>
         </div>
       </div>

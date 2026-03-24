@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useLayoutEffect, useRef, useEffect } from "react";
+import Image from "next/image";
 import { DraggableResizablePanel } from "./DraggableResizablePanel";
 import { FollowUpPanel } from "./panels/FollowUpPanel";
 import { LiveTranscriptPanel } from "./panels/LiveTranscriptPanel";
@@ -343,19 +344,16 @@ export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProp
             <div className="flex items-center gap-2 min-w-0">
               <h2 className="text-sm font-medium text-text-primary tracking-tight">Notes</h2>
               <div
-                className="pointer-events-none h-8 w-[15px] sm:h-9 sm:w-[17px] shrink-0 overflow-hidden rounded-[7px] bg-black"
+                className="pointer-events-none h-9 w-9 sm:h-10 sm:w-10 shrink-0 overflow-hidden rounded-lg bg-black border border-border/25"
                 aria-hidden
               >
-                <video
-                  className="h-full w-full object-cover object-center"
-                  autoPlay
-                  muted
-                  playsInline
-                  preload="auto"
-                  aria-label="Cue — plays once"
-                >
-                  <source src="/CueVid1.mp4" type="video/mp4" />
-                </video>
+                <Image
+                  src="/dashboard-mascot.png"
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="h-full w-full object-contain object-center p-0.5"
+                />
               </div>
             </div>
           </>

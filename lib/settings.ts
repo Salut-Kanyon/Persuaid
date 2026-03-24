@@ -1,9 +1,7 @@
-export type ThemePreference = "system" | "dark" | "light";
 export type AnimationQuality = "low" | "medium" | "high";
 export type ExportFormat = "txt" | "md";
 
 export interface AppSettings {
-  theme: ThemePreference;
   notificationsEnabled: boolean;
   animationQuality: AnimationQuality;
   autoSaveEnabled: boolean;
@@ -14,7 +12,6 @@ export interface AppSettings {
 const STORAGE_KEY = "persuaid_settings_v1";
 
 const DEFAULT_SETTINGS: AppSettings = {
-  theme: "system",
   notificationsEnabled: true,
   animationQuality: "medium",
   autoSaveEnabled: true,
@@ -27,8 +24,9 @@ export function loadSettings(): AppSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_SETTINGS;
-    const parsed = JSON.parse(raw) as Partial<AppSettings>;
-    return { ...DEFAULT_SETTINGS, ...parsed };
+    const parsed = JSON.parse(raw) as Partial<AppSettings> & { theme?: unknown };
+    const { theme: _legacyTheme, ...rest } = parsed;
+    return { ...DEFAULT_SETTINGS, ...rest };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -41,16 +39,6 @@ export function saveSettings(next: AppSettings): void {
   } catch {
     // ignore
   }
-}
-
-export function applyTheme(theme: ThemePreference): void {
-  if (typeof document === "undefined") return;
-  const root = document.documentElement;
-  const prefersLight =
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-color-scheme: light)")?.matches;
-  const useLight = theme === "light" || (theme === "system" && prefersLight);
-  root.classList.toggle("theme-light", useLight);
 }
 
 export function applyMotionQuality(q: AnimationQuality): void {
