@@ -298,11 +298,6 @@ export function LandingHeroVideo({ show }: Props) {
       )}
     >
       {shell}
-      {!expanded && (
-        <p className="mt-3 text-center text-sm font-semibold tracking-tight text-white/60">
-          Video tutorial
-        </p>
-      )}
     </motion.div>
   );
 }

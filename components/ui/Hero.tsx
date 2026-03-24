@@ -1,23 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { LandingTestimonials } from "@/components/landing/LandingTestimonials";
 import { LandingHeroVideo } from "@/components/landing/LandingHeroVideo";
+import { LandingBenefitStrip } from "@/components/landing/LandingBenefitStrip";
 
 const FADE_START = 0;
 const FADE_END = 950;
-
-/** After hero copy settles, image eases to fully transparent (× scroll factor; hidden when demo open). */
-const INTRO_BG_DELAY_MS = 2200;
-const INTRO_BG_DURATION_MS = 5200;
-const INTRO_BG_END = 0;
-
-function easeOutCubic(t: number) {
-  return 1 - Math.pow(1 - t, 3);
-}
 
 const HERO_TITLE_LINE1 = "Sound like a top performer";
 const HERO_TITLE_LINE2 = "from day one.";
@@ -77,7 +68,6 @@ type HeroProps = {
 export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps = {}) {
   const reduceMotion = useReducedMotion();
   const [scrollFade, setScrollFade] = useState(1);
-  const [introFade, setIntroFade] = useState(1);
   const [showSubtitle, setShowSubtitle] = useState(false);
   const [showCTA, setShowCTA] = useState(false);
 
@@ -92,27 +82,6 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Slow background dim once hero content has started appearing (multiplies with scroll fade)
-  useEffect(() => {
-    if (reduceMotion) {
-      setIntroFade(INTRO_BG_END);
-      return;
-    }
-    let raf = 0;
-    const t0 = performance.now() + INTRO_BG_DELAY_MS;
-    const tick = (now: number) => {
-      if (now < t0) {
-        raf = requestAnimationFrame(tick);
-        return;
-      }
-      const u = Math.min(1, (now - t0) / INTRO_BG_DURATION_MS);
-      setIntroFade(1 + (INTRO_BG_END - 1) * easeOutCubic(u));
-      if (u < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [reduceMotion]);
-
   // Stagger subtitle and CTA after word-by-word title finishes
   useEffect(() => {
     const t1 = setTimeout(() => setShowSubtitle(true), 1200);
@@ -123,7 +92,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
     };
   }, []);
 
-  const bgOpacity = demoOpen ? 0 : introFade * scrollFade;
+  const bgOpacity = demoOpen ? 0 : scrollFade;
 
   return (
     <div
@@ -132,18 +101,16 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
         "overflow-x-hidden overflow-y-visible"
       )}
     >
-      {/* Landing background image — fades to fully off after load; instant off when demo opens */}
+      {/* Landing background image — position nudged so the skyline sits higher in the frame */}
       <div
-        className="absolute inset-0 pointer-events-none bg-cover bg-no-repeat transition-opacity duration-700 ease-out"
+        className="absolute inset-0 pointer-events-none bg-cover bg-no-repeat"
         style={{
-          backgroundImage: "url(/MGBack.png)",
-          backgroundPosition: "center 125%",
+          backgroundImage: "url(/hero-skyline.png)",
+          backgroundPosition: "center 22%",
           opacity: bgOpacity,
         }}
         aria-hidden
       />
-
-      <LandingTestimonials demoOpen={demoOpen} />
 
       <div
         className={cn(
@@ -271,12 +238,12 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
             }
             transition={{
               duration: reduceMotion ? 0.01 : 0.55,
-              delay: reduceMotion ? 0 : 0.12,
+              delay: reduceMotion ? 0 : 0.08,
               ease: [0.16, 1, 0.3, 1],
             }}
             className={cn(
-              "relative mt-6 sm:mt-8 lg:mt-10 w-full max-w-full self-stretch",
-              demoOpen ? "min-h-0 max-h-none" : "min-h-[min(58vh,560px)] max-h-[min(80vh,840px)]"
+              "relative mt-4 sm:mt-5 lg:mt-6 w-full max-w-full self-stretch",
+              demoOpen ? "min-h-0 max-h-none" : "min-h-[min(42vh,400px)] max-h-[min(72vh,720px)]"
             )}
             id="hero-demo-panel"
           >
@@ -286,7 +253,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                   "flex w-full flex-col transition-opacity duration-300 ease-out",
                   demoOpen
                     ? "relative z-10 min-h-0 opacity-100"
-                    : "absolute inset-0 z-0 h-full min-h-[280px] overflow-hidden opacity-0 pointer-events-none"
+                    : "absolute inset-0 z-0 h-full min-h-[220px] overflow-hidden opacity-0 pointer-events-none"
                 )}
                 aria-hidden={!demoOpen}
               >
@@ -297,37 +264,34 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
               className={cn(
                 "flex flex-col transition-opacity duration-300 ease-out",
                 !demoOpen
-                  ? "relative z-10 h-full min-h-[min(58vh,320px)] max-h-[min(80vh,840px)] opacity-100"
-                  : "absolute inset-0 z-0 h-full min-h-[320px] max-h-[min(80vh,840px)] opacity-0 pointer-events-none overflow-hidden"
+                  ? "relative z-10 h-full min-h-[min(42vh,260px)] max-h-[min(72vh,720px)] opacity-100"
+                  : "absolute inset-0 z-0 h-full min-h-[260px] max-h-[min(72vh,720px)] opacity-0 pointer-events-none overflow-hidden"
               )}
               aria-hidden={demoOpen}
             >
               <LandingHeroVideo show={showCTA} />
             </div>
           </motion.div>
+
+          {/* Benefit checklist — below video/demo */}
+          <motion.div
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+            animate={
+              reduceMotion
+                ? { opacity: showCTA ? 1 : 0 }
+                : { opacity: showCTA ? 1 : 0, y: showCTA ? 0 : 10 }
+            }
+            transition={{
+              duration: reduceMotion ? 0.01 : 0.45,
+              delay: reduceMotion ? 0 : 0.18,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            className="w-full max-w-full self-stretch mt-4 sm:mt-5 lg:mt-6"
+          >
+            <LandingBenefitStrip />
+          </motion.div>
         </div>
       </div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: demoOpen ? 0 : 1 }}
-        transition={{ duration: 0.6, delay: 1 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 pointer-events-none"
-        aria-hidden={demoOpen}
-      >
-        <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          className="w-6 h-10 border-2 border-text-dim rounded-full flex justify-center"
-        >
-          <motion.div
-            animate={{ y: [0, 12, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-1 h-3 bg-text-dim rounded-full mt-2"
-          />
-        </motion.div>
-      </motion.div>
     </div>
   );
 }

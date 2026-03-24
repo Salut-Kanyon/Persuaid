@@ -1,14 +1,9 @@
 "use client";
 
 /**
- * Landing demo: Persuaid value prop in one surface (context → talk → response).
- *
- * Design intent (maintenance):
- * - One elevated panel reads as a single product, not a 3-step wizard.
- * - Accent #20D3A6 matches primary CTAs (Start talking, Request answer) and outlines every
- *   field/control the user must use (type, click, talk) so affordances read as one system.
- * - Typography and spacing carry hierarchy; shell border stays neutral (white/8).
- * - Motion is entry + micro-interaction only — no decorative loops except listening pulse.
+ * Landing demo: mirrors the signed-in workspace layout (Header + Workspace panels).
+ * Left column: What to say next (top) + Live transcript (bottom). Right: Notes.
+ * Start Call / Pause lives in the header like the real app, not inside the transcript panel.
  */
 
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
@@ -20,11 +15,33 @@ const MAX_NOTES = 1200;
 const LISTEN_SECONDS = 60;
 const CLIENT_AI_CAP = 2;
 
-/** Three columns share the same vertical bands on md+ (header → action row → main panel). */
-const COL_HEADER_DESC_LINES = "min-h-[2.5rem] line-clamp-2";
-const ACTION_BAND = "flex min-h-[5.5rem] shrink-0 flex-col justify-center gap-2";
-const MAIN_PANEL_BOX =
-  "h-[220px] min-h-[220px] overflow-y-auto overflow-x-hidden sm:h-[236px] sm:min-h-[236px] md:h-[240px] md:min-h-[240px]";
+const COACHING_DEMO_INSIGHTS = [
+  {
+    label: "Strengths",
+    text: "You kept the conversation moving and tied answers back to what they said—confidence reads even when you pause.",
+  },
+  {
+    label: "Gaps to tighten",
+    text: "Discovery on budget, timeline, and who signs could go one layer deeper so the next call isn’t a reset.",
+  },
+  {
+    label: "Suggested follow-up",
+    text: "Send a short recap with two options to advance; offer a focused call with whoever owns the outcome they hinted at.",
+  },
+] as const;
+
+const COL_HEADER_DESC_LINES = "min-h-[2.25rem] line-clamp-2";
+const MAIN_PANEL_FOLLOW =
+  "min-h-[160px] max-h-[220px] sm:max-h-[240px] flex-1 overflow-y-auto overflow-x-hidden";
+const MAIN_PANEL_TRANSCRIPT =
+  "min-h-[140px] max-h-[200px] sm:max-h-[220px] flex-1 overflow-y-auto overflow-x-hidden";
+
+function formatElapsed(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return [h, m, s].map((n) => n.toString().padStart(2, "0")).join(":");
+}
 
 /** Persuaid demo palette (matches product marketing spec) */
 const demo = {
@@ -74,6 +91,7 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
   const [listenLeft, setListenLeft] = useState(LISTEN_SECONDS);
   const listenTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recognitionRef = useRef<any>(null);
+  const coachingDemoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [aiText, setAiText] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -82,10 +100,30 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
 
   const [speechSupported, setSpeechSupported] = useState<boolean | null>(null);
   const [notesLinkedToAi, setNotesLinkedToAi] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  /** After pause: invite to preview post-call coaching (demo). */
+  const [postCallInviteOpen, setPostCallInviteOpen] = useState(false);
+  const [coachingDemoPhase, setCoachingDemoPhase] = useState<"idle" | "running" | "done">("idle");
+
+  const linesRef = useRef(lines);
+  const elapsedRef = useRef(elapsedSeconds);
+  useEffect(() => {
+    linesRef.current = lines;
+  }, [lines]);
+  useEffect(() => {
+    elapsedRef.current = elapsedSeconds;
+  }, [elapsedSeconds]);
 
   useEffect(() => {
     setSpeechSupported(getSpeechRecognitionCtor() !== null);
   }, []);
+
+  useEffect(() => {
+    if (!listening) return;
+    const t = setInterval(() => setElapsedSeconds((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [listening]);
 
   const stopListenTimer = useCallback(() => {
     if (listenTimerRef.current) {
@@ -95,6 +133,8 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
   }, []);
 
   const stopRecognition = useCallback(() => {
+    const hadActivity =
+      elapsedRef.current >= 3 || linesRef.current.length > 0;
     try {
       recognitionRef.current?.stop();
     } catch {
@@ -104,6 +144,10 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
     setListening(false);
     stopListenTimer();
     setListenLeft(LISTEN_SECONDS);
+    if (hadActivity) {
+      setPostCallInviteOpen(true);
+      setCoachingDemoPhase("idle");
+    }
   }, [stopListenTimer]);
 
   const appendRepLine = useCallback((text: string) => {
@@ -147,6 +191,9 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
     try {
       rec.start();
       setListening(true);
+      setElapsedSeconds(0);
+      setPostCallInviteOpen(false);
+      setCoachingDemoPhase("idle");
       stopListenTimer();
       listenTimerRef.current = setInterval(() => {
         setListenLeft((s) => {
@@ -165,6 +212,10 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
   useEffect(() => {
     return () => {
       stopListenTimer();
+      if (coachingDemoTimeoutRef.current) {
+        clearTimeout(coachingDemoTimeoutRef.current);
+        coachingDemoTimeoutRef.current = null;
+      }
       try {
         recognitionRef.current?.stop?.();
       } catch {
@@ -218,6 +269,24 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
       setAiLoading(false);
     }
   }, [aiUsed, lines, notes]);
+
+  const runCoachingDemo = useCallback(() => {
+    setCoachingDemoPhase("running");
+    if (coachingDemoTimeoutRef.current) clearTimeout(coachingDemoTimeoutRef.current);
+    coachingDemoTimeoutRef.current = setTimeout(() => {
+      coachingDemoTimeoutRef.current = null;
+      setCoachingDemoPhase("done");
+    }, 1500);
+  }, []);
+
+  const dismissPostCallInvite = useCallback(() => {
+    if (coachingDemoTimeoutRef.current) {
+      clearTimeout(coachingDemoTimeoutRef.current);
+      coachingDemoTimeoutRef.current = null;
+    }
+    setPostCallInviteOpen(false);
+    setCoachingDemoPhase("idle");
+  }, []);
 
   const aiRemaining = Math.max(0, CLIENT_AI_CAP - aiUsed);
   const canGetAnswer = lines.length > 0 && aiRemaining > 0 && !aiLoading;
@@ -313,328 +382,432 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                 )}
                 style={{ color: demo.textMuted }}
               >
-                The real app is faster and more optimized.
-              </p>
-              <p
-                className={cn(
-                  "mt-4 text-center text-[10px] sm:text-[11px] font-semibold tracking-[0.2em] uppercase",
-                  isHero && "mt-5"
-                )}
-              >
-                <span style={{ color: demo.accent }}>Steps</span>
+                Same panel layout as the live workspace—header, then answers and transcript on the left, notes on
+                the right.
               </p>
             </header>
 
-        {/*
-          Unified demo surface: one rounded shell + CSS divide so columns feel connected.
-          Desktop: 3 equal columns; mobile: stack with vertical rhythm.
-        */}
         <div
           className={cn(
-            "border backdrop-blur-[2px] overflow-hidden shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]",
-            isHero ? "rounded-[24px] lg:rounded-[28px]" : "rounded-[20px]"
+            "border border-white/10 overflow-hidden shadow-[0_24px_80px_-24px_rgba(0,0,0,0.65)]",
+            isHero ? "rounded-[20px] lg:rounded-[24px]" : "rounded-[18px]"
           )}
-          style={{
-            backgroundColor: demo.bgElevated,
-            borderColor: demo.border,
-            boxShadow: `0 24px 80px -24px rgba(0,0,0,0.65)`,
-          }}
+          style={{ backgroundColor: demo.bgElevated }}
         >
-          <div className="relative h-[3px] bg-white/[0.04]">
-            <motion.div
-              className="absolute inset-y-0 left-0 rounded-full"
-              style={{
-                background: `linear-gradient(90deg, transparent, ${demo.accent}, transparent)`,
-                boxShadow: notesLinkedToAi ? `0 0 16px ${demo.accentGlow}` : "none",
-              }}
-              initial={false}
-              animate={{ width: notesLinkedToAi ? "100%" : "0%" }}
-              transition={{ type: "spring", stiffness: 140, damping: 24 }}
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 md:items-stretch md:divide-x md:divide-[rgba(255,255,255,0.08)]">
-            {/* Context */}
-            <motion.div
-              className={cn(
-                "flex min-h-0 flex-col border-b md:h-full md:border-b-0",
-                isHero ? "p-6 md:p-8 lg:p-9" : "p-6 md:p-8"
-              )}
-              style={{ borderColor: demo.border }}
-              animate={
-                notesLinkedToAi
-                  ? { boxShadow: [`0 0 0 0 ${demo.accentGlow}`, `0 0 28px -8px ${demo.accentGlow}`, `0 0 0 0 ${demo.accentGlow}`] }
-                  : { boxShadow: "none" }
-              }
-              transition={{ duration: 1.2, times: [0, 0.5, 1] }}
-            >
-              <div className="mb-4 shrink-0">
-                <h3 className="text-[15px] font-medium tracking-tight" style={{ color: demo.text }}>
-                  Context
-                </h3>
-                <p
-                  className={cn("mt-1 text-[12px] leading-snug md:text-[13px]", COL_HEADER_DESC_LINES)}
-                  style={{ color: demo.textMuted }}
-                >
-                  Product knowledge — pricing, objections, notes
-                </p>
-              </div>
-
-              <div className={ACTION_BAND} aria-hidden />
-
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value.slice(0, MAX_NOTES))}
-                placeholder="Example: pricing, common objections, competitor differences, who we help…"
-                className={cn(
-                  MAIN_PANEL_BOX,
-                  "w-full shrink-0 rounded-[12px] px-3.5 py-3 text-[13px] leading-relaxed md:text-[14px] resize-none transition-[border-color,box-shadow] duration-200",
-                  "placeholder:text-[#7E8888]/80 focus:outline-none"
-                )}
-                style={{
-                  color: demo.text,
-                  backgroundColor: demo.bgPanel,
-                  border: `1px solid ${notesLinkedToAi ? demo.accentBorder : demo.actionBorder}`,
-                  boxShadow: notesLinkedToAi ? `0 0 0 1px ${demo.accentGlow}` : undefined,
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = demo.accent;
-                  e.target.style.boxShadow = `0 0 0 1px ${demo.accentGlow}`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = notesLinkedToAi ? demo.accentBorder : demo.actionBorder;
-                  e.target.style.boxShadow = notesLinkedToAi ? `0 0 0 1px ${demo.accentGlow}` : "none";
-                }}
-              />
-              <div className="mt-auto flex flex-col gap-3 pt-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="tabular-nums text-[11px]" style={{ color: demo.textMuted }}>
-                    {notes.length}/{MAX_NOTES}
-                  </p>
-                  <motion.button
-                    type="button"
-                    onClick={() => setNotesLinkedToAi(true)}
-                    disabled={notesLinkedToAi}
-                    whileHover={notesLinkedToAi ? undefined : { scale: 1.02 }}
-                    whileTap={notesLinkedToAi ? undefined : { scale: 0.98 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 28 }}
+          {/* Matches components/app/Header.tsx */}
+          <div className="h-12 sm:h-14 flex items-center justify-between gap-3 px-4 sm:px-5 bg-background-elevated/35 backdrop-blur-2xl border-b border-border/10">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <div
                     className={cn(
-                      "inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-full px-4 text-[12px] font-medium tracking-tight transition-colors duration-200 sm:w-auto sm:min-w-0",
-                      notesLinkedToAi
-                        ? "cursor-default border border-[#20D3A6]/35 bg-[#20D3A6]/12 text-[#20D3A6]"
-                        : "border border-[#20D3A6]/45 bg-[#20D3A6]/10 text-[#20D3A6] hover:border-[#20D3A6]/60 hover:bg-[#20D3A6]/16"
+                      "w-1.5 h-1.5 rounded-full transition-all",
+                      listening ? "bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-text-dim/50"
                     )}
-                  >
-                    <span
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px]"
-                      style={{ borderColor: notesLinkedToAi ? demo.accent : "rgba(32, 211, 166, 0.45)" }}
-                    >
-                      {notesLinkedToAi ? "✓" : "↗"}
-                    </span>
-                    {notesLinkedToAi ? "Connected" : "Connect to AI"}
-                  </motion.button>
+                  />
+                  {listening && (
+                    <div className="absolute inset-0 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping opacity-60" />
+                  )}
                 </div>
+                <span className="text-xs sm:text-sm font-medium text-text-primary whitespace-nowrap">
+                  {listening ? "Recording" : "Paused"}
+                </span>
               </div>
-            </motion.div>
-
-            {/* Talk */}
-            <motion.div
+              <div className="h-3.5 w-px bg-border/12 shrink-0" />
+              <span className="text-xs sm:text-sm text-text-muted/80 font-mono tracking-wider tabular-nums">
+                {formatElapsed(elapsedSeconds)}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => (listening ? stopRecognition() : startListening())}
+              disabled={!listening && speechSupported === false}
               className={cn(
-                "relative flex min-h-0 flex-col border-b md:h-full md:border-b-0 transition-shadow duration-300",
-                isHero ? "p-6 md:p-8 lg:p-9" : "p-6 md:p-8",
-                listening && "shadow-[inset_0_0_0_1px_rgba(32,211,166,0.15)]"
-              )}
-              style={{ borderColor: demo.border }}
-              animate={
+                "group relative overflow-hidden rounded-xl px-3 py-1.5 sm:px-3.5 sm:py-2 text-[11px] sm:text-xs font-bold tracking-tight transition-[filter,box-shadow] duration-300 flex items-center gap-1.5 shrink-0",
                 listening
-                  ? {
-                      boxShadow: [
-                        `inset 0 0 0 1px ${demo.accentBorder}`,
-                        `inset 0 0 24px ${demo.accentGlow}`,
-                        `inset 0 0 0 1px ${demo.accentBorder}`,
-                      ],
-                    }
-                  : { boxShadow: "none" }
-              }
-              transition={listening ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
-            >
-              <div className="mb-4 shrink-0">
-                <h3 className="text-[15px] font-medium tracking-tight" style={{ color: demo.text }}>
-                  Talk
-                </h3>
-                <p
-                  className={cn("mt-1 text-[12px] leading-snug md:text-[13px]", COL_HEADER_DESC_LINES)}
-                  style={{ color: demo.textMuted }}
-                >
-                  Live transcript — you or them
-                </p>
-              </div>
-
-              <div className={ACTION_BAND}>
-                {!listening ? (
-                  <motion.button
-                    type="button"
-                    onClick={startListening}
-                    disabled={speechSupported === false}
-                    whileHover={{ scale: speechSupported === false ? 1 : 1.02 }}
-                    whileTap={{ scale: speechSupported === false ? 1 : 0.98 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                    className="w-full min-h-[44px] rounded-full bg-[#20D3A6] py-3 text-[14px] font-semibold tracking-tight text-[#04110D] shadow-[0_8px_32px_rgba(32,211,166,0.18)] transition-colors hover:bg-[#19BE95] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#20D3A6]"
-                  >
-                    Start talking
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    type="button"
-                    onClick={stopRecognition}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                    className="w-full min-h-[44px] rounded-full border border-red-500/45 bg-gradient-to-b from-red-500 to-red-600 py-3 text-[14px] font-semibold tracking-tight text-white shadow-[0_4px_20px_rgba(220,38,38,0.35),inset_0_1px_0_rgba(255,255,255,0.15)] transition-[filter,box-shadow] duration-200 hover:from-red-600 hover:to-red-700 hover:shadow-[0_6px_24px_rgba(220,38,38,0.4)] active:brightness-95"
-                  >
-                    Stop · {String(Math.floor(listenLeft / 60)).padStart(2, "0")}:{String(listenLeft % 60).padStart(2, "0")}
-                  </motion.button>
-                )}
-                <p className="text-center text-[11px] leading-snug" style={{ color: demo.textMuted }}>
-                  Try: <span style={{ color: demo.textSecondary }}>&ldquo;Too expensive&rdquo;</span>
-                </p>
-              </div>
-
-              <div
-                className={cn(
-                  MAIN_PANEL_BOX,
-                  "mb-4 shrink-0 rounded-[12px] px-3.5 py-3 text-[12px] leading-relaxed transition-[border-color] duration-300 md:text-[13px]"
-                )}
-                style={{
-                  backgroundColor: demo.bgPanel,
-                  border: `1px solid ${hasTranscript ? demo.accentBorder : demo.actionBorder}`,
-                  color: demo.textSecondary,
-                  ...(hasTranscript ? { boxShadow: `0 0 0 1px ${demo.accentGlow}` } : {}),
-                }}
-              >
-                {!hasTranscript ? (
-                  <span style={{ color: demo.textMuted }}>Live lines appear here.</span>
-                ) : (
-                  lines.map((l, i) => (
-                    <p key={i} className="mb-1.5 last:mb-0">
-                      <span
-                        className="font-medium"
-                        style={{ color: l.speaker === "rep" ? demo.accent : demo.textMuted }}
-                      >
-                        {l.speaker === "rep" ? "You" : "Them"}
-                      </span>{" "}
-                      <span style={{ color: demo.textSecondary }}>{l.text}</span>
-                    </p>
-                  ))
-                )}
-              </div>
-
-              <div className="mt-auto flex gap-2 pt-3">
-                <input
-                  value={prospectDraft}
-                  onChange={(e) => setProspectDraft(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addProspectLine())}
-                  placeholder="Their line (optional)"
-                  className="min-w-0 flex-1 rounded-full border border-[rgba(32,211,166,0.52)] bg-[#050505] px-3 py-2 text-[12px] text-[#B7C0C0] transition-colors placeholder:text-[#7E8888]/80 focus:border-[#20D3A6] focus:outline-none focus:ring-1 focus:ring-[#20D3A6]/35 md:text-[13px]"
-                />
-                <button
-                  type="button"
-                  onClick={addProspectLine}
-                  className="shrink-0 rounded-full border border-[rgba(32,211,166,0.52)] bg-transparent px-3 py-2 text-[12px] font-medium text-[#20D3A6] transition-colors hover:border-[#20D3A6]/70 hover:bg-[#20D3A6]/10 md:text-[13px]"
-                >
-                  Add
-                </button>
-              </div>
-              {speechSupported === false && (
-                <p className="mt-2 text-[10px]" style={{ color: demo.textMuted }}>
-                  Mic: Chrome or Edge
-                </p>
+                  ? "bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/15 shadow-md"
+                  : [
+                      "border border-white/25 bg-gradient-to-br from-[#5eead4] via-[#20D3A6] to-[#0f766e] text-[#04110D]",
+                      "shadow-[0_4px_18px_rgba(32,211,166,0.35),0_0_24px_-8px_rgba(45,212,191,0.45),inset_0_1px_0_rgba(255,255,255,0.35)]",
+                      "ring-1 ring-[#20D3A6]/50 ring-offset-1 ring-offset-background",
+                      "hover:brightness-[1.05] disabled:opacity-40 disabled:cursor-not-allowed",
+                    ]
               )}
-            </motion.div>
-
-            {/* Response */}
-            <motion.div
-              className={cn("flex min-h-0 flex-col md:h-full", isHero ? "p-6 md:p-8 lg:p-9" : "p-6 md:p-8")}
-              animate={
-                notesLinkedToAi
-                  ? { boxShadow: [`0 0 0 0 ${demo.accentGlow}`, `0 0 32px -10px ${demo.accentGlow}`, `0 0 0 0 ${demo.accentGlow}`] }
-                  : { boxShadow: "none" }
-              }
-              transition={{ duration: 1.2, delay: 0.15, times: [0, 0.5, 1] }}
             >
-              <div className="mb-4 shrink-0">
-                <h3 className="text-[15px] font-medium tracking-tight" style={{ color: demo.text }}>
-                  Response
-                </h3>
-                <p
-                  className={cn("mt-1 text-[12px] leading-snug md:text-[13px]", COL_HEADER_DESC_LINES)}
-                  style={{ color: demo.textMuted }}
-                >
-                  {notesLinkedToAi ? "Notes + live talk → reply" : "Notes + talk → suggested reply"}
-                </p>
-              </div>
-
-              <div className={ACTION_BAND} aria-hidden />
-
-              <div
-                className={cn(
-                  MAIN_PANEL_BOX,
-                  "mb-4 shrink-0 rounded-[12px] px-3.5 py-3 text-[13px] leading-relaxed transition-[border-color,box-shadow] duration-300 md:text-[14px]"
-                )}
-                style={{
-                  color: demo.text,
-                  backgroundColor: demo.bgPanel,
-                  border: `1px solid ${hasResponse ? demo.accentBorder : demo.actionBorder}`,
-                  ...(hasResponse ? { boxShadow: "0 0 28px -14px rgba(32, 211, 166, 0.12)" } : {}),
-                }}
-              >
-                {aiLoading ? (
-                  <span className="animate-pulse" style={{ color: demo.textSecondary }}>
-                    …
+              {listening ? (
+                <>
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span>Pause</span>
+                </>
+              ) : (
+                <>
+                  <span
+                    className="pointer-events-none absolute -left-1/4 top-0 h-full w-1/2 skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-70 transition-opacity duration-300 group-hover:opacity-100"
+                    aria-hidden
+                  />
+                  <span className="relative z-[1]">Start Call</span>
+                  <span
+                    className="relative z-[1] inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[#04110D]/30"
+                    aria-hidden
+                  >
+                    <span className="absolute inset-0 animate-ping rounded-full bg-[#04110D]/25" />
                   </span>
-                ) : hasResponse ? (
-                  <p className="whitespace-pre-wrap">{aiText}</p>
-                ) : (
-                  <span style={{ color: demo.textMuted }}>Suggested reply</span>
-                )}
-              </div>
-
-              {aiError && (
-                <p className="text-[12px] mb-3" style={{ color: "rgb(248 113 113 / 0.95)" }}>
-                  {aiError}
-                </p>
+                </>
               )}
+            </button>
+          </div>
 
-              <div className="mt-auto flex flex-col gap-3">
-                <motion.button
-                  type="button"
-                  onClick={fetchAi}
-                  disabled={getAnswerDisabled}
-                  whileHover={canGetAnswer ? { scale: 1.02 } : {}}
-                  whileTap={canGetAnswer ? { scale: 0.98 } : {}}
-                  transition={{ type: "spring", stiffness: 400, damping: 28 }}
+          <AnimatePresence>
+            {postCallInviteOpen && !listening ? (
+              <motion.div
+                key="post-call-coaching-invite"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-green-primary/[0.07] to-[#050505]"
+              >
+                <div className="px-3 py-3 sm:px-4 sm:py-3.5">
+                  {coachingDemoPhase === "idle" ? (
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-green-accent/90">
+                          After the call
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-text-primary leading-snug">
+                          Preview AI coaching on this session
+                        </p>
+                        <p className="mt-0.5 text-[12px] leading-relaxed text-text-muted">
+                          See how Persuaid debriefs the transcript you captured—no signup, simulated insights.
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:shrink-0">
+                        <button
+                          type="button"
+                          onClick={runCoachingDemo}
+                          className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-transparent bg-[#20D3A6] px-4 py-2 text-[13px] font-semibold text-[#04110D] shadow-[0_4px_24px_rgba(32,211,166,0.22)] transition-[filter,transform] hover:brightness-[1.05] active:scale-[0.99]"
+                        >
+                          Run coaching demo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={dismissPostCallInvite}
+                          className="text-center text-[12px] font-medium text-text-muted underline-offset-2 hover:text-text-secondary hover:underline sm:px-2"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  ) : coachingDemoPhase === "running" ? (
+                    <div className="flex flex-col items-center justify-center gap-3 py-6 sm:py-8">
+                      <div className="h-9 w-9 rounded-full border-2 border-green-primary/30 border-t-green-primary animate-spin" />
+                      <p className="text-sm font-medium text-text-primary">Analyzing your transcript…</p>
+                      <p className="max-w-md text-center text-[12px] text-text-muted">
+                        In the real app, coaching runs on the full saved call—here’s a quick preview of the output.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-green-accent/90">
+                            Coaching preview
+                          </p>
+                          <p className="mt-0.5 text-sm font-semibold text-text-primary">
+                            Debrief for this demo session
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={dismissPostCallInvite}
+                          className="self-start text-[12px] font-medium text-text-muted underline-offset-2 hover:text-text-secondary hover:underline"
+                        >
+                          Close
+                        </button>
+                      </div>
+                      <ul className="grid gap-2 sm:grid-cols-3 sm:gap-3">
+                        {COACHING_DEMO_INSIGHTS.map((row, i) => (
+                          <motion.li
+                            key={row.label}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.06 * i, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                            className="rounded-xl border border-white/[0.08] bg-black/35 px-3 py-2.5"
+                          >
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-green-primary/90">
+                              {row.label}
+                            </p>
+                            <p className="mt-1 text-[12px] leading-relaxed text-text-secondary">{row.text}</p>
+                          </motion.li>
+                        ))}
+                      </ul>
+                      <p className="text-[11px] text-text-dim">
+                        <a
+                          href="/sign-in"
+                          className="font-medium text-green-accent underline-offset-2 hover:underline"
+                        >
+                          Sign in
+                        </a>{" "}
+                        for real coaching on every saved conversation.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+
+          {/* Matches Workspace default layout: left stack (follow-up, transcript), right notes */}
+          <div className="p-3 sm:p-4 bg-[#050505] border-t border-white/[0.04]">
+            <div
+              className={cn(
+                "grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 lg:items-stretch",
+                isHero ? "min-h-[min(48vh,440px)] lg:min-h-[380px]" : "min-h-[min(72vh,560px)] lg:min-h-[480px]"
+              )}
+            >
+              <div className="flex flex-col gap-3 min-h-0">
+                {/* What to say next — FollowUp panel */}
+                <motion.div
+                  className="flex flex-col flex-1 min-h-0 rounded-2xl border border-white/10 bg-background-surface/28 overflow-hidden"
+                  animate={
+                    notesLinkedToAi
+                      ? {
+                          boxShadow: [
+                            `0 0 0 0 ${demo.accentGlow}`,
+                            `0 0 24px -8px ${demo.accentGlow}`,
+                            `0 0 0 0 ${demo.accentGlow}`,
+                          ],
+                        }
+                      : { boxShadow: "none" }
+                  }
+                  transition={{ duration: 1.2, times: [0, 0.5, 1] }}
+                >
+                  <div className="flex items-center gap-2 px-3 py-2.5 border-b border-green-primary/20 bg-green-primary/10">
+                    <div className="w-6 h-6 rounded-xl bg-green-primary/20 border border-green-primary/30 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-3.5 h-3.5 text-green-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-sm font-semibold text-text-primary tracking-tight">What to say next</h3>
+                  </div>
+                  <div className="flex flex-col flex-1 min-h-0 p-3">
+                    <p
+                      className={cn("text-[11px] sm:text-xs mb-2", COL_HEADER_DESC_LINES)}
+                      style={{ color: demo.textMuted }}
+                    >
+                      Press Enter in the app; here tap Get answer. Uses your notes and transcript.
+                    </p>
+                    <div
+                      className={cn(
+                        MAIN_PANEL_FOLLOW,
+                        "rounded-xl px-3 py-2.5 text-[13px] leading-relaxed mb-3 border transition-[border-color,box-shadow] duration-300"
+                      )}
+                      style={{
+                        color: demo.text,
+                        backgroundColor: demo.bgPanel,
+                        borderColor: hasResponse ? demo.accentBorder : demo.actionBorder,
+                        boxShadow: hasResponse ? "0 0 28px -14px rgba(32, 211, 166, 0.12)" : undefined,
+                      }}
+                    >
+                      {aiLoading ? (
+                        <span className="animate-pulse" style={{ color: demo.textSecondary }}>
+                          …
+                        </span>
+                      ) : hasResponse ? (
+                        <p className="whitespace-pre-wrap">{aiText}</p>
+                      ) : (
+                        <span style={{ color: demo.textMuted }}>
+                          Answer appears here after you add transcript lines and request a reply.
+                        </span>
+                      )}
+                    </div>
+                    {aiError ? (
+                      <p className="text-[11px] mb-2" style={{ color: "rgb(248 113 113 / 0.95)" }}>
+                        {aiError}
+                      </p>
+                    ) : null}
+                    <div className="mt-auto space-y-2">
+                      <motion.button
+                        type="button"
+                        onClick={fetchAi}
+                        disabled={getAnswerDisabled}
+                        whileHover={canGetAnswer ? { scale: 1.02 } : {}}
+                        whileTap={canGetAnswer ? { scale: 0.98 } : {}}
+                        transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                        className={cn(
+                          "w-full min-h-[40px] rounded-lg border py-2.5 text-[13px] font-semibold transition-colors duration-200 disabled:cursor-not-allowed",
+                          getAnswerDisabled && !aiLoading
+                            ? "border-white/[0.08] bg-[#0a0c0c] text-[#7E8888] opacity-90"
+                            : "border-transparent bg-[#20D3A6] text-[#04110D] hover:bg-[#19BE95] shadow-[0_4px_24px_rgba(32,211,166,0.18)]"
+                        )}
+                      >
+                        {aiRemaining <= 0 ? "Limit reached" : aiLoading ? "…" : "Get answer"}
+                      </motion.button>
+                      <p className="text-center tabular-nums text-[10px]" style={{ color: demo.textMuted }}>
+                        {aiRemaining}/{CLIENT_AI_CAP} demo replies ·{" "}
+                        <a
+                          href="/sign-in"
+                          className="font-medium underline-offset-2 hover:underline"
+                          style={{ color: demo.textSecondary }}
+                        >
+                          Full app
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Live transcript */}
+                <motion.div
                   className={cn(
-                    "w-full min-h-[44px] rounded-full border py-3 text-[14px] font-semibold transition-colors duration-200 disabled:cursor-not-allowed",
-                    getAnswerDisabled && !aiLoading
-                      ? "border-[rgba(255,255,255,0.08)] bg-[#0a0c0c] text-[#7E8888] opacity-90 ring-1 ring-white/[0.06]"
-                      : "border-transparent bg-[#20D3A6] text-[#04110D] hover:bg-[#19BE95] shadow-[0_4px_24px_rgba(32,211,166,0.18)]"
+                    "flex flex-col flex-1 min-h-0 rounded-2xl border border-white/10 bg-background-surface/28 overflow-hidden",
+                    listening && "ring-1 ring-green-primary/20"
                   )}
                 >
-                  {aiRemaining <= 0 ? "Limit reached" : aiLoading ? "…" : "Request answer"}
-                </motion.button>
-
-                {lines.length === 0 && aiRemaining > 0 && (
-                  <p className="text-center text-[10px] leading-relaxed" style={{ color: demo.textMuted }}>
-                    Add a line in Talk first.
-                  </p>
-                )}
-
-                <p className="text-center tabular-nums text-[10px]" style={{ color: demo.textMuted }}>
-                  {aiRemaining}/{CLIENT_AI_CAP} demo replies ·{" "}
-                  <a href="/sign-in" className="font-medium underline-offset-2 hover:underline" style={{ color: demo.textSecondary }}>
-                    Full app
-                  </a>
-                </p>
+                  <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border/20">
+                    <svg className="w-4 h-4 text-amber-500/80 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" />
+                    </svg>
+                    <h3 className="text-sm font-medium text-text-primary tracking-tight">Live transcript</h3>
+                  </div>
+                  <div className="flex flex-col flex-1 min-h-0 p-3">
+                    <p className={cn("text-[11px] sm:text-xs mb-2", COL_HEADER_DESC_LINES)} style={{ color: demo.textMuted }}>
+                      Starts when you press Start Call above. Or type the prospect&apos;s line below.
+                    </p>
+                    <div
+                      className={cn(
+                        MAIN_PANEL_TRANSCRIPT,
+                        "rounded-xl px-3 py-2.5 text-[12px] leading-relaxed mb-3 border md:text-[13px]"
+                      )}
+                      style={{
+                        backgroundColor: demo.bgPanel,
+                        borderColor: hasTranscript ? demo.accentBorder : demo.actionBorder,
+                        color: demo.textSecondary,
+                        boxShadow: hasTranscript ? `0 0 0 1px ${demo.accentGlow}` : undefined,
+                      }}
+                    >
+                      {!hasTranscript ? (
+                        <span style={{ color: demo.textMuted }}>Transcript lines appear here.</span>
+                      ) : (
+                        lines.map((l, i) => (
+                          <p key={i} className="mb-1.5 last:mb-0">
+                            <span
+                              className="font-medium"
+                              style={{ color: l.speaker === "rep" ? demo.accent : demo.textMuted }}
+                            >
+                              {l.speaker === "rep" ? "You" : "Other"}
+                            </span>{" "}
+                            <span style={{ color: demo.textSecondary }}>{l.text}</span>
+                          </p>
+                        ))
+                      )}
+                    </div>
+                    <div className="mt-auto flex gap-2">
+                      <input
+                        value={prospectDraft}
+                        onChange={(e) => setProspectDraft(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addProspectLine())}
+                        placeholder="Other speaker line (optional)"
+                        className="min-w-0 flex-1 rounded-lg border border-border/50 bg-background-elevated/60 px-3 py-2 text-[12px] text-text-primary placeholder:text-text-dim/50 focus:outline-none focus:ring-1 focus:ring-green-primary/40 md:text-[13px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={addProspectLine}
+                        className="shrink-0 rounded-lg border border-green-primary/30 bg-green-primary/10 px-3 py-2 text-[12px] font-medium text-green-300 hover:bg-green-primary/15 md:text-[13px]"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {speechSupported === false && (
+                      <p className="mt-2 text-[10px]" style={{ color: demo.textMuted }}>
+                        Mic capture: use Chrome or Edge for Start Call.
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
+
+              {/* Notes — matches Notes panel column */}
+              <motion.div
+                className="flex flex-col min-h-[280px] lg:min-h-0 rounded-2xl border border-white/10 bg-background-surface/18 overflow-hidden"
+                animate={
+                  notesLinkedToAi
+                    ? {
+                        boxShadow: [
+                          `0 0 0 0 ${demo.accentGlow}`,
+                          `0 0 28px -10px ${demo.accentGlow}`,
+                          `0 0 0 0 ${demo.accentGlow}`,
+                        ],
+                      }
+                    : { boxShadow: "none" }
+                }
+                transition={{ duration: 1.2, delay: 0.08, times: [0, 0.5, 1] }}
+              >
+                <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border/20">
+                  <div className="w-6 h-6 rounded-xl bg-background-elevated/40 border border-border/20 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 text-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-sm font-medium text-text-primary tracking-tight">Notes</h3>
+                </div>
+                <div className="flex flex-col flex-1 min-h-0 p-3">
+                  <p className={cn("text-[11px] sm:text-xs mb-2", COL_HEADER_DESC_LINES)} style={{ color: demo.textMuted }}>
+                    Product knowledge the copilot reads—pricing, objections, talk tracks.
+                  </p>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value.slice(0, MAX_NOTES))}
+                    placeholder="Paste notes, bullets, or snippets you would use on a real call…"
+                    className={cn(
+                      "w-full flex-1 min-h-[200px] lg:min-h-0 rounded-xl px-3 py-2.5 text-[13px] leading-relaxed resize-none border transition-[border-color,box-shadow] duration-200",
+                      "placeholder:text-text-dim/60 focus:outline-none focus:ring-1 focus:ring-green-primary/35 md:text-[14px]"
+                    )}
+                    style={{
+                      color: demo.text,
+                      backgroundColor: demo.bgPanel,
+                      borderColor: notesLinkedToAi ? demo.accentBorder : "rgba(255,255,255,0.12)",
+                    }}
+                  />
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="tabular-nums text-[11px]" style={{ color: demo.textMuted }}>
+                      {notes.length}/{MAX_NOTES}
+                    </p>
+                    <motion.button
+                      type="button"
+                      onClick={() => setNotesLinkedToAi(true)}
+                      disabled={notesLinkedToAi}
+                      whileHover={notesLinkedToAi ? undefined : { scale: 1.02 }}
+                      whileTap={notesLinkedToAi ? undefined : { scale: 0.98 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                      className={cn(
+                        "inline-flex min-h-[38px] w-full items-center justify-center gap-2 rounded-lg px-3 text-[12px] font-medium sm:w-auto",
+                        notesLinkedToAi
+                          ? "cursor-default border border-green-primary/35 bg-green-primary/12 text-green-300"
+                          : "border border-green-primary/40 bg-green-primary/10 text-green-300 hover:bg-green-primary/16"
+                      )}
+                    >
+                      <span
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-green-primary/40 text-[10px]"
+                      >
+                        {notesLinkedToAi ? "✓" : "↗"}
+                      </span>
+                      {notesLinkedToAi ? "Connected" : "Connect with AI"}
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </div>
         </div>
 

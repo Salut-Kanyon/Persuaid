@@ -6,11 +6,10 @@ import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/ui/Navbar";
 import { Hero } from "@/components/ui/Hero";
 import { Section } from "@/components/ui/Section";
-import { ProductPreview } from "@/components/ui/ProductPreview";
-import { CTAButton } from "@/components/ui/CTAButton";
 import { Footer } from "@/components/ui/Footer";
 import { FAQSection } from "@/components/ui/FAQSection";
 import { TryWorkspaceDemo } from "@/components/landing/TryWorkspaceDemo";
+import { LandingTestimonialsSection } from "@/components/landing/LandingTestimonials";
 
 function formatTimer(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -23,7 +22,6 @@ function Step02MiniUI() {
   const [elapsed, setElapsed] = useState(0);
   const [justClicked, setJustClicked] = useState(false);
 
-  // Show Start Call first; after 2.2s simulate click and switch to Pause + timer. Re-runs when we reset (isRecording false).
   useEffect(() => {
     if (isRecording) return;
     let pauseT: ReturnType<typeof setTimeout>;
@@ -87,10 +85,12 @@ function Step02MiniUI() {
             transition={{ duration: 0.25 }}
             className="flex items-center gap-3 flex-wrap justify-center"
           >
-            <div className={cn(
-              "flex items-center gap-2 rounded-2xl px-5 py-2 text-sm font-semibold shadow-lg",
-              "bg-red-500/10 border border-red-500/30 text-red-400"
-            )}>
+            <div
+              className={cn(
+                "flex items-center gap-2 rounded-2xl px-5 py-2 text-sm font-semibold shadow-lg",
+                "bg-red-500/10 border border-red-500/30 text-red-400"
+              )}
+            >
               <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
               <span>Pause</span>
             </div>
@@ -140,9 +140,7 @@ function Step03MiniUI() {
         </span>
         <span className="text-[10px] text-text-dim font-mono">00:18:42</span>
       </div>
-      <div className="mb-2 text-[10px] text-text-dim">
-        Whole conversation captured and streamed live.
-      </div>
+      <div className="mb-2 text-[10px] text-text-dim">Whole conversation captured and streamed live.</div>
       <div className="space-y-1.5 rounded-xl bg-background-elevated/80 border border-border-subtle px-3 py-2 text-[11px] leading-snug h-32 md:h-36 overflow-hidden">
         {STEP03_LINES.slice(0, visibleCount).map((line, i) => (
           <motion.p
@@ -219,9 +217,18 @@ function Step04MiniUI() {
               </span>
               <span>Drafting your next line…</span>
               <span className="flex gap-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-primary animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-green-primary animate-bounce" style={{ animationDelay: "100ms" }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-green-primary animate-bounce" style={{ animationDelay: "200ms" }} />
+                <span
+                  className="w-1.5 h-1.5 rounded-full bg-green-primary animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                />
+                <span
+                  className="w-1.5 h-1.5 rounded-full bg-green-primary animate-bounce"
+                  style={{ animationDelay: "100ms" }}
+                />
+                <span
+                  className="w-1.5 h-1.5 rounded-full bg-green-primary animate-bounce"
+                  style={{ animationDelay: "200ms" }}
+                />
               </span>
             </motion.div>
           )}
@@ -252,11 +259,67 @@ function Step04MiniUI() {
       </div>
       <div className="flex items-center gap-1.5 rounded-full bg-background-elevated border border-green-primary/30 px-3 py-1.5 text-[10px] text-text-dim mt-2">
         <span className="flex-1 truncate">Press Enter anytime—get the next line in milliseconds.</span>
-        <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-green-primary text-[10px] font-medium text-black">Enter</span>
+        <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-green-primary text-[10px] font-medium text-black">
+          Enter
+        </span>
       </div>
     </div>
   );
 }
+
+const SALES_BENEFITS = [
+  {
+    title: "Never get stuck again",
+    paragraphs: [
+      "When the conversation stalls, you don't panic—you press Enter.",
+      "Persuaid instantly turns your notes and live conversation into clear, confident language you can say on the spot.",
+      "No rambling. No awkward silence. No lost momentum.",
+    ],
+  },
+  {
+    title: "Sound like your best rep—every time",
+    paragraphs: [
+      "Every response is built from your pricing, your positioning, and your playbook.",
+      "Not generic AI. Not guesswork.",
+      "Just answers that sound exactly like your top performer on their best day.",
+    ],
+  },
+  {
+    title: "Everything you need, right in front of you",
+    paragraphs: [
+      "Live transcript. Your notes. What to say next.",
+      "All in one place.",
+      "So while others are scrambling through tabs… you're already answering.",
+    ],
+  },
+  {
+    title: "Your unfair advantage (and they'll never know)",
+    paragraphs: [
+      "Nothing joins the call. Nothing changes the experience.",
+      "To them? You're sharp, confident, and in control.",
+      "To you? You've got real-time coaching guiding every move.",
+    ],
+  },
+] as const;
+
+const POST_CALL_BENEFITS = [
+  {
+    title: "See what actually happened",
+    body: "Clear insights on your strengths, missed opportunities, and how your objections landed.",
+  },
+  {
+    title: "Fix what's costing you deals",
+    body: "Spot gaps in discovery, talk balance, and messaging—so you don't repeat them.",
+  },
+  {
+    title: "Walk into your follow-up ready to close",
+    body: "Get simple, actionable next steps you can use immediately.",
+  },
+  {
+    title: "Improve every call—automatically",
+    body: "No manual debriefs. Just fast, built-in coaching that makes you better every time.",
+  },
+] as const;
 
 export default function Home() {
   const [demoOpen, setDemoOpen] = useState(false);
@@ -270,53 +333,7 @@ export default function Home() {
         <TryWorkspaceDemo variant="heroSlot" open={demoOpen} onOpenChange={setDemoOpen} />
       </Hero>
 
-      {/* Product Overview Section */}
-      <Section id="product">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <div className="text-left mb-16 lg:mb-20">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="mb-6"
-            >
-              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
-                Your call dashboard
-              </span>
-            </motion.div>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary leading-tight tracking-tight">
-              Live transcript, AI next lines, and your product notes—{" "}
-              <span className="bg-gradient-to-r from-green-primary via-green-accent to-emerald-400 bg-clip-text text-transparent">
-                on one screen.
-              </span>
-            </h2>
-            <p className="mt-5 text-lg sm:text-xl text-text-muted max-w-3xl leading-relaxed">
-              Below is the Persuaid workspace: <span className="text-text-primary font-medium">Start Call</span>,{" "}
-              <span className="text-text-primary font-medium">What to say next</span> with Press Enter, live transcript,
-              and Notes wired into the AI—exactly how it looks when you&apos;re selling.
-            </p>
-          </div>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            whileInView={{ opacity: 1, scale: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="relative max-w-5xl mx-auto"
-          >
-            <div className="pointer-events-none absolute -inset-10 bg-green-primary/15 blur-3xl rounded-[32px] opacity-40" />
-            <div className="pointer-events-none absolute -inset-4 bg-green-primary/10 blur-2xl rounded-[32px] opacity-40" />
-            <ProductPreview className="relative" />
-          </motion.div>
-        </motion.div>
-      </Section>
-
-      {/* How It Works Section */}
+      {/* How it works — animated mini UI per step (restored from earlier landing) */}
       <Section className="bg-background-elevated">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -333,7 +350,7 @@ export default function Home() {
               className="inline-block mb-6"
             >
               <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
-                Simple Process
+                Simple process
               </span>
             </motion.div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight tracking-tight">
@@ -368,7 +385,8 @@ export default function Home() {
               {
                 step: "04",
                 title: "Press Enter for answers—as often as you want",
-                description: "Press Enter anytime. Persuaid uses the last moments and your notes, then gives you the answer in milliseconds.",
+                description:
+                  "Press Enter anytime. Persuaid uses the last moments and your notes, then gives you the answer in milliseconds.",
                 isHighlight: true,
               },
             ].map((item, index) => (
@@ -378,17 +396,11 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.08 }}
-                className={cn(
-                  "relative flex flex-col md:flex-row items-stretch gap-8 md:gap-12",
-                  index % 2 === 1 ? "md:flex-row-reverse" : ""
-                )}
+                className="relative flex flex-col md:flex-row items-stretch gap-8 md:gap-12"
               >
-                {/* Text column */}
                 <div className="md:w-5/12 lg:w-2/5 flex flex-col justify-center text-center md:text-left">
                   <div className="inline-flex items-center justify-center md:justify-start gap-2 mb-3 flex-wrap">
-                    <span className="text-sm font-mono text-green-primary/80">
-                      Step {item.step}
-                    </span>
+                    <span className="text-sm font-mono text-green-primary/80">Step {item.step}</span>
                     {"isHighlight" in item && item.isHighlight && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-primary/15 text-[10px] font-semibold text-green-accent border border-green-primary/40">
                         Most important
@@ -396,19 +408,17 @@ export default function Home() {
                     )}
                     <span className="h-px w-8 bg-gradient-to-r from-green-primary/70 to-transparent hidden md:inline-block" />
                   </div>
-                  <h3 className={cn(
-                    "text-2xl md:text-3xl font-semibold text-text-primary mb-3 leading-snug",
-                    "isHighlight" in item && item.isHighlight && "text-green-accent/90"
-                  )}>
+                  <h3
+                    className={cn(
+                      "text-2xl md:text-3xl font-semibold text-text-primary mb-3 leading-snug",
+                      "isHighlight" in item && item.isHighlight && "text-green-accent/90"
+                    )}
+                  >
                     {item.title}
                   </h3>
-                  <p className="text-text-muted leading-relaxed mb-4">
-                    {item.description}
-                  </p>
+                  <p className="text-text-muted leading-relaxed mb-4">{item.description}</p>
                 </div>
 
-                {/* Mini UI column */}
-                {/* Step 01: Product knowledge */}
                 {item.step === "01" && (
                   <div className="mx-auto md:mx-0 md:w-7/12 lg:w-3/5 rounded-2xl border border-border-subtle/80 bg-background shadow-[0_20px_60px_rgba(0,0,0,0.65)] px-4 py-3.5 text-left">
                     <div className="flex items-center justify-between mb-2">
@@ -417,29 +427,24 @@ export default function Home() {
                           Product knowledge
                         </span>
                       </div>
-                      <span className="text-[10px] text-green-accent">
-                        Linked to AI
-                      </span>
+                      <span className="text-[10px] text-green-accent">Linked to AI</span>
                     </div>
-
                     <div className="mb-2 text-[10px] text-text-dim">
                       Notes Persuaid pulls from when it suggests what to say.
                     </div>
-
                     <div className="rounded-xl bg-background-elevated/80 border border-border-subtle px-3 py-2 text-[11px] text-text-secondary leading-snug max-h-28 overflow-hidden space-y-1.5">
                       <div>
-                        <p className="text-[10px] font-semibold text-text-primary">
-                          Positioning · Core value
-                        </p>
+                        <p className="text-[10px] font-semibold text-text-primary">Positioning · Core value</p>
                         <ul className="mt-0.5 space-y-0.5 list-disc list-inside marker:text-emerald-300">
-                          <li>Live coaching, next moves, and follow-ups during the call; save the transcript and run AI coach analysis after.</li>
+                          <li>
+                            Live coaching, next moves, and follow-ups during the call; save the transcript and run AI
+                            coach analysis after.
+                          </li>
                           <li>Fits next to any dialer or meeting tool.</li>
                         </ul>
                       </div>
                       <div>
-                        <p className="text-[10px] font-semibold text-text-primary">
-                          Objection handling
-                        </p>
+                        <p className="text-[10px] font-semibold text-text-primary">Objection handling</p>
                         <ul className="mt-0.5 space-y-0.5 list-disc list-inside marker:text-emerald-300">
                           <li>Reps stay in control—Persuaid suggests language.</li>
                         </ul>
@@ -448,13 +453,8 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Step 02: Start a call (button) — animated click → Pause + timer */}
                 {item.step === "02" && <Step02MiniUI />}
-
-                {/* Step 03: Live transcript — lines stream in like a real call */}
                 {item.step === "03" && <Step03MiniUI />}
-
-                {/* Step 04: Press Enter — AI thinking then answer, loops */}
                 {item.step === "04" && <Step04MiniUI />}
               </motion.div>
             ))}
@@ -462,151 +462,173 @@ export default function Home() {
         </motion.div>
       </Section>
 
-      {/* Meet Cue — brand AI agent (pure black strip) */}
-      <Section className="bg-[rgb(0,0,0)] pb-10 md:pb-14 lg:pb-16">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.45 }}
-          className="max-w-5xl mx-auto"
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-            <div className="lg:col-span-5 order-2 lg:order-1 flex justify-center lg:justify-start">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.98 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-[340px] sm:max-w-[400px] lg:max-w-[460px]"
-              >
-                <div className="overflow-hidden rounded-2xl bg-black">
-                  <video
-                    className="w-full max-h-[min(420px,55vh)] sm:max-h-[min(460px,58vh)] lg:max-h-[min(500px,60vh)] block object-contain bg-black"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="auto"
-                    aria-label="Cue, Persuaid's AI agent — looping animation"
-                  >
-                    <source src="/CueVid1.mp4" type="video/mp4" />
-                  </video>
-                </div>
-              </motion.div>
+      {/* During the call — benefits (aligned with post-call section width) */}
+      <Section id="product" className="border-t border-white/[0.06]">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="mb-12 lg:mb-16 mx-auto max-w-4xl text-center"
+          >
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-green-accent/90 mb-4">
+              During the call
+            </p>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight tracking-tight">
+              Win the moments that{" "}
+              <span className="bg-gradient-to-r from-green-primary via-green-accent to-emerald-400 bg-clip-text text-transparent">
+                decide the deal
+              </span>
+            </h2>
+            <div className="mx-auto max-w-3xl space-y-4 text-base sm:text-lg lg:text-xl text-text-muted leading-relaxed">
+              <p className="font-medium text-text-primary/95">
+                Every deal is won or lost in seconds.
+              </p>
+              <p>The pause. The objection. The question you didn&apos;t expect.</p>
+              <p>
+                Persuaid gives you the exact words to say—in real time—so you never freeze, guess, or lose control of
+                the conversation.
+              </p>
+              <p className="font-semibold text-text-primary">
+                No bots. No delays. No &ldquo;I&apos;ll follow up.&rdquo;
+              </p>
+              <p className="font-medium text-text-primary/90">
+                Just confident answers, exactly when you need them.
+              </p>
             </div>
+          </motion.div>
 
-            <div className="lg:col-span-7 order-1 lg:order-2 text-center lg:text-left">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-8">
-                Meet{" "}
-                <span className="text-green-accent">Cue</span>
-              </h2>
-              <div className="space-y-6 text-base sm:text-lg text-zinc-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                <p className="text-zinc-100 font-medium text-lg sm:text-xl">
-                  Cue isn&apos;t here to steal your sandwich.
-                </p>
-                <p>
-                  He&apos;s built for one thing — helping you say the right thing and close more deals.
-                </p>
-                <div className="space-y-1.5 text-zinc-400">
-                  <p>When you go off script and your mind goes blank…</p>
-                  <p>when they ask something you weren&apos;t ready for…</p>
-                  <p>when you&apos;re trying to find the right words — and nothing&apos;s coming…</p>
+          <div className="grid gap-6 sm:grid-cols-2 lg:gap-7 text-left">
+            {SALES_BENEFITS.map((b, index) => (
+              <motion.article
+                key={b.title}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.45, delay: index * 0.05, ease: "easeOut" }}
+                className="group relative overflow-hidden rounded-2xl border border-white/[0.1] bg-background-elevated/40 pl-5 pr-5 py-6 sm:pl-6 sm:pr-6 sm:py-7 text-left shadow-[0_16px_48px_rgba(0,0,0,0.4)] ring-1 ring-white/[0.04] sm:ring-white/[0.06] before:pointer-events-none before:absolute before:left-0 before:top-4 before:bottom-4 before:w-[3px] before:rounded-full before:bg-gradient-to-b before:from-green-primary before:via-green-accent/90 before:to-emerald-500/80 before:content-['']"
+              >
+                <span
+                  className="text-[11px] font-mono font-semibold text-green-primary/85 tabular-nums"
+                  aria-hidden
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h3 className="mt-2 text-lg sm:text-xl font-semibold text-text-primary leading-snug tracking-tight">
+                  {b.title}
+                </h3>
+                <div className="mt-3 space-y-3">
+                  {b.paragraphs.map((para, pi) => (
+                    <p
+                      key={pi}
+                      className="text-sm sm:text-[15px] lg:text-base text-text-muted leading-relaxed"
+                    >
+                      {para}
+                    </p>
+                  ))}
                 </div>
-                <p className="text-zinc-100 font-semibold text-lg sm:text-xl pt-1">
-                  Cue steps in.
-                </p>
-              </div>
-            </div>
+              </motion.article>
+            ))}
           </div>
-        </motion.div>
+        </div>
       </Section>
 
-      <FAQSection />
-
-      {/* Final CTA Section */}
-      <Section className="py-16 sm:py-20">
+      {/* Post-call AI coaching + video — explains analysis after the hang-up */}
+      <Section className="py-16 sm:py-20 border-t border-white/[0.06]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="max-w-6xl mx-auto flex flex-col lg:flex-row lg:items-center gap-12 lg:gap-16"
+          className="max-w-6xl mx-auto flex flex-col gap-12 lg:gap-14"
         >
-          {/* Left: copy + button */}
-          <div className="flex-1 space-y-6">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text-primary leading-tight tracking-tight">
-              Next moves and follow-ups while you&apos;re on the call—save the transcript and run the AI coach when you&apos;re done.
-            </h2>
-            <p className="text-lg text-text-muted leading-relaxed">
-              Persuaid gives you winning lines, objection handling, and what to do next in real time. After you hang up, save the transcript and have the{" "}
-              <span className="text-text-primary font-semibold">AI coach</span> analyze the conversation.
-            </p>
-            <a
-              href="/sign-in"
-              className="group inline-flex items-center gap-3 px-8 py-3.5 text-base font-semibold rounded-2xl transition-all duration-300 border-2 border-green-primary/70 bg-black text-white hover:bg-green-primary hover:border-green-primary hover:shadow-2xl hover:shadow-green-primary/20 shadow-lg transform hover:scale-[1.05] active:scale-100 focus:outline-none focus:ring-2 focus:ring-green-primary focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
-            >
-              <img
-                src="/PersuaidLogo.png"
-                alt=""
-                className="w-5 h-5 flex-shrink-0 object-contain group-hover:scale-110 transition-transform duration-300"
-                aria-hidden
-              />
-              <span>Try Free</span>
-            </a>
-          </div>
-          {/* Right: video with small AI transcript overlay */}
-          <div className="flex-1 min-w-0 flex items-center justify-center mt-6 lg:mt-8">
-            <div className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden border border-white/10 bg-[#0d0d0d] shadow-2xl shadow-black/50 ring-1 ring-white/5">
-              <video
-                src="/VideoAd.mp4"
-                className="absolute inset-0 h-full w-full object-contain object-center bg-[#0d0d0d]"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-                aria-hidden
-              />
-              {/* Soft vignette */}
-              <div
-                className="absolute inset-0 pointer-events-none rounded-2xl"
-                style={{
-                  background: "radial-gradient(ellipse 80% 70% at 50% 50%, transparent 50%, rgba(10,10,10,0.4) 85%, rgba(10,10,10,0.85) 100%)",
-                  boxShadow: "inset 0 0 60px 20px rgba(10,10,10,0.3)",
-                }}
-                aria-hidden
-              />
-              {/* Small AI transcript overlay (like Hero) */}
-              <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4">
-                <div className="w-full max-w-[240px] sm:max-w-[280px] rounded-xl border border-white/10 bg-black/50 shadow-xl overflow-hidden flex flex-col backdrop-blur-sm">
-                  <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between bg-black/40 shrink-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-primary animate-pulse" />
-                      <span className="text-xs font-semibold text-text-primary">Live AI transcript</span>
-                    </div>
-                    <span className="text-[10px] text-text-dim font-mono tabular-nums">00:18</span>
-                  </div>
-                  <div className="p-2.5 space-y-1.5 bg-black/35">
-                    <div className="flex gap-2">
-                      <span className="text-[10px] font-semibold text-emerald-300/95 shrink-0">Rep</span>
-                      <p className="text-[11px] text-text-primary leading-snug">Thanks for your time—focused on how we can help.</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="text-[10px] font-semibold text-sky-200/95 shrink-0">Prospect</span>
-                      <p className="text-[11px] text-text-primary leading-snug">We've tried tools that added more work for reps.</p>
-                    </div>
-                    <div className="flex gap-2 rounded-lg bg-black/45 border border-green-primary/20 pl-2 py-1.5 pr-2">
-                      <span className="text-[10px] font-semibold text-green-primary shrink-0">AI</span>
-                      <p className="text-[11px] text-text-primary leading-snug">Suggested: &quot;That&apos;s what we fix. Real-time help, no extra steps.&quot;</p>
-                    </div>
-                  </div>
-                </div>
+          <div className="flex flex-col lg:flex-row lg:items-center gap-12 lg:gap-16">
+            <div className="flex-1 space-y-5">
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-green-accent/90">
+                After the call
+              </p>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary leading-tight tracking-tight">
+                AI sales coaching on every conversation
+              </h2>
+              <div className="space-y-4 text-base sm:text-lg text-text-muted leading-relaxed">
+                <p className="font-medium text-text-primary/95">The call ends. The learning starts.</p>
+                <p>
+                  Persuaid instantly breaks down your conversation—so you know what worked, what missed, and exactly
+                  how to win the next one.
+                </p>
+                <p className="font-semibold text-text-primary">
+                  No notes. No guesswork. No wasted calls.
+                </p>
+              </div>
+              <a
+                href="/sign-in"
+                className="group inline-flex items-center gap-3 px-8 py-3.5 text-base font-semibold rounded-2xl transition-all duration-300 border-2 border-green-primary/70 bg-black text-white hover:bg-green-primary hover:border-green-primary hover:shadow-2xl hover:shadow-green-primary/20 shadow-lg transform hover:scale-[1.05] active:scale-100 focus:outline-none focus:ring-2 focus:ring-green-primary focus:ring-offset-2 focus:ring-offset-[#0a0a0a]"
+              >
+                <img
+                  src="/PersuaidLogo.png"
+                  alt=""
+                  className="w-5 h-5 flex-shrink-0 object-contain group-hover:scale-110 transition-transform duration-300"
+                  aria-hidden
+                />
+                <span>Try Free</span>
+              </a>
+            </div>
+            <div className="flex-1 min-w-0 flex items-center justify-center mt-6 lg:mt-0">
+              <div className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden border border-white/10 bg-[#0d0d0d] shadow-xl shadow-black/40">
+                <video
+                  src="/VideoAd.mp4"
+                  className="absolute inset-0 h-full w-full object-contain object-center bg-[#0d0d0d]"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  aria-label="Persuaid post-call coaching and product overview"
+                />
               </div>
             </div>
           </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:gap-7 text-left">
+            {POST_CALL_BENEFITS.map((b, index) => (
+              <motion.article
+                key={b.title}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.45, delay: index * 0.05, ease: "easeOut" }}
+                className="group relative overflow-hidden rounded-2xl border border-white/[0.1] bg-background-elevated/40 pl-5 pr-5 py-6 sm:pl-6 sm:pr-6 sm:py-7 text-left shadow-[0_16px_48px_rgba(0,0,0,0.4)] ring-1 ring-white/[0.04] sm:ring-white/[0.06] before:pointer-events-none before:absolute before:left-0 before:top-4 before:bottom-4 before:w-[3px] before:rounded-full before:bg-gradient-to-b before:from-green-primary before:via-green-accent/90 before:to-emerald-500/80 before:content-['']"
+              >
+                <span
+                  className="text-[11px] font-mono font-semibold text-green-primary/85 tabular-nums"
+                  aria-hidden
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h3 className="mt-2 text-lg sm:text-xl font-semibold text-text-primary leading-snug tracking-tight">
+                  {b.title}
+                </h3>
+                <p className="mt-3 text-sm sm:text-[15px] lg:text-base text-text-muted leading-relaxed">{b.body}</p>
+              </motion.article>
+            ))}
+          </div>
         </motion.div>
       </Section>
+
+      {/* Customer quotes — horizontal scroll row */}
+      <Section className="bg-black border-t border-white/[0.06] pt-12 md:pt-16 lg:pt-20 pb-16 md:pb-20 lg:pb-24 overflow-x-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.45 }}
+        >
+          <LandingTestimonialsSection />
+        </motion.div>
+      </Section>
+
+      <FAQSection />
 
       <Footer />
     </main>

@@ -45,8 +45,8 @@ export default function TutorialPage() {
       <div
         className="pointer-events-none fixed inset-0 bg-cover bg-no-repeat opacity-[0.22]"
         style={{
-          backgroundImage: "url(/MGBack.png)",
-          backgroundPosition: "center 40%",
+          backgroundImage: "url(/hero-skyline.png)",
+          backgroundPosition: "center 22%",
         }}
         aria-hidden
       />
