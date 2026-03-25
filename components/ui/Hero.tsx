@@ -10,13 +10,13 @@ import { LandingBenefitStrip } from "@/components/landing/LandingBenefitStrip";
 const FADE_START = 0;
 const FADE_END = 950;
 
-const HERO_TITLE_LINE1 = "Sound like a top performer";
-const HERO_TITLE_LINE2 = "from day one.";
+const HERO_TITLE_LINE1 = "Never freeze on a";
+const HERO_TITLE_LINE2 = "sales call again.";
 const HERO_LINE1_WORDS = HERO_TITLE_LINE1.split(" ");
 const HERO_LINE2_WORDS = HERO_TITLE_LINE2.split(" ");
 
-const HERO_SUBTITLE_LINE1 = "Great sales reps sound prepared, not lucky.";
-const HERO_SUBTITLE_LINE2_AFTER = " backs you with the right detail in real time when the conversation turns.";
+const HERO_SUBTITLE_AFTER_PERSUAID =
+  "shows you what to say next—in real time. No freeze. No guesswork. You stay in control. Nothing joins the call.";
 
 function HeroTitleTwoLines() {
   const reduce = useReducedMotion();
@@ -146,9 +146,8 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
               className="mt-5 text-[15px] sm:mt-6 sm:text-[17px] text-text-secondary/95 mb-6 sm:mb-8 max-w-[26rem] sm:max-w-xl mx-auto leading-[1.5] font-normal text-balance"
             >
               <span className="block">
-                {HERO_SUBTITLE_LINE1}{" "}
-                <span className="font-medium text-green-primary">Persuaid</span>
-                {HERO_SUBTITLE_LINE2_AFTER}
+                <span className="font-medium text-green-primary">Persuaid</span>{" "}
+                {HERO_SUBTITLE_AFTER_PERSUAID}
               </span>
             </motion.p>
 

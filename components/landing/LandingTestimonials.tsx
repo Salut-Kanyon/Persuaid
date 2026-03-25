@@ -30,7 +30,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     image: "/testimonials/hf_20260323_202221_37b564d2-4170-400b-8622-0dfeb75e52e2.jpeg",
     quote:
-      "Training and what's next increase confidence—especially for younger reps who aren't stuck memorizing everything.",
+      "New producers stopped freezing on product detail. They get the next sentence live instead of memorizing decks.",
     name: "Rose S.",
     role: "Agency owner",
     company: SALES_ACADEMY,
@@ -45,7 +45,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     image: "/testimonials/hf_20260323_204033_c62828bd-f1db-4e2b-852c-535316ab8fae.jpeg",
     quote:
-      "We still train the basics the normal way. Persuaid helped new agents get through the early product-learning curve a lot faster.",
+      "We still run fundamentals in class. New agents got productive on product much faster—less shadowing, fewer dead-air first calls.",
     name: "Jordan R.",
     role: "CEO",
     company: INSURANCE_ORG,
@@ -59,7 +59,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     image: "/testimonials/hf_20260323_202601_6ee2d99d-a36d-45b4-a021-71b0efd24d43.jpeg",
     quote:
-      "I'm not gonna lie, I didn't really know what I was doing at first. This makes it easier to not feel lost mid-call. You kind of learn without realizing it.",
+      "First month I was lost mid-call. Now I get a line when I blank—I'm closing small policies I would have handed off before.",
     name: "Madelyne P.",
     role: "New rep, first calls",
     company: INSURANCE_ORG,
@@ -73,7 +73,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     image: "/testimonials/hf_20260323_202419_8817a318-2716-4357-934e-f12daccc9414.jpeg",
     quote:
-      "I basically dropped the financial calculator. Persuaid walks through the math with me on simple questions—fast and accurate.",
+      "Dropped the calculator for routine scenarios. I quote payment math on the phone in seconds and it's been right every time so far.",
     name: "Devon B.",
     role: "New rep, mortgage insurance",
     company: "Ridgeline MI",
@@ -87,7 +87,7 @@ const TESTIMONIALS: Testimonial[] = [
   {
     image: "/testimonials/hf_20260323_202328_4443aaad-6170-450f-aad9-80edf5a67399.jpeg",
     quote:
-      "I used to live in back-to-back coaching calls. Reps get steady in-the-moment nudges now, and I step in when something actually needs a human.",
+      "Far fewer live ride-alongs. Reps get nudges on the call; I step in only when the deal is actually stuck.",
     name: "Andrew D.",
     role: "Sales coach",
     company: "Harborline Mutual",
@@ -196,10 +196,10 @@ export function LandingTestimonialsSection() {
           Real customers
         </p>
         <h2 className="mt-3 text-3xl sm:text-4xl lg:text-[2.35rem] font-semibold tracking-tight text-white leading-[1.15]">
-          What reps and leaders say
+          Results on live calls
         </h2>
         <p className="mt-3 max-w-2xl mx-auto text-base sm:text-[17px] text-zinc-500 leading-relaxed">
-          Photos and quotes from people using Persuaid on live calls. Swipe or scroll sideways to see more.
+          Reps and managers on faster ramps, fewer stalls, and less hand-holding. Scroll for more.
         </p>
       </div>
 

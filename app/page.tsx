@@ -112,59 +112,10 @@ function Step02MiniUI() {
   );
 }
 
-const STEP03_LINES = [
-  { who: "Rep", time: "10:23", text: "Thanks for your time—I'll keep this focused on how your team sells." },
-  { who: "Prospect", time: "10:24", text: "We've tried a few tools; they ended up being more work for reps." },
-  { who: "Rep", time: "10:24", text: "That's exactly what we're built to fix. Real-time help, no extra steps." },
-  { who: "Prospect", time: "10:25", text: "How does it work during an actual call?" },
-  { who: "Rep", time: "10:25", text: "You talk, Persuaid listens and suggests the next line. Press Enter when you need it." },
-];
-
-function Step03MiniUI() {
-  const [visibleCount, setVisibleCount] = useState(0);
-
-  useEffect(() => {
-    if (visibleCount >= STEP03_LINES.length) {
-      const t = setTimeout(() => setVisibleCount(0), 2500);
-      return () => clearTimeout(t);
-    }
-    const t = setTimeout(() => setVisibleCount((c) => c + 1), 1100);
-    return () => clearTimeout(t);
-  }, [visibleCount]);
-
-  return (
-    <div className="mx-auto md:mx-0 md:w-7/12 lg:w-3/5 rounded-2xl border border-border-subtle/80 bg-background shadow-[0_20px_60px_rgba(0,0,0,0.65)] px-4 py-3.5 text-left">
-      <div className="flex items-center justify-between mb-2">
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-background-elevated text-[10px] font-medium text-text-primary border border-border-subtle">
-          Live transcript
-        </span>
-        <span className="text-[10px] text-text-dim font-mono">00:18:42</span>
-      </div>
-      <div className="mb-2 text-[10px] text-text-dim">Whole conversation captured and streamed live.</div>
-      <div className="space-y-1.5 rounded-xl bg-background-elevated/80 border border-border-subtle px-3 py-2 text-[11px] leading-snug h-32 md:h-36 overflow-hidden">
-        {STEP03_LINES.slice(0, visibleCount).map((line, i) => (
-          <motion.p
-            key={i}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <span className={line.who === "Rep" ? "text-emerald-300 font-semibold" : "text-sky-200 font-semibold"}>
-              {line.who}
-            </span>
-            <span className="mx-1 text-text-dim">· {line.time}</span>
-            <span className="text-text-secondary"> {line.text}</span>
-          </motion.p>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 const STEP04_ANSWERS = [
-  "That makes sense. Reps in your position want sharp lines live—and a solid recap when the call wraps.",
-  "Here's how Persuaid fits in: it sits next to your dialer and only steps in when it can make your next sentence sharper.",
-  "If your team has scripts, we can turn those into live prompts so reps don't search for them mid-call.",
+  "Got it—you want sharp lines live and a clean recap after the call.",
+  "Persuaid sits next to your dialer. It only surfaces text when you ask.",
+  "Load your scripts once; we turn them into live prompts so reps aren't searching mid-call.",
 ];
 
 function Step04MiniUI() {
@@ -258,7 +209,7 @@ function Step04MiniUI() {
         </AnimatePresence>
       </div>
       <div className="flex items-center gap-1.5 rounded-full bg-background-elevated border border-green-primary/30 px-3 py-1.5 text-[10px] text-text-dim mt-2">
-        <span className="flex-1 truncate">Press Enter anytime—get the next line in milliseconds.</span>
+        <span className="flex-1 truncate">Press Enter for the next line—fast.</span>
         <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-green-primary text-[10px] font-medium text-black">
           Enter
         </span>
@@ -269,55 +220,47 @@ function Step04MiniUI() {
 
 const SALES_BENEFITS = [
   {
-    title: "Never get stuck again",
+    title: "No freeze. No stall.",
     paragraphs: [
-      "When the conversation stalls, you don't panic—you press Enter.",
-      "Persuaid instantly turns your notes and live conversation into clear, confident language you can say on the spot.",
-      "No rambling. No awkward silence. No lost momentum.",
+      "The objection lands. Your mind blanks. You still get the next sentence—instantly.",
+      "Real-time lines from your notes and the last few seconds of the call. You talk. No ramble.",
     ],
   },
   {
-    title: "Sound like your best rep—every time",
+    title: "Sound like your best rep",
     paragraphs: [
-      "Every response is built from your pricing, your positioning, and your playbook.",
-      "Not generic AI. Not guesswork.",
-      "Just answers that sound exactly like your top performer on their best day.",
+      "Answers pull from your pricing, positioning, and playbook—not a generic model.",
+      "Same tone your top closer would use. You deliver it live.",
     ],
   },
   {
-    title: "Everything you need, right in front of you",
+    title: "One screen. Full context.",
     paragraphs: [
-      "Live transcript. Your notes. What to say next.",
-      "All in one place.",
-      "So while others are scrambling through tabs… you're already answering.",
+      "Transcript, notes, and what to say next together.",
+      "No tab hunt while the deal is moving.",
     ],
   },
   {
-    title: "Your unfair advantage (and they'll never know)",
+    title: "They never know",
     paragraphs: [
-      "Nothing joins the call. Nothing changes the experience.",
-      "To them? You're sharp, confident, and in control.",
-      "To you? You've got real-time coaching guiding every move.",
+      "Nothing joins the call. The buyer sees you—not a bot.",
+      "You look sharp and in control. The coaching stays on your screen.",
     ],
   },
 ] as const;
 
 const POST_CALL_BENEFITS = [
   {
-    title: "See what actually happened",
-    body: "Clear insights on your strengths, missed opportunities, and how your objections landed.",
+    title: "Know what worked—and what didn’t",
+    body: "See where you won, where you slipped, and how objections actually landed.",
   },
   {
-    title: "Fix what's costing you deals",
-    body: "Spot gaps in discovery, talk balance, and messaging—so you don't repeat them.",
+    title: "Improve every call",
+    body: "Patterns surface automatically. You fix the leaks before the next dial.",
   },
   {
-    title: "Walk into your follow-up ready to close",
-    body: "Get simple, actionable next steps you can use immediately.",
-  },
-  {
-    title: "Improve every call—automatically",
-    body: "No manual debriefs. Just fast, built-in coaching that makes you better every time.",
+    title: "Follow up with a plan",
+    body: "Concrete next steps from the real conversation—not a vague recap.",
   },
 ] as const;
 
@@ -350,7 +293,7 @@ export default function Home() {
               className="inline-block mb-6"
             >
               <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
-                Simple process
+                Three steps
               </span>
             </motion.div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight tracking-tight">
@@ -360,8 +303,8 @@ export default function Home() {
               </span>{" "}
               <span className="text-text-primary">works on a call</span>
             </h2>
-            <p className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed font-light">
-              Add your knowledge, start the call, and get live answers whenever you need them.
+            <p className="text-lg sm:text-xl text-text-muted max-w-2xl mx-auto leading-relaxed font-light">
+              Load your playbook. Run the call. Pull the next line the second you need it.
             </p>
           </div>
 
@@ -369,24 +312,18 @@ export default function Home() {
             {[
               {
                 step: "01",
-                title: "Add your product knowledge",
-                description: "Notes, playbooks, and objection handlers. Persuaid uses them to tailor every suggestion.",
+                title: "Load your playbook",
+                description: "Notes, pricing, objections—whatever you sell with. Persuaid uses all of it.",
               },
               {
                 step: "02",
-                title: "Start a call",
-                description: "Click Start Call. Persuaid connects and listens so it can coach you in real time.",
+                title: "Start the call",
+                description: "Persuaid listens in real time. Nothing joins the line for your prospect.",
               },
               {
                 step: "03",
-                title: "Live transcript records the conversation",
-                description: "The full conversation is captured live so Persuaid can spot context and objections.",
-              },
-              {
-                step: "04",
-                title: "Press Enter for answers—as often as you want",
-                description:
-                  "Press Enter anytime. Persuaid uses the last moments and your notes, then gives you the answer in milliseconds.",
+                title: "Get what to say next",
+                description: "One shortcut. Lines you can say as yourself. As often as the call demands.",
                 isHighlight: true,
               },
             ].map((item, index) => (
@@ -429,24 +366,19 @@ export default function Home() {
                       </div>
                       <span className="text-[10px] text-green-accent">Linked to AI</span>
                     </div>
-                    <div className="mb-2 text-[10px] text-text-dim">
-                      Notes Persuaid pulls from when it suggests what to say.
-                    </div>
+                    <div className="mb-2 text-[10px] text-text-dim">What Persuaid reads before each suggestion.</div>
                     <div className="rounded-xl bg-background-elevated/80 border border-border-subtle px-3 py-2 text-[11px] text-text-secondary leading-snug max-h-28 overflow-hidden space-y-1.5">
                       <div>
-                        <p className="text-[10px] font-semibold text-text-primary">Positioning · Core value</p>
+                        <p className="text-[10px] font-semibold text-text-primary">Positioning</p>
                         <ul className="mt-0.5 space-y-0.5 list-disc list-inside marker:text-emerald-300">
-                          <li>
-                            Live coaching, next moves, and follow-ups during the call; save the transcript and run AI
-                            coach analysis after.
-                          </li>
-                          <li>Fits next to any dialer or meeting tool.</li>
+                          <li>Real-time next lines; save the call for post-call coaching.</li>
+                          <li>Sits beside your dialer or meeting link.</li>
                         </ul>
                       </div>
                       <div>
-                        <p className="text-[10px] font-semibold text-text-primary">Objection handling</p>
+                        <p className="text-[10px] font-semibold text-text-primary">Objections</p>
                         <ul className="mt-0.5 space-y-0.5 list-disc list-inside marker:text-emerald-300">
-                          <li>Reps stay in control—Persuaid suggests language.</li>
+                          <li>You talk. Persuaid suggests wording.</li>
                         </ul>
                       </div>
                     </div>
@@ -454,8 +386,7 @@ export default function Home() {
                 )}
 
                 {item.step === "02" && <Step02MiniUI />}
-                {item.step === "03" && <Step03MiniUI />}
-                {item.step === "04" && <Step04MiniUI />}
+                {item.step === "03" && <Step04MiniUI />}
               </motion.div>
             ))}
           </div>
@@ -481,20 +412,16 @@ export default function Home() {
                 decide the deal
               </span>
             </h2>
-            <div className="mx-auto max-w-3xl space-y-4 text-base sm:text-lg lg:text-xl text-text-muted leading-relaxed">
-              <p className="font-medium text-text-primary/95">
-                Every deal is won or lost in seconds.
+            <div className="mx-auto max-w-3xl space-y-3 text-base sm:text-lg text-text-muted leading-relaxed">
+              <p className="font-semibold text-text-primary/95">
+                Deals turn in seconds—the pause, the objection, the question you didn&apos;t prep for.
               </p>
-              <p>The pause. The objection. The question you didn&apos;t expect.</p>
               <p>
-                Persuaid gives you the exact words to say—in real time—so you never freeze, guess, or lose control of
-                the conversation.
+                Persuaid gives you the exact words in real time. No freeze. No guessing. You keep control of the
+                thread.
               </p>
-              <p className="font-semibold text-text-primary">
-                No bots. No delays. No &ldquo;I&apos;ll follow up.&rdquo;
-              </p>
-              <p className="font-medium text-text-primary/90">
-                Just confident answers, exactly when you need them.
+              <p className="font-medium text-text-primary">
+                No bot on the line. No &ldquo;let me circle back.&rdquo; Just answers when you need them.
               </p>
             </div>
           </motion.div>
@@ -549,16 +476,13 @@ export default function Home() {
                 After the call
               </p>
               <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary leading-tight tracking-tight">
-                AI sales coaching on every conversation
+                Coaching after every call
               </h2>
-              <div className="space-y-4 text-base sm:text-lg text-text-muted leading-relaxed">
-                <p className="font-medium text-text-primary/95">The call ends. The learning starts.</p>
+              <div className="space-y-3 text-base sm:text-lg text-text-muted leading-relaxed">
+                <p className="font-medium text-text-primary/95">Hang up. Get the debrief.</p>
                 <p>
-                  Persuaid instantly breaks down your conversation—so you know what worked, what missed, and exactly
-                  how to win the next one.
-                </p>
-                <p className="font-semibold text-text-primary">
-                  No notes. No guesswork. No wasted calls.
+                  What worked. What didn&apos;t. What to say on the follow-up. You improve on the next call without
+                  building a deck.
                 </p>
               </div>
               <a

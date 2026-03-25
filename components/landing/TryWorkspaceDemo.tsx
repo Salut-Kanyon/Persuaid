@@ -373,18 +373,16 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                 )}
                 style={{ color: demo.text }}
               >
-                Demo to see the intelligence
+                {isHero ? "See it in action" : "Try the demo"}
               </h2>
-              <p
-                className={cn(
-                  "mt-2 md:mt-2.5 leading-relaxed",
-                  isHero ? "text-sm sm:text-[15px]" : "text-sm md:text-[15px]"
-                )}
-                style={{ color: demo.textMuted }}
-              >
-                Same panel layout as the live workspace—header, then answers and transcript on the left, notes on
-                the right.
-              </p>
+              {!isHero && (
+                <p
+                  className="mt-2 md:mt-2.5 text-sm md:text-[15px] leading-relaxed"
+                  style={{ color: demo.textMuted }}
+                >
+                  Real-time lines from your playbook. No layout tour—just use it.
+                </p>
+              )}
             </header>
 
         <div
@@ -475,10 +473,10 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                           After the call
                         </p>
                         <p className="mt-1 text-sm font-semibold text-text-primary leading-snug">
-                          Preview AI coaching on this session
+                          Preview post-call coaching
                         </p>
                         <p className="mt-0.5 text-[12px] leading-relaxed text-text-muted">
-                          See how Persuaid debriefs the transcript you captured—no signup, simulated insights.
+                          Sample debrief from this session—no signup.
                         </p>
                       </div>
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:shrink-0">
@@ -503,7 +501,7 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                       <div className="h-9 w-9 rounded-full border-2 border-green-primary/30 border-t-green-primary animate-spin" />
                       <p className="text-sm font-medium text-text-primary">Analyzing your transcript…</p>
                       <p className="max-w-md text-center text-[12px] text-text-muted">
-                        In the real app, coaching runs on the full saved call—here’s a quick preview of the output.
+                        In the app, this runs on the full saved call.
                       </p>
                     </div>
                   ) : (
@@ -600,7 +598,7 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                       className={cn("text-[11px] sm:text-xs mb-2", COL_HEADER_DESC_LINES)}
                       style={{ color: demo.textMuted }}
                     >
-                      Press Enter in the app; here tap Get answer. Uses your notes and transcript.
+                      Tap Get answer. Pulls from your notes and the transcript.
                     </p>
                     <div
                       className={cn(
@@ -622,7 +620,7 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                         <p className="whitespace-pre-wrap">{aiText}</p>
                       ) : (
                         <span style={{ color: demo.textMuted }}>
-                          Answer appears here after you add transcript lines and request a reply.
+                          Your next line appears here.
                         </span>
                       )}
                     </div>
@@ -677,7 +675,7 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                   </div>
                   <div className="flex flex-col flex-1 min-h-0 p-3">
                     <p className={cn("text-[11px] sm:text-xs mb-2", COL_HEADER_DESC_LINES)} style={{ color: demo.textMuted }}>
-                      Starts when you press Start Call above. Or type the prospect&apos;s line below.
+                      Start Call to capture audio, or type a prospect line below.
                     </p>
                     <div
                       className={cn(
@@ -763,7 +761,7 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                 </div>
                 <div className="flex flex-col flex-1 min-h-0 p-3">
                   <p className={cn("text-[11px] sm:text-xs mb-2", COL_HEADER_DESC_LINES)} style={{ color: demo.textMuted }}>
-                    Product knowledge the copilot reads—pricing, objections, talk tracks.
+                    Your playbook: pricing, objections, talk tracks.
                   </p>
                   <textarea
                     value={notes}

@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 
 const STRIP_ITEMS = [
-  "Real-time lines the moment you need them",
-  "Nothing joins the call—coaching stays on your screen",
-  "Answers shaped by your playbook, not generic AI",
+  "What to say next, the moment you need it",
+  "Nothing joins the call—only you see the coaching",
+  "Lines from your playbook—not generic AI",
 ] as const;
 
 function StripCheckIcon({ compact }: { compact?: boolean }) {
