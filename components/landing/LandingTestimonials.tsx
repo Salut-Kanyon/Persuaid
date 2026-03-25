@@ -102,29 +102,20 @@ const TESTIMONIALS: Testimonial[] = [
 
 function TestimonialCardInner({
   t,
-  reduceMotion,
   photoClass,
-  useGreenPulse,
 }: {
   t: Testimonial;
-  reduceMotion: boolean | null;
   photoClass: string;
-  useGreenPulse: boolean;
 }) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-white/[0.1] bg-[#0c0f0f]/88 p-4 sm:p-5 backdrop-blur-md",
-        useGreenPulse && !reduceMotion && "landing-testimonial-green-line"
+        "rounded-xl border border-stone-600/25 bg-[var(--bg-elevated)]/95 p-4 sm:p-5",
+        "shadow-[0_12px_40px_-8px_rgba(0,0,0,0.35)]"
       )}
-      style={
-        useGreenPulse && !reduceMotion
-          ? { animationDelay: `${Number(t.delay) * 14}s` }
-          : { boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)" }
-      }
     >
-      <div className="flex items-center gap-3 border-b border-white/[0.08] pb-3">
-        <div className={cn("shrink-0 overflow-hidden rounded-full border border-white/[0.1] bg-zinc-900", photoClass)}>
+      <div className="flex items-center gap-3 border-b border-stone-600/20 pb-3">
+        <div className={cn("shrink-0 overflow-hidden rounded-full border border-stone-600/30 bg-zinc-900", photoClass)}>
           <img
             src={t.image}
             alt={`${t.name}, ${t.role}`}
@@ -142,11 +133,11 @@ function TestimonialCardInner({
       </div>
       {t.greenQuoteMarks ? (
         <p className={cn("mt-3 sm:mt-3.5", quoteCls)}>
-          <span className="font-serif text-[1.15em] leading-none text-[#6b8f7c]" aria-hidden>
+          <span className="font-serif text-[1.15em] leading-none text-[color:var(--landing-accent)]" aria-hidden>
             &ldquo;
           </span>
           {t.quote}
-          <span className="font-serif text-[1.15em] leading-none text-[#6b8f7c]" aria-hidden>
+          <span className="font-serif text-[1.15em] leading-none text-[color:var(--landing-accent)]" aria-hidden>
             &rdquo;
           </span>
         </p>
@@ -175,12 +166,7 @@ function TestimonialScrollCard({
       transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.2), ease: "easeOut" }}
       className="shrink-0 snap-start snap-always w-[min(22.5rem,calc(100vw-2.25rem))] sm:w-[min(24rem,calc(100vw-3rem))]"
     >
-      <TestimonialCardInner
-        t={t}
-        reduceMotion={reduceMotion}
-        photoClass="h-14 w-14 sm:h-[3.75rem] sm:w-[3.75rem]"
-        useGreenPulse={false}
-      />
+      <TestimonialCardInner t={t} photoClass="h-14 w-14 sm:h-[3.75rem] sm:w-[3.75rem]" />
     </motion.article>
   );
 }
@@ -192,13 +178,13 @@ export function LandingTestimonialsSection() {
   return (
     <div className="relative w-full max-w-full">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 pt-2 pb-7 sm:pb-9 text-center">
-        <p className="text-[13px] sm:text-sm font-medium uppercase tracking-[0.14em] text-zinc-500">
+        <p className="text-[13px] sm:text-sm font-medium uppercase tracking-[0.16em] text-text-dim">
           Real customers
         </p>
-        <h2 className="mt-3 text-3xl sm:text-4xl lg:text-[2.35rem] font-semibold tracking-tight text-white leading-[1.15]">
+        <h2 className="mt-3 text-3xl sm:text-4xl lg:text-[2.35rem] font-semibold tracking-tight text-text-primary leading-[1.15]">
           Results on live calls
         </h2>
-        <p className="mt-3 max-w-2xl mx-auto text-base sm:text-[17px] text-zinc-500 leading-relaxed">
+        <p className="mt-3 max-w-2xl mx-auto text-base sm:text-[17px] text-text-muted leading-relaxed">
           Reps and managers on faster ramps, fewer stalls, and less hand-holding. Scroll for more.
         </p>
       </div>

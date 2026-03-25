@@ -41,21 +41,20 @@ export default function TutorialPage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen bg-[#050505] text-[#F5F7F7] selection:bg-[#20D3A6]/30">
+    <main className="relative min-h-screen bg-[#121210] text-[#F5F7F7] selection:bg-[color:var(--landing-accent)]/20">
       <div
-        className="pointer-events-none fixed inset-0 bg-cover bg-no-repeat opacity-[0.22]"
+        className="pointer-events-none fixed inset-0 bg-cover bg-top bg-no-repeat opacity-[0.2]"
         style={{
-          backgroundImage: "url(/hero-skyline.png)",
-          backgroundPosition: "center 22%",
+          backgroundImage: "url(/hero-landing-bg.png?v=9)",
         }}
         aria-hidden
       />
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-56 bg-gradient-to-b from-[#050505] via-[#050505]/80 to-transparent z-0" />
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-56 bg-gradient-to-b from-[#121210] via-[#121210]/80 to-transparent z-0" />
 
-      <Navbar />
+      <Navbar landing />
 
       <div className="relative z-10">
-        <section className="pt-8 pb-20 sm:pt-12 sm:pb-28 px-5 sm:px-8 max-w-[980px] mx-auto">
+        <section className="pt-24 pb-20 sm:pt-28 sm:pb-28 px-5 sm:px-8 max-w-[980px] mx-auto">
           <motion.header
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

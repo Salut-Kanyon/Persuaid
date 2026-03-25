@@ -44,22 +44,22 @@ function formatElapsed(seconds: number): string {
   return [h, m, s].map((n) => n.toString().padStart(2, "0")).join(":");
 }
 
-/** Persuaid demo palette (matches product marketing spec) */
+/** Demo chrome — moss/sage accents to match landing hero art (not neon teal) */
 const demo = {
-  bgPage: "#050505",
-  bgElevated: "#0B0D0D",
+  bgPage: "#121210",
+  bgElevated: "var(--bg-elevated)",
   bgPanel: "rgba(255,255,255,0.02)",
   text: "#F5F7F7",
   textSecondary: "#B7C0C0",
   textMuted: "#7E8888",
-  accent: "#20D3A6",
-  accentHover: "#19BE95",
-  accentGlow: "rgba(32, 211, 166, 0.18)",
-  accentBorder: "rgba(32, 211, 166, 0.28)",
-  /** Outlines for inputs & action controls — same hue as Start talking / Request answer */
-  actionBorder: "rgba(32, 211, 166, 0.52)",
+  accent: "#8aae96",
+  accentHover: "#9db89a",
+  accentGlow: "rgba(138, 174, 150, 0.14)",
+  accentBorder: "rgba(122, 150, 130, 0.32)",
+  /** Outlines for inputs & action controls */
+  actionBorder: "rgba(122, 150, 130, 0.45)",
   border: "rgba(255,255,255,0.08)",
-  btnText: "#04110D",
+  btnText: "#121210",
 } as const;
 
 type Speaker = "rep" | "prospect";
@@ -389,8 +389,10 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
 
         <div
           className={cn(
-            "border border-white/10 overflow-hidden shadow-[0_24px_80px_-24px_rgba(0,0,0,0.65)]",
-            isHero ? "rounded-[20px] lg:rounded-[24px]" : "rounded-[18px]"
+            "border overflow-hidden",
+            isHero
+              ? "border-stone-600/25 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)] rounded-[18px] lg:rounded-[20px]"
+              : "border-white/10 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.65)] rounded-[18px]"
           )}
           style={{ backgroundColor: demo.bgElevated }}
         >
@@ -423,15 +425,10 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
               onClick={() => (listening ? stopRecognition() : startListening())}
               disabled={!listening && speechSupported === false}
               className={cn(
-                "group relative overflow-hidden rounded-xl px-3 py-1.5 sm:px-3.5 sm:py-2 text-[11px] sm:text-xs font-bold tracking-tight transition-[filter,box-shadow] duration-300 flex items-center gap-1.5 shrink-0",
+                "group relative overflow-hidden rounded-lg px-3 py-1.5 sm:px-3.5 sm:py-2 text-[11px] sm:text-xs font-semibold tracking-tight transition-colors duration-200 flex items-center gap-1.5 shrink-0",
                 listening
-                  ? "bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/15 shadow-md"
-                  : [
-                      "border border-white/25 bg-gradient-to-br from-[#5eead4] via-[#20D3A6] to-[#0f766e] text-[#04110D]",
-                      "shadow-[0_4px_18px_rgba(32,211,166,0.35),0_0_24px_-8px_rgba(45,212,191,0.45),inset_0_1px_0_rgba(255,255,255,0.35)]",
-                      "ring-1 ring-[#20D3A6]/50 ring-offset-1 ring-offset-background",
-                      "hover:brightness-[1.05] disabled:opacity-40 disabled:cursor-not-allowed",
-                    ]
+                  ? "bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/15 shadow-sm"
+                  : "border border-stone-500/40 bg-[color:var(--landing-moss)] text-stone-100 hover:bg-[color:var(--landing-moss-hover)] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
               )}
             >
               {listening ? (
@@ -441,17 +438,11 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                 </>
               ) : (
                 <>
-                  <span
-                    className="pointer-events-none absolute -left-1/4 top-0 h-full w-1/2 skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-70 transition-opacity duration-300 group-hover:opacity-100"
-                    aria-hidden
-                  />
                   <span className="relative z-[1]">Start Call</span>
                   <span
-                    className="relative z-[1] inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[#04110D]/30"
+                    className="relative z-[1] inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-stone-300/35"
                     aria-hidden
-                  >
-                    <span className="absolute inset-0 animate-ping rounded-full bg-[#04110D]/25" />
-                  </span>
+                  />
                 </>
               )}
             </button>
@@ -465,13 +456,13 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-green-primary/[0.07] to-[#050505]"
+                className="overflow-hidden border-b border-white/[0.06] bg-gradient-to-b from-stone-800/40 to-[#050505]"
               >
                 <div className="px-3 py-3 sm:px-4 sm:py-3.5">
                   {coachingDemoPhase === "idle" ? (
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                       <div className="min-w-0">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-green-accent/90">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-dim">
                           After the call
                         </p>
                         <p className="mt-1 text-sm font-semibold text-text-primary leading-snug">

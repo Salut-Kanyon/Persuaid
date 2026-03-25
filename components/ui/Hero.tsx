@@ -16,14 +16,15 @@ const HERO_LINE1_WORDS = HERO_TITLE_LINE1.split(" ");
 const HERO_LINE2_WORDS = HERO_TITLE_LINE2.split(" ");
 
 const HERO_SUBTITLE_AFTER_PERSUAID =
-  "shows you what to say next—in real time. No freeze. No guesswork. You stay in control. Nothing joins the call.";
+  "shows you what to say next—in real time, grounded in your playbook. No guesswork. You stay in control.";
 
 function HeroTitleTwoLines() {
   const reduce = useReducedMotion();
   const words1 = HERO_LINE1_WORDS;
   const words2 = HERO_LINE2_WORDS;
+  /* Tighter display type: confident, not shouty — reads editorial, not “growth hack” */
   const lineClass =
-    "block whitespace-nowrap text-[clamp(1.65rem,7.5vw,4.25rem)] leading-[1.05] font-bold text-text-primary tracking-[-0.035em]";
+    "block whitespace-nowrap text-[clamp(1.5rem,6.25vw,3.5rem)] leading-[1.08] font-semibold text-text-primary tracking-[-0.03em]";
 
   const renderLine = (words: string[], baseIndex: number) =>
     words.map((word, i) => {
@@ -34,14 +35,14 @@ function HeroTitleTwoLines() {
       return (
         <span key={`${baseIndex}-${i}`} className="inline-block whitespace-pre">
           <motion.span
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: reduce ? 0 : -6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
-              duration: reduce ? 0.01 : 0.4,
-              delay: reduce ? 0 : index * 0.09,
+              duration: reduce ? 0.01 : 0.35,
+              delay: reduce ? 0 : index * 0.06,
               ease: [0.25, 0.1, 0.25, 1],
             }}
-            className={cn((isPersuaid || isAi) && "text-green-primary")}
+            className={cn((isPersuaid || isAi) && "text-[color:var(--landing-accent)]")}
           >
             {word}
           </motion.span>
@@ -63,9 +64,11 @@ type HeroProps = {
   onDemoOpenChange?: (open: boolean) => void;
   /** Interactive demo panel — swaps into the video slot when open */
   children?: ReactNode;
+  /** Home + fixed glass navbar: extra top padding; full-bleed cover bg anchored to top */
+  landing?: boolean;
 };
 
-export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps = {}) {
+export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = false }: HeroProps = {}) {
   const reduceMotion = useReducedMotion();
   const [scrollFade, setScrollFade] = useState(1);
   const [showSubtitle, setShowSubtitle] = useState(false);
@@ -97,18 +100,23 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
   return (
     <div
       className={cn(
-        "relative min-h-screen bg-background-near-black flex justify-center items-start pt-6 sm:pt-8 lg:pt-10 pb-16 sm:pb-20",
-        "overflow-x-hidden overflow-y-visible"
+        "relative min-h-[100dvh] bg-background-near-black flex justify-center items-start pb-20 sm:pb-24",
+        "overflow-x-hidden overflow-y-visible",
+        landing ? "pt-24 sm:pt-28 lg:pt-28" : "pt-8 sm:pt-10 lg:pt-12"
       )}
     >
-      {/* Landing background image — position nudged so the skyline sits higher in the frame */}
+      {/* Full-bleed art: cover fills viewport; top anchor keeps charcoal “sky” visible under the nav */}
       <div
-        className="absolute inset-0 pointer-events-none bg-cover bg-no-repeat"
+        className="absolute inset-0 z-0 pointer-events-none bg-cover bg-top bg-no-repeat"
         style={{
-          backgroundImage: "url(/hero-skyline.png)",
-          backgroundPosition: "center 22%",
+          backgroundImage: "url(/hero-landing-bg.png?v=9)",
           opacity: bgOpacity,
         }}
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-44 bg-gradient-to-t from-[var(--bg-near-black)] via-[var(--bg-near-black)]/70 to-transparent"
+        style={{ opacity: bgOpacity }}
         aria-hidden
       />
 
@@ -133,7 +141,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
               className="mx-auto mt-4 max-w-[min(24rem,90vw)] px-2 sm:mt-5 sm:max-w-xl"
               aria-hidden
             >
-              <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.2] to-transparent" />
+              <div className="h-px w-full max-w-xs mx-auto bg-[color:var(--landing-sand)]/30" />
             </div>
 
             <motion.p
@@ -143,10 +151,10 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                 y: reduceMotion ? 0 : showSubtitle ? 0 : 6,
               }}
               transition={{ duration: reduceMotion ? 0.01 : 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-              className="mt-5 text-[15px] sm:mt-6 sm:text-[17px] text-text-secondary/95 mb-6 sm:mb-8 max-w-[26rem] sm:max-w-xl mx-auto leading-[1.5] font-normal text-balance"
+              className="mt-6 text-[15px] sm:mt-8 sm:text-[16px] text-text-secondary mb-8 sm:mb-10 max-w-md sm:max-w-lg mx-auto leading-relaxed font-normal text-balance"
             >
               <span className="block">
-                <span className="font-medium text-green-primary">Persuaid</span>{" "}
+                <span className="font-medium text-[color:var(--landing-accent-soft)]">Persuaid</span>{" "}
                 {HERO_SUBTITLE_AFTER_PERSUAID}
               </span>
             </motion.p>
@@ -181,19 +189,13 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
               >
                 <motion.a
                   href="/sign-in"
-                  whileHover={reduceMotion ? undefined : { scale: 1.01 }}
-                  whileTap={reduceMotion ? undefined : { scale: 0.985 }}
                   transition={{ type: "spring", stiffness: 520, damping: 32 }}
                   className={cn(
-                    "group inline-flex min-h-[50px] flex-1 items-center justify-center rounded-full px-4 text-center text-[14px] leading-snug font-medium tracking-[-0.02em] sm:px-8 sm:text-[16px] sm:leading-tight",
-                    "border border-white/15 bg-gradient-to-br from-[#20D3A6] via-[#1db896] to-[#0f766e] text-[#061210]",
-                    "shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.22)]",
-                    "transition-[transform,box-shadow,border-color,filter] duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
-                    "hover:border-cyan-300/40 hover:bg-gradient-to-br hover:from-[#5eead4] hover:via-[#2dd4bf] hover:to-[#0d9488]",
-                    "hover:shadow-[0_4px_32px_rgba(45,212,191,0.45),inset_0_1px_0_rgba(255,255,255,0.35)] hover:brightness-[1.03]",
-                    "active:brightness-95",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[transparent]",
-                    "min-w-0 sm:min-h-[52px] sm:min-w-[10.75rem]"
+                    "group inline-flex min-h-[48px] flex-1 items-center justify-center rounded-lg px-5 text-center text-[15px] font-medium tracking-tight sm:px-7 sm:text-[15px]",
+                    "bg-[color:var(--landing-moss)] text-stone-100 border border-white/10",
+                    "shadow-sm hover:bg-[color:var(--landing-moss-hover)] transition-colors duration-200",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--landing-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg-near-black)]",
+                    "min-w-0 sm:min-h-[48px] sm:min-w-[11rem]"
                   )}
                 >
                   Try it on your next call
@@ -204,20 +206,13 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children }: HeroProps
                     onClick={() => onDemoOpenChange(!demoOpen)}
                     aria-expanded={demoOpen}
                     aria-controls="hero-demo-panel"
-                    whileHover={reduceMotion ? undefined : { scale: 1.01 }}
-                    whileTap={reduceMotion ? undefined : { scale: 0.985 }}
                     transition={{ type: "spring", stiffness: 520, damping: 32 }}
                     className={cn(
-                      "inline-flex min-h-[50px] flex-1 items-center justify-center rounded-full px-8 text-[17px] font-medium tracking-[-0.022em]",
-                      "border border-white/20 bg-white/[0.08] text-white/[0.95] backdrop-blur-xl backdrop-saturate-150",
-                      "bg-gradient-to-br from-white/[0.12] to-white/[0.05]",
-                      "shadow-[inset_0_0.5px_0_rgba(255,255,255,0.35),0_1px_3px_rgba(0,0,0,0.12)]",
-                      "transition-[transform,background,background-color,border-color,box-shadow,color] duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
-                      "hover:border-fuchsia-400/35 hover:from-fuchsia-500/25 hover:via-violet-500/20 hover:to-cyan-500/15",
-                      "hover:text-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_24px_rgba(192,132,252,0.2)]",
-                      "active:from-white/10 active:to-white/5",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[transparent]",
-                      "min-w-0 sm:min-h-[52px] sm:min-w-[10.75rem]"
+                      "inline-flex min-h-[48px] flex-1 items-center justify-center rounded-lg px-6 text-[15px] font-medium tracking-tight",
+                      "border border-stone-500/40 bg-stone-950/40 text-stone-200",
+                      "hover:bg-stone-900/60 hover:border-stone-500/55 transition-colors duration-200",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg-near-black)]",
+                      "min-w-0 sm:min-h-[48px] sm:min-w-[11rem]"
                     )}
                   >
                     {demoOpen ? "Back" : "Free demo"}

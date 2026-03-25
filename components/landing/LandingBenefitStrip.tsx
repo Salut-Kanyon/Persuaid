@@ -11,8 +11,8 @@ function StripCheckIcon({ compact }: { compact?: boolean }) {
     <span
       className={cn(
         "relative flex shrink-0 items-center justify-center rounded-full",
-        "bg-gradient-to-br from-emerald-300/95 via-green-primary to-teal-700/90",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_1px_2px_rgba(0,0,0,0.4),0_0_0_1px_rgba(6,95,70,0.45),0_4px_16px_rgba(16,185,129,0.28)]",
+        /* Flat forest green — matches paper-cut hero palette */
+        "bg-[color:var(--landing-forest)] border border-[color:var(--landing-sage)]/45 shadow-inner",
         compact ? "h-4 w-4" : "h-[22px] w-[22px]"
       )}
       aria-hidden
@@ -20,7 +20,7 @@ function StripCheckIcon({ compact }: { compact?: boolean }) {
       <svg
         viewBox="0 0 16 16"
         className={cn(
-          "text-white [filter:drop-shadow(0_0.5px_0_rgba(0,0,0,0.25))]",
+          "text-[color:var(--landing-accent-soft)]",
           compact ? "size-[9px]" : "size-[11px]"
         )}
         fill="none"
@@ -51,13 +51,10 @@ export function LandingBenefitStrip({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden border border-white/[0.09]",
-        "bg-gradient-to-b from-white/[0.07] via-white/[0.03] to-transparent",
-        "shadow-[0_12px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.06)]",
-        "backdrop-blur-xl backdrop-saturate-150",
-        "ring-1 ring-inset ring-white/[0.05]",
-        "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-green-primary/35 before:to-transparent",
-        compact ? "rounded-xl" : "rounded-2xl",
+        "relative w-full overflow-hidden border border-stone-500/20",
+        "bg-stone-950/35",
+        "shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]",
+        compact ? "rounded-lg" : "rounded-xl",
         className
       )}
       role="region"
@@ -77,7 +74,7 @@ export function LandingBenefitStrip({
             className={cn(
               "flex flex-1 items-center justify-center text-center sm:min-h-0 sm:justify-center sm:text-left",
               compact ? "gap-2 sm:gap-2 sm:px-1.5 lg:px-2" : "gap-3 sm:gap-2.5 sm:px-2 lg:px-3",
-              i > 0 && "sm:border-l sm:border-white/[0.08]"
+              i > 0 && "sm:border-l sm:border-stone-600/25"
             )}
           >
             <StripCheckIcon compact={compact} />

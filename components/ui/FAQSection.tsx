@@ -14,8 +14,8 @@ const FAQ_ITEMS = [
     a: "Notetakers are great for recaps. We're for the moment. When a prospect asks about pricing or a competitor, you get a suggested line right then—grounded in your notes and your product—so you don't blank or fumble.",
   },
   {
-    q: "Does a bot join the meeting?",
-    a: "No. You run audio through the app; your prospect only sees you.",
+    q: "Does Persuaid join the call as a participant?",
+    a: "No. You route audio through the app on your side—your prospect only sees you.",
   },
   {
     q: "Is there a free tier?",
@@ -51,7 +51,10 @@ export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <Section id="faq" className="bg-background-default pt-12 md:pt-16 pb-10 md:pb-14">
+    <Section
+      id="faq"
+      className="border-t border-white/[0.06] bg-background-elevated py-16 md:py-20 lg:py-24"
+    >
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -65,11 +68,11 @@ export function FAQSection() {
           </h2>
         </header>
 
-        <div className="rounded-xl border border-white/10 bg-background-elevated/40 overflow-hidden">
+        <div className="rounded-xl border border-stone-600/25 bg-[var(--bg-surface)]/30 overflow-hidden">
           {FAQ_ITEMS.map((item, index) => {
             const isOpen = openIndex === index;
             return (
-              <div key={item.q} className="border-b border-white/10 last:border-b-0">
+              <div key={item.q} className="border-b border-stone-600/20 last:border-b-0">
                 <button
                   type="button"
                   onClick={() => setOpenIndex(isOpen ? null : index)}

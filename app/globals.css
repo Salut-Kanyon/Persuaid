@@ -17,6 +17,16 @@
     --text-muted: #9ca3af;
     --text-dim: #6b7280;
     --border: rgba(255, 255, 255, 0.1);
+    /* Organic marketing accents (hero illustration palette) — safe on any page */
+    --landing-accent: #a3b89a;
+    --landing-accent-soft: #c9d6c3;
+    --landing-sage: #8a9f86;
+    --landing-moss: #3d5244;
+    --landing-moss-hover: #4d6254;
+    --landing-forest: #2f3d32;
+    --landing-sand: #c4b89a;
+    --landing-line: rgba(93, 110, 88, 0.6);
+    --landing-ring: rgba(163, 184, 154, 0.45);
   }
 
   .theme-light {
@@ -107,6 +117,21 @@
     @apply font-bold;
     letter-spacing: -0.02em;
   }
+
+  /*
+   * Landing (home only): palette keyed to hero-landing-bg (paper-cut hills, charcoal sky, sand).
+   * Cream/stone type on dark; moss primary — never pure white/black.
+   */
+  main.landing-home {
+    --bg-near-black: #121210;
+    --bg-elevated: #1a1c17;
+    --bg-surface: #232620;
+    --text-primary: #f4f1ea;
+    --text-secondary: #d1ccc0;
+    --text-muted: #969185;
+    --text-dim: #6e695e;
+    --border: rgba(220, 205, 175, 0.11);
+  }
 }
 
 @layer utilities {
@@ -154,33 +179,6 @@
   }
   .notes-connect-recommended-blink {
     animation: notes-connect-recommended-blink 1.35s ease-in-out infinite;
-  }
-
-  /* Landing testimonial rails — soft terminal-green outline pulse */
-  @keyframes landing-testimonial-green-line {
-    0%,
-    100% {
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.04),
-        0 0 0 1px rgba(34, 197, 94, 0.14),
-        0 0 10px rgba(34, 197, 94, 0.05);
-    }
-    50% {
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.04),
-        0 0 0 1px rgba(74, 222, 128, 0.38),
-        0 0 20px rgba(34, 197, 94, 0.12);
-    }
-  }
-
-  .landing-testimonial-green-line {
-    animation: landing-testimonial-green-line 3.6s ease-in-out infinite;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .landing-testimonial-green-line {
-      animation: none;
-    }
   }
 
 }

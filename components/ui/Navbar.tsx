@@ -14,9 +14,11 @@ export type NavbarLiveDemoProps = {
 type NavbarProps = {
   /** When set, floating CTA opens the in-page live demo instead of linking to sign-in */
   liveDemo?: NavbarLiveDemoProps;
+  /** Home marketing: fixed bar, translucent — hero art shows through the top */
+  landing?: boolean;
 };
 
-export function Navbar({ liveDemo }: NavbarProps) {
+export function Navbar({ liveDemo, landing = false }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showCtaButton, setShowCtaButton] = useState(false);
 
@@ -61,8 +63,8 @@ export function Navbar({ liveDemo }: NavbarProps) {
           {liveDemo ? (
             <div
               className={cn(
-                "overflow-hidden rounded-2xl border border-green-primary/50 bg-black/95 shadow-xl shadow-black/40 backdrop-blur-md",
-                liveDemo.isOpen ? "ring-1 ring-green-primary/30" : ""
+                "overflow-hidden rounded-xl border border-stone-600/40 bg-[color:var(--bg-near-black)]/95 shadow-lg shadow-black/35 backdrop-blur-md",
+                liveDemo.isOpen ? "ring-1 ring-stone-500/25" : ""
               )}
             >
               <button
@@ -84,7 +86,7 @@ export function Navbar({ liveDemo }: NavbarProps) {
                 <motion.span
                   animate={{ rotate: liveDemo.isOpen ? 180 : 0 }}
                   transition={{ duration: 0.25 }}
-                  className="text-green-primary/90 shrink-0"
+                  className="text-stone-400 shrink-0"
                   aria-hidden
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -109,7 +111,7 @@ export function Navbar({ liveDemo }: NavbarProps) {
                       <button
                         type="button"
                         onClick={scrollToDemo}
-                        className="mt-2.5 text-xs font-semibold text-emerald-400/95 hover:text-emerald-300 transition-colors"
+                        className="mt-2.5 text-xs font-semibold text-[color:var(--landing-accent)] hover:text-text-primary transition-colors"
                       >
                         Jump to workspace ↓
                       </button>
@@ -121,7 +123,7 @@ export function Navbar({ liveDemo }: NavbarProps) {
           ) : (
             <a
               href="/sign-in"
-              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 border border-green-primary/60 bg-black text-white hover:bg-gray-900 hover:border-green-primary/80 hover:shadow-xl shadow-lg"
+              className="flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-lg transition-colors duration-200 border border-stone-600/45 bg-[color:var(--bg-near-black)] text-stone-100 hover:bg-stone-900/80 hover:border-stone-500/55"
             >
               <img
                 src="/PersuaidLogo.png"
@@ -134,21 +136,27 @@ export function Navbar({ liveDemo }: NavbarProps) {
         </div>
       )}
 
-      {/* Regular Navbar - scrolls with page */}
-      <nav className="bg-background-near-black/80 backdrop-blur-xl border-b border-border/50">
+      {/* Regular Navbar — landing: fixed + solid bar (wordmark sits on black like the asset) */}
+      <nav
+        className={cn(
+          "w-full border-b",
+          landing
+            ? "fixed top-0 left-0 right-0 z-50 border-white/10 bg-black"
+            : "bg-background-near-black/80 backdrop-blur-xl border-border/50"
+        )}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-18 lg:h-20">
-            {/* Logo */}
-            <div className="flex-shrink-0">
-              <a href="/" className="flex items-end gap-0 group">
+            {/* Full wordmark (icon + logotype in one asset) */}
+            <div className="flex-shrink-0 min-w-0">
+              <a href="/" className="group inline-flex items-center py-1" aria-label="Persuaid home">
                 <img
-                  src="/PersuaidLogo.png"
+                  src="/Persuaid-wordmark.png?v=1"
                   alt="Persuaid"
-                  className="w-8 h-8 flex-shrink-0 object-contain translate-y-0.5 group-hover:opacity-90 transition-opacity duration-300"
+                  className="h-12 sm:h-[3.25rem] md:h-14 w-auto max-w-[min(380px,72vw)] object-contain object-left group-hover:opacity-90 transition-opacity duration-300"
+                  width={280}
+                  height={56}
                 />
-                <span className="text-xl font-bold text-text-primary tracking-tight -ml-1 translate-y-2 group-hover:text-green-accent transition-colors duration-300">
-                  ersuaid
-                </span>
               </a>
             </div>
 
@@ -158,10 +166,10 @@ export function Navbar({ liveDemo }: NavbarProps) {
                 <a
                   key={link.label}
                   href={link.href}
-                  className="text-sm font-medium text-text-secondary hover:text-green-accent transition-colors duration-300 relative group"
+                  className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors duration-300 relative group"
                 >
                   {link.label}
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-primary group-hover:w-full transition-all duration-300"></span>
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-stone-500/70 group-hover:w-full transition-all duration-300"></span>
                 </a>
               ))}
             </div>
@@ -209,7 +217,7 @@ export function Navbar({ liveDemo }: NavbarProps) {
                 <a
                   key={link.label}
                   href={link.href}
-                  className="text-text-secondary hover:text-green-accent transition-colors duration-200"
+                  className="text-text-secondary hover:text-text-primary transition-colors duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}

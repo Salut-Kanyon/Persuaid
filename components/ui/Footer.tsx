@@ -1,5 +1,3 @@
-import { CTAButton } from "./CTAButton";
-
 export function Footer() {
   const footerLinks = {
     Product: [
@@ -20,28 +18,24 @@ export function Footer() {
   };
 
   return (
-    <footer className="border-t border-border bg-background-elevated">
+    <footer className="border-t border-white/[0.08] bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
           {/* Brand */}
           <div className="col-span-2">
-            <div className="flex items-end gap-0 mb-4">
+            <div className="mb-4">
               <img
-                src="/PersuaidLogo.png"
+                src="/Persuaid-wordmark.png?v=1"
                 alt="Persuaid"
-                className="w-10 h-10 flex-shrink-0 object-contain translate-y-0.5"
+                className="h-12 sm:h-[3.25rem] md:h-14 w-auto max-w-[min(380px,100%)] object-contain object-left"
+                width={280}
+                height={56}
               />
-              <span className="text-2xl font-bold text-text-primary tracking-tight -ml-1 translate-y-2">
-                ersuaid
-              </span>
             </div>
-            <p className="text-text-muted mb-4 max-w-sm">
+            <p className="text-text-muted max-w-sm">
               The AI copilot for sales calls. Say the right thing on every
               conversation.
             </p>
-            <CTAButton variant="primary" href="/pricing">
-              Start free trial
-            </CTAButton>
           </div>
 
           {/* Links */}
@@ -55,7 +49,7 @@ export function Footer() {
                   <li key={link.label}>
                     <a
                       href={link.href}
-                      className="text-text-muted hover:text-green-accent transition-colors duration-200 text-sm"
+                      className="text-text-muted hover:text-text-primary transition-colors duration-200 text-sm"
                     >
                       {link.label}
                     </a>
@@ -67,7 +61,7 @@ export function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="pt-8 border-t border-border">
+        <div className="pt-8 border-t border-white/[0.08]">
           <p className="text-text-dim text-sm">
             © {new Date().getFullYear()} Persuaid. All rights reserved.
           </p>
