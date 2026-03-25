@@ -10,10 +10,7 @@ interface TranscriptMessage {
 
 interface NoteItem {
   content: string;
-  tags?: string[];
 }
-
-const TAGS = ["Interest", "Objection", "Action", "Budget", "Contact", "Pain Point"];
 
 function buildTranscriptText(transcript: TranscriptMessage[]): string {
   return transcript
@@ -47,8 +44,8 @@ export async function POST(req: NextRequest) {
 
   const systemPrompt = `You are a sales assistant. Given a call transcript, produce:
 1. A short summary (1-3 sentences).
-2. A JSON array of note items. Each item has "content" (one short sentence or phrase) and "tags" (array of zero or more from: ${TAGS.join(", ")}). Output 3-8 note items. Use the exact tag names when relevant.`;
-  const userPrompt = `Transcript:\n${conversation}\n\nReturn a single JSON object with keys "summary" (string) and "items" (array of { "content": string, "tags": string[] }). No other text.`;
+2. A JSON array of note items. Each item has "content" (one short sentence or phrase). Output 3-8 note items.`;
+  const userPrompt = `Transcript:\n${conversation}\n\nReturn a single JSON object with keys "summary" (string) and "items" (array of { "content": string }). No other text.`;
 
   try {
     const res = await fetch(OPENAI_URL, {
@@ -89,9 +86,6 @@ export async function POST(req: NextRequest) {
     const summary = String(parsed.summary ?? "").slice(0, 2000);
     const items = (parsed.items ?? []).slice(0, 15).map((item) => ({
       content: String(item.content ?? "").slice(0, 500),
-      tags: Array.isArray(item.tags)
-        ? (item.tags as string[]).filter((t) => TAGS.includes(t)).slice(0, 5)
-        : [],
     }));
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -109,7 +103,6 @@ export async function POST(req: NextRequest) {
           user_id: user.id,
           title: null,
           content: item.content,
-          tags: item.tags,
           completed: false,
         }));
         await supabase.from("notes").insert(rows);

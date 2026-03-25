@@ -9,13 +9,10 @@ export interface Note {
   user_id: string;
   title: string | null;
   content: string;
-  tags: string[];
   completed: boolean;
   created_at: string;
   updated_at: string;
 }
-
-const AVAILABLE_TAGS = ["Interest", "Objection", "Action", "Budget", "Contact", "Pain Point"];
 
 function formatRelativeTime(iso: string): string {
   const d = new Date(iso);
@@ -31,16 +28,10 @@ function formatRelativeTime(iso: string): string {
   return d.toLocaleDateString();
 }
 
-function tagStyle(tag: string): string {
-  if (tag === "Interest") return "bg-green-primary/15 text-green-accent border-green-primary/25";
-  return "bg-background-surface/60 text-text-muted border-border";
-}
-
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterTag, setFilterTag] = useState<string | "All">("All");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [saving, setSaving] = useState(false);
@@ -49,7 +40,6 @@ export default function NotesPage() {
 
   const [formTitle, setFormTitle] = useState("");
   const [formContent, setFormContent] = useState("");
-  const [formTags, setFormTags] = useState<string[]>([]);
   const [formCompleted, setFormCompleted] = useState(false);
 
   const fetchNotes = useCallback(async () => {
@@ -78,7 +68,6 @@ export default function NotesPage() {
     setEditingNote(null);
     setFormTitle("");
     setFormContent("");
-    setFormTags([]);
     setFormCompleted(false);
     setModalOpen(true);
   };
@@ -87,7 +76,6 @@ export default function NotesPage() {
     setEditingNote(note);
     setFormTitle(note.title ?? "");
     setFormContent(note.content ?? "");
-    setFormTags(note.tags ?? []);
     setFormCompleted(note.completed ?? false);
     setModalOpen(true);
   };
@@ -98,10 +86,6 @@ export default function NotesPage() {
     setSaving(false);
   };
 
-  const toggleTag = (tag: string) => {
-    setFormTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
-  };
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const { data: { user } } = await supabase.auth.getUser();
@@ -110,7 +94,6 @@ export default function NotesPage() {
     const payload = {
       title: formTitle.trim() || null,
       content: formContent.trim() || "",
-      tags: formTags,
       completed: formCompleted,
       updated_at: new Date().toISOString(),
     };
@@ -154,10 +137,8 @@ export default function NotesPage() {
     const matchSearch =
       !search.trim() ||
       (n.title || "").toLowerCase().includes(search.toLowerCase()) ||
-      (n.content || "").toLowerCase().includes(search.toLowerCase()) ||
-      (n.tags || []).some((t) => t.toLowerCase().includes(search.toLowerCase()));
-    const matchTag = filterTag === "All" || (n.tags || []).includes(filterTag);
-    return matchSearch && matchTag;
+      (n.content || "").toLowerCase().includes(search.toLowerCase());
+    return matchSearch;
   });
 
   return (
@@ -203,23 +184,6 @@ export default function NotesPage() {
               className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-background-surface/60 border border-border text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/40 focus:border-green-primary/30 text-sm"
             />
           </div>
-          <div className="flex flex-wrap gap-2">
-            {["All", ...AVAILABLE_TAGS].map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setFilterTag(tag)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                  filterTag === tag
-                    ? "bg-green-primary/20 text-green-accent border border-green-primary/30"
-                    : "bg-background-surface/60 text-text-muted border border-border hover:text-text-secondary hover:border-border/80"
-                )}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="max-w-4xl">
@@ -240,7 +204,7 @@ export default function NotesPage() {
               <p className="text-sm text-text-muted mt-1">
                 {notes.length === 0
                   ? "Add notes from calls, meetings, and follow-ups."
-                  : "Try a different search or tag."}
+                  : "Try a different search."}
               </p>
               {notes.length === 0 && (
                 <button
@@ -286,16 +250,6 @@ export default function NotesPage() {
                       <p className={cn("text-sm mt-0.5 line-clamp-2", note.completed ? "text-text-dim/70 line-through" : "text-text-secondary")}>
                         {note.content || "No content"}
                       </p>
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {(note.tags || []).map((tag) => (
-                          <span
-                            key={tag}
-                            className={cn("inline-flex px-2 py-0.5 rounded-md text-[10px] font-medium border", tagStyle(tag))}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
                       <p className="text-[10px] text-text-dim mt-2">{formatRelativeTime(note.updated_at)}</p>
                     </button>
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -376,26 +330,6 @@ export default function NotesPage() {
                   rows={4}
                   className="w-full px-4 py-2.5 rounded-xl bg-background-surface/60 border border-border text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/40 text-sm resize-y min-h-[100px]"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-2">Tags</label>
-                <div className="flex flex-wrap gap-2">
-                  {AVAILABLE_TAGS.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleTag(tag)}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
-                        formTags.includes(tag)
-                          ? "bg-green-primary/20 text-green-accent border-green-primary/30"
-                          : "bg-background-surface/40 text-text-muted border-border hover:border-border/80"
-                      )}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
               </div>
               <div className="flex items-center gap-2">
                 <button

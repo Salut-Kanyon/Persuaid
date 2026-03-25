@@ -187,19 +187,6 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
                 }}
                 className="flex w-full max-w-xl flex-row flex-nowrap items-stretch justify-center gap-3 sm:mx-auto sm:gap-4"
               >
-                <motion.a
-                  href="/sign-in"
-                  transition={{ type: "spring", stiffness: 520, damping: 32 }}
-                  className={cn(
-                    "group inline-flex min-h-[48px] flex-1 items-center justify-center rounded-lg px-5 text-center text-[15px] font-medium tracking-tight sm:px-7 sm:text-[15px]",
-                    "bg-[color:var(--landing-moss)] text-stone-100 border border-white/10",
-                    "shadow-sm hover:bg-[color:var(--landing-moss-hover)] transition-colors duration-200",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--landing-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg-near-black)]",
-                    "min-w-0 sm:min-h-[48px] sm:min-w-[11rem]"
-                  )}
-                >
-                  Try it on your next call
-                </motion.a>
                 {onDemoOpenChange && (
                   <motion.button
                     type="button"
@@ -218,6 +205,19 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
                     {demoOpen ? "Back" : "Free demo"}
                   </motion.button>
                 )}
+                <motion.a
+                  href="/sign-in"
+                  transition={{ type: "spring", stiffness: 520, damping: 32 }}
+                  className={cn(
+                    "group inline-flex min-h-[48px] flex-1 items-center justify-center rounded-lg px-5 text-center text-[15px] font-medium tracking-tight sm:px-7 sm:text-[15px]",
+                    "bg-[color:var(--landing-moss)] text-stone-100 border border-white/10",
+                    "shadow-sm hover:bg-[color:var(--landing-moss-hover)] transition-colors duration-200",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--landing-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg-near-black)]",
+                    "min-w-0 sm:min-h-[48px] sm:min-w-[11rem]"
+                  )}
+                >
+                  Try it on your next call
+                </motion.a>
               </motion.div>
             </motion.div>
           </motion.div>

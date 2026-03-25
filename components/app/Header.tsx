@@ -65,7 +65,9 @@ export function Header() {
         </select>
       </div>
 
-      <div className="flex shrink-0 justify-self-center">
+      <div className="min-w-0 justify-self-center" aria-hidden />
+
+      <div className="flex shrink-0 justify-self-end">
         <button
           type="button"
           onClick={() => setRecording(true)}
@@ -89,8 +91,6 @@ export function Header() {
           />
         </button>
       </div>
-
-      <div className="min-w-0 justify-self-end" aria-hidden />
     </header>
   );
 }

@@ -123,7 +123,6 @@ export function NotesPanel() {
       user_id: user.id,
       title: null,
       content,
-      tags: [],
       completed: false,
     });
 
