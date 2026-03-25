@@ -10,7 +10,7 @@ interface LiveSessionProps {
 
 export function LiveSession({ panelVisibility, setPanelVisibility }: LiveSessionProps) {
   return (
-    <div className="h-full w-full bg-background-near-black/40 backdrop-blur-md">
+    <div className="h-full min-h-0 w-full overflow-hidden overscroll-none bg-background-near-black">
       <Workspace panelVisibility={panelVisibility} setPanelVisibility={setPanelVisibility} />
     </div>
   );

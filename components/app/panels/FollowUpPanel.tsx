@@ -1,11 +1,46 @@
 "use client";
 
-import { useEffect, useCallback, useState, useRef } from "react";
+import { useEffect, useCallback, useState, useRef, useMemo, type RefObject, type Ref } from "react";
+import type { CSSProperties } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import { cn } from "@/lib/utils";
+import { getClientIanaTimeZone } from "@/lib/client-timezone";
 
 const DEBUG = process.env.NODE_ENV !== "production";
+
+function CallOverlayKeycap({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="mx-0.5 inline-flex h-[1.35rem] min-w-[1.35rem] items-center justify-center rounded-md border border-white/[0.22] bg-white/[0.10] px-1.5 text-[11px] font-medium text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+      {children}
+    </kbd>
+  );
+}
+
+/** Same Answer layout as idle; cycles “.” → “…” for loading. */
+function CallOverlayAnswerLoading({
+  labelCls,
+  anchorRef,
+}: {
+  labelCls: string;
+  anchorRef: RefObject<HTMLDivElement | null>;
+}) {
+  const [phase, setPhase] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setPhase((p) => (p + 1) % 4), 420);
+    return () => window.clearInterval(id);
+  }, []);
+  const ell = (["", ".", "..", "..."] as const)[phase]!;
+  return (
+    <div ref={anchorRef as Ref<HTMLDivElement>} className="space-y-2.5" role="status" aria-live="polite" aria-busy="true">
+      <p className={labelCls}>Answer</p>
+      <p className="min-h-[1.55em] text-[14px] font-normal leading-[1.55] tracking-tight text-white/[0.88]">
+        Answering<span className="inline-block min-w-[2.75ch] tabular-nums text-white/90">{ell}</span>
+      </p>
+      <p className="text-[11px] leading-relaxed text-white/34">Using transcript and notes</p>
+    </div>
+  );
+}
 
 function normalizeForCompare(s: string) {
   return s
@@ -107,7 +142,101 @@ function sanitizeAnswer(raw: string): string {
   return out || t.slice(0, 400).trim();
 }
 
-export function FollowUpPanel() {
+/** Locate a substring in notes that overlaps the answer (highlights “from your notes” provenance). */
+function findNotesHighlightSpan(notes: string, answer: string): { start: number; end: number } | null {
+  const n = notes;
+  if (!n.trim() || !answer.trim()) return null;
+  const lowerN = n.toLowerCase();
+  const words = answer
+    .toLowerCase()
+    .replace(/[^\w\s'-]/g, " ")
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length > 2);
+  for (let len = Math.min(16, words.length); len >= 3; len--) {
+    for (let i = 0; i + len <= words.length; i++) {
+      const phrase = words.slice(i, i + len).join(" ");
+      if (phrase.length < (len >= 4 ? 10 : 14)) continue;
+      const idx = lowerN.indexOf(phrase);
+      if (idx !== -1) return { start: idx, end: idx + phrase.length };
+    }
+  }
+  for (const w of words) {
+    if (w.length < 5) continue;
+    const idx = lowerN.indexOf(w);
+    if (idx !== -1) return { start: idx, end: idx + w.length };
+  }
+  return null;
+}
+
+/**
+ * Prefer a span in the user’s notes; if the model used the AI-connected layer, try to map a match
+ * from that text back into `userNotes` so highlighting still works on “My notes” view.
+ */
+function findNotesHighlightSpanWithFallback(
+  userNotes: string,
+  aiNotes: string | undefined,
+  answer: string
+): { start: number; end: number } | null {
+  const u = userNotes;
+  const ans = answer.trim();
+  if (!u.trim() || !ans) return null;
+
+  let span = findNotesHighlightSpan(u, ans);
+  if (span) return span;
+
+  const ai = aiNotes?.trim() ?? "";
+  if (!ai) return null;
+
+  span = findNotesHighlightSpan(ai, ans);
+  if (!span) return null;
+
+  const frag = ai.slice(span.start, span.end).trim();
+  if (frag.length < 4) return null;
+
+  const lowerU = u.toLowerCase();
+  let idx = lowerU.indexOf(frag.toLowerCase());
+  if (idx !== -1) return { start: idx, end: idx + frag.length };
+
+  const fragWords = frag
+    .toLowerCase()
+    .replace(/[^\w\s'-]/g, " ")
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length > 2);
+
+  for (let len = Math.min(fragWords.length, 12); len >= 2; len--) {
+    for (let i = 0; i + len <= fragWords.length; i++) {
+      const phrase = fragWords.slice(i, i + len).join(" ");
+      if (phrase.length < 8) continue;
+      const j = lowerU.indexOf(phrase);
+      if (j !== -1) return { start: j, end: j + phrase.length };
+    }
+  }
+
+  return null;
+}
+
+function scrollNotesHighlightIntoView(scroller: HTMLDivElement | null) {
+  if (!scroller) return;
+  const mark = scroller.querySelector('[data-notes-highlight="true"]');
+  if (!(mark instanceof HTMLElement)) return;
+
+  const sr = scroller.getBoundingClientRect();
+  const mr = mark.getBoundingClientRect();
+  const relativeTop = mr.top - sr.top + scroller.scrollTop;
+  const targetScroll = relativeTop - sr.height / 2 + mr.height / 2;
+  const top = Math.max(0, Math.min(targetScroll, scroller.scrollHeight - sr.height));
+  scroller.scrollTo({ top, behavior: "smooth" });
+}
+
+/** Must match `CallSessionOverlay` fixed card height. */
+const OVERLAY_CARD_H_PX = 680;
+
+type FollowUpPanelVariant = "default" | "callOverlay";
+
+export function FollowUpPanel({ variant = "default" }: { variant?: FollowUpPanelVariant }) {
+  const overlay = variant === "callOverlay";
   const {
     transcript,
     answerText,
@@ -121,6 +250,7 @@ export function FollowUpPanel() {
     requestFollowUp,
     isRecording,
     notesContext,
+    notesUserPlain,
   } = useSession();
   const { canUseAiCoach, openUpgradeModal } = useEntitlements();
 
@@ -133,7 +263,9 @@ export function FollowUpPanel() {
   const [lockedAnswerSource, setLockedAnswerSource] = useState<string>("");
 
   const answerSectionRef = useRef<HTMLDivElement>(null);
+  const followUpSectionRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const notesScrollRef = useRef<HTMLDivElement>(null);
   const prevSanitizedAnswerRef = useRef<string>("");
   const lockedAnswerRef = useRef("");
   const suggestedFollowUpTextRef = useRef("");
@@ -174,9 +306,22 @@ export function FollowUpPanel() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Enter" || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== "Enter" || e.repeat || e.altKey || e.ctrlKey) return;
       const target = e.target as HTMLElement;
       if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
+
+      if (overlay && e.metaKey) {
+        e.preventDefault();
+        if (!canUseAiCoach) {
+          openUpgradeModal();
+          return;
+        }
+        requestFollowUp("answer");
+        return;
+      }
+
+      if (e.metaKey) return;
+
       e.preventDefault();
       if (!canUseAiCoach) {
         openUpgradeModal();
@@ -186,7 +331,7 @@ export function FollowUpPanel() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [requestFollowUp, canUseAiCoach, openUpgradeModal]);
+  }, [requestFollowUp, canUseAiCoach, openUpgradeModal, overlay]);
 
   const handleSend = useCallback(async () => {
     const text = chatInput.trim();
@@ -217,7 +362,11 @@ export function FollowUpPanel() {
       const res = await fetch("/api/ai/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, notesContext: notesContext?.trim() ?? "" }),
+        body: JSON.stringify({
+          text,
+          notesContext: notesContext?.trim() ?? "",
+          timeZone: getClientIanaTimeZone(),
+        }),
       });
       const data = (await res.json()) as { answer?: string; error?: string };
       if (res.ok && typeof data.answer === "string") {
@@ -337,6 +486,7 @@ export function FollowUpPanel() {
   // Auto-generate suggested follow-up after a valid answer (separate request + separate state).
   useEffect(() => {
     if (!canUseAiCoach) return;
+    if (overlay) return;
     if (uiMode !== "answered") return;
     if (!hasTranscript) return;
     if (!lockedAnswer.trim()) return;
@@ -350,6 +500,7 @@ export function FollowUpPanel() {
     hasTranscript,
     canUseAiCoach,
     requestFollowUp,
+    overlay,
   ]);
 
   /** Copilot / chat is fetching a new answer — show one unified thinking UI (not stale sections). */
@@ -358,96 +509,281 @@ export function FollowUpPanel() {
   const showSuggestedBody =
     suggestedFollowUpText && suggestedFollowUpText !== "…";
 
-  return (
-    <div className="h-full w-full flex flex-col overflow-hidden">
+  const assistVisualActive =
+    isGeneratingNewAnswer || sending || (uiMode === "answered" && !!lockedAnswer.trim());
+
+  const overlayBlur: CSSProperties = {
+    WebkitBackdropFilter: "saturate(180%) blur(22px)",
+    backdropFilter: "saturate(180%) blur(22px)",
+  };
+
+  const overlayLabel = "text-[9px] font-semibold uppercase tracking-[0.16em] text-white/38";
+
+  const idleAnswerCopy = hasTranscript
+    ? "Waiting for a clearer moment — let the prospect ask a question or raise an objection, then press Assist."
+    : "When someone speaks, you’ll see lines here. Press Assist for what to say next, or type a specific question below.";
+
+  /** Call overlay always shows My notes — never the AI-connected rewrite (`notesContext` is still sent to APIs). */
+  const overlayNotesBody = useMemo(() => {
+    if (!overlay) return { kind: "skip" as const };
+    const raw = notesUserPlain.trim();
+    if (!raw) return { kind: "empty" as const };
+    const highlight =
+      uiMode === "answered" && lockedAnswerSource === "your notes" && !!lockedAnswer.trim();
+    if (!highlight) {
+      return {
+        kind: "text" as const,
+        node: <span className="whitespace-pre-wrap text-[12px] leading-relaxed text-white/58">{notesUserPlain}</span>,
+      };
+    }
+    const span = findNotesHighlightSpanWithFallback(notesUserPlain, notesContext, lockedAnswer);
+    if (!span) {
+      return {
+        kind: "text" as const,
+        node: <span className="whitespace-pre-wrap text-[12px] leading-relaxed text-white/58">{notesUserPlain}</span>,
+      };
+    }
+    const { start, end } = span;
+    return {
+      kind: "text" as const,
+      node: (
+        <>
+          <span className="whitespace-pre-wrap text-[12px] leading-relaxed text-white/58">{notesUserPlain.slice(0, start)}</span>
+          <mark
+            data-notes-highlight="true"
+            className="whitespace-pre-wrap rounded-sm bg-emerald-400/25 px-0.5 py-px text-[12px] leading-relaxed text-white/95 shadow-[0_0_14px_rgba(52,211,153,0.12)] ring-2 ring-emerald-400/35 [box-decoration-break:clone]"
+          >
+            {notesUserPlain.slice(start, end)}
+          </mark>
+          <span className="whitespace-pre-wrap text-[12px] leading-relaxed text-white/58">{notesUserPlain.slice(end)}</span>
+        </>
+      ),
+    };
+  }, [overlay, notesUserPlain, notesContext, uiMode, lockedAnswerSource, lockedAnswer]);
+
+  useEffect(() => {
+    if (!overlay) return;
+    if (lockedAnswerSource !== "your notes") return;
+    if (uiMode !== "answered") return;
+
+    let cancelled = false;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const raf = { outer: 0, inner: 0 };
+
+    const run = () => {
+      if (!cancelled) scrollNotesHighlightIntoView(notesScrollRef.current);
+    };
+
+    raf.outer = requestAnimationFrame(() => {
+      raf.inner = requestAnimationFrame(() => {
+        if (cancelled) return;
+        run();
+        timeouts.push(setTimeout(run, 50));
+        timeouts.push(setTimeout(run, 200));
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf.outer);
+      cancelAnimationFrame(raf.inner);
+      timeouts.forEach(clearTimeout);
+    };
+  }, [overlay, lockedAnswer, lockedAnswerSource, notesUserPlain, notesContext, uiMode]);
+
+  if (overlay) {
+    return (
       <div
-        ref={scrollContainerRef}
         className={cn(
-          "flex-1 min-h-0 overflow-y-auto p-4",
-          "flex flex-col gap-3"
+          "flex min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[rgba(20,20,20,0.82)] text-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.38)] transition-[box-shadow] duration-300 ease-out",
+          assistVisualActive && "shadow-[0_12px_40px_rgba(0,0,0,0.38),inset_0_0_0_1px_rgba(52,211,153,0.1)]"
         )}
+        style={{ ...overlayBlur, height: OVERLAY_CARD_H_PX }}
       >
+        <div className="flex h-11 shrink-0 items-center border-b border-white/[0.08] px-4">
+          <span className={overlayLabel}>Assist</span>
+        </div>
+
+        <div
+          ref={scrollContainerRef}
+          className="h-[200px] shrink-0 overflow-y-auto overscroll-contain border-b border-white/[0.06] px-4 py-4"
+        >
+          {isGeneratingNewAnswer ? (
+            <CallOverlayAnswerLoading labelCls={overlayLabel} anchorRef={answerSectionRef} />
+          ) : uiMode === "idle" ? (
+            <div ref={answerSectionRef} className="space-y-2.5">
+              <p className={overlayLabel}>Answer</p>
+              <p className="text-[14px] font-normal leading-[1.55] tracking-tight text-white/[0.92]">{idleAnswerCopy}</p>
+            </div>
+          ) : (
+            <>
+              <div ref={answerSectionRef} className="space-y-2.5">
+                <p className={overlayLabel}>Answer</p>
+                {lockedAnswerSource ? (
+                  <p className="text-[10px] text-white/30">From {lockedAnswerSource}</p>
+                ) : null}
+                <p className="text-[14px] font-normal leading-[1.55] tracking-tight text-white/[0.92]">{lockedAnswer || "…"}</p>
+              </div>
+              {uiMode === "error" ? (
+                <div className="mt-4 rounded-xl border border-amber-400/18 bg-amber-400/[0.07] px-3.5 py-3 text-[13px] text-amber-100/90">
+                  Something went wrong. Try again.
+                </div>
+              ) : null}
+            </>
+          )}
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col border-b border-white/[0.06] px-4 pb-3 pt-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className={overlayLabel}>Your notes</span>
+            {lockedAnswerSource === "your notes" && uiMode === "answered" ? (
+              <span className="text-[9px] font-medium uppercase tracking-wider text-emerald-400/70">Used in answer</span>
+            ) : null}
+          </div>
+          <div
+            ref={notesScrollRef}
+            className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-white/[0.07] bg-[rgba(10,10,12,0.65)] px-3.5 py-3"
+          >
+            {overlayNotesBody.kind === "empty" ? (
+              <p className="text-[12px] leading-relaxed text-white/38">
+                <span className="font-medium text-white/50">Nothing in My notes</span>. Add text in the Notes panel. If you use
+                Connect with AI, Assist still uses that for context — this view is always your wording only.
+              </p>
+            ) : overlayNotesBody.kind === "text" ? (
+              overlayNotesBody.node
+            ) : null}
+          </div>
+        </div>
+
+        <div className="shrink-0 px-4 pb-4 pt-3">
+          <div
+            className={cn(
+              "flex h-11 items-center gap-2 rounded-xl border px-3",
+              "border-white/10 bg-[rgba(12,12,14,0.55)]",
+              assistVisualActive && "border-emerald-400/15 shadow-[inset_0_0_0_1px_rgba(52,211,153,0.05)]"
+            )}
+          >
+            <input
+              id="follow-up-chat-input"
+              name="followUpMessage"
+              type="text"
+              autoComplete="off"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" || e.shiftKey) return;
+                if (e.metaKey) {
+                  e.preventDefault();
+                  if (!canUseAiCoach) {
+                    openUpgradeModal();
+                    return;
+                  }
+                  requestFollowUp("answer");
+                  return;
+                }
+                handleSend();
+              }}
+              placeholder="Type a specific question…"
+              className="min-w-0 flex-1 border-0 bg-transparent py-0.5 text-[13px] text-white/88 placeholder:text-white/30 focus:outline-none focus:ring-0 disabled:opacity-50"
+              disabled={sending}
+            />
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={sending}
+              className={cn(
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/25",
+                assistVisualActive
+                  ? "bg-emerald-600/88 text-white shadow-[0_2px_10px_rgba(0,0,0,0.28)] hover:bg-emerald-600"
+                  : "border border-white/10 bg-white/[0.06] text-white/50 hover:bg-white/[0.1] hover:text-white/75 disabled:cursor-not-allowed disabled:opacity-45"
+              )}
+              aria-label={sending ? "Sending" : "Send"}
+            >
+              {sending ? (
+                <span className="h-3.5 w-3.5 animate-pulse rounded-full bg-white/70" />
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M3.4 20.4l17.45-7.48a1 1 0 000-1.84L3.4 3.6a.993.993 0 00-1.39 1.15L4.25 12l-2.24 7.25a.992.992 0 001.39 1.15z" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full w-full flex-col overflow-hidden">
+      <div ref={scrollContainerRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
         {/* Generating must win over idle: answerText can flip to "…" before uiMode effect runs */}
         {isGeneratingNewAnswer ? (
           <div
-            className={cn(
-              "flex-1 min-h-[min(320px,50vh)] flex flex-col items-center justify-center gap-4 py-10 px-6 rounded-2xl",
-              "border border-white/10 bg-neutral-950 shadow-lg",
-              "text-center"
-            )}
+            className="flex min-h-[min(320px,50vh)] flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-neutral-950 px-6 py-10 text-center shadow-lg"
             role="status"
             aria-live="polite"
             aria-busy="true"
           >
             <span className="inline-flex gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-zinc-500 animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-zinc-500 animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-zinc-500 animate-bounce" />
+              <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-zinc-500 [animation-delay:-0.3s]" />
+              <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-zinc-500 [animation-delay:-0.15s]" />
+              <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-zinc-500" />
             </span>
-            <div className="space-y-2 max-w-sm">
-              <p className="text-sm font-semibold text-zinc-100">
-                Generating a new answer…
-              </p>
-              <p className="text-xs text-zinc-400 leading-relaxed">
+            <div className="max-w-sm space-y-2">
+              <p className="text-sm font-semibold text-zinc-100">Generating a new answer…</p>
+              <p className="text-xs leading-relaxed text-zinc-400">
                 Using your latest transcript. Your suggested follow-up will appear right after.
               </p>
             </div>
           </div>
         ) : uiMode === "idle" ? (
-          <div className="rounded-xl bg-background-elevated/40 border border-border/20 p-4 text-sm text-text-dim/80">
+          <div className="rounded-2xl border border-border/20 bg-background-elevated/40 p-4 text-sm text-text-dim/80">
             {hasTranscript
               ? "Press Enter to generate what to say next."
               : "Start the call, then press Enter for an answer."}
           </div>
         ) : (
           <>
-            <div ref={answerSectionRef} className="space-y-3 scroll-mt-2 pb-2">
+            <div ref={answerSectionRef} className="scroll-mt-2 space-y-3 pb-2">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-300 via-green-400 to-teal-300 bg-clip-text text-transparent">
+                <h3 className="bg-gradient-to-r from-emerald-300 via-green-400 to-teal-300 bg-clip-text text-xs font-bold uppercase tracking-wider text-transparent">
                   Answer
                 </h3>
               </div>
-              <div className="rounded-xl bg-background-elevated/55 border border-border/30 p-4 text-sm">
-                <p className="text-text-primary/95 leading-7 whitespace-pre-wrap">
-                  {lockedAnswer || "…"}
-                </p>
+              <div className="rounded-2xl border border-border/30 bg-background-elevated/55 p-4 text-sm">
+                <p className="whitespace-pre-wrap leading-7 text-text-primary/95">{lockedAnswer || "…"}</p>
               </div>
               {lockedAnswerSource ? (
-                <p className="text-xs text-text-dim/90 pl-1">From: {lockedAnswerSource}</p>
+                <p className="pl-1 text-xs text-text-dim/90">From: {lockedAnswerSource}</p>
               ) : null}
             </div>
 
-            <div className="space-y-2 mt-1">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-text-dim/75">
-                Suggested follow-up
-              </h3>
-              <div className="rounded-xl bg-background-elevated/25 border border-border/15 p-4 text-sm">
+            <div ref={followUpSectionRef} className="mt-1 space-y-2">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-text-dim/75">Suggested follow-up</h3>
+              <div className="rounded-2xl border border-border/15 bg-background-elevated/25 p-4 text-sm">
                 {questionLoading ? (
                   <div className="flex items-center gap-2 text-sm text-text-dim">
                     <span className="inline-flex gap-1">
-                      <span className="w-2 h-2 rounded-full bg-green-primary/70 animate-bounce [animation-delay:-0.3s]" />
-                      <span className="w-2 h-2 rounded-full bg-green-primary/70 animate-bounce [animation-delay:-0.15s]" />
-                      <span className="w-2 h-2 rounded-full bg-green-primary/70 animate-bounce" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-green-primary/70 [animation-delay:-0.3s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-green-primary/70 [animation-delay:-0.15s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-green-primary/70" />
                     </span>
                     <span>Thinking…</span>
                   </div>
                 ) : showSuggestedBody ? (
-                  <p className="text-text-secondary/90 leading-relaxed whitespace-pre-wrap italic">
-                    {suggestedFollowUpText}
-                  </p>
+                  <p className="whitespace-pre-wrap leading-relaxed italic text-text-secondary/90">{suggestedFollowUpText}</p>
                 ) : (
-                  <p className="text-text-dim/90 leading-relaxed">
-                    A suggested question will appear here shortly.
-                  </p>
+                  <p className="leading-relaxed text-text-dim/90">A suggested question will appear here shortly.</p>
                 )}
                 {suggestedFollowUpSource ? (
-                  <p className="text-xs text-text-dim/90 pt-2">From: {suggestedFollowUpSource}</p>
+                  <p className="pt-2 text-xs text-text-dim/90">From: {suggestedFollowUpSource}</p>
                 ) : null}
               </div>
             </div>
 
             {uiMode === "error" ? (
-              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-sm text-amber-300">
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-300">
                 Something went wrong. Try again.
               </div>
             ) : null}
@@ -455,7 +791,7 @@ export function FollowUpPanel() {
         )}
       </div>
 
-      <div className="flex-shrink-0 border-t border-border/30 bg-background-surface/50 p-3 space-y-2">
+      <div className="flex-shrink-0 space-y-2 border-t border-border/30 bg-background-surface/50 p-3">
         <div className="flex gap-2">
           <input
             id="follow-up-chat-input"
@@ -466,18 +802,14 @@ export function FollowUpPanel() {
             onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
             placeholder="Type a question or objection…"
-            className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm bg-background-elevated/60 border border-border/50 text-text-primary placeholder:text-text-dim/50 focus:outline-none focus:ring-1 focus:ring-green-primary/40"
+            className="min-w-0 flex-1 rounded-lg border border-border/50 bg-background-elevated/60 px-3 py-2.5 text-sm text-text-primary placeholder:text-text-dim/50 focus:outline-none focus:ring-1 focus:ring-green-primary/40"
             disabled={sending}
           />
           <button
             type="button"
             onClick={handleSend}
             disabled={sending}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0",
-              "bg-green-primary/20 text-green-700 dark:text-green-300 border border-green-primary/30",
-              "hover:bg-green-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
-            )}
+            className="flex-shrink-0 rounded-lg border border-green-primary/30 bg-green-primary/20 px-4 py-2.5 text-sm font-medium text-green-700 transition-colors hover:bg-green-primary/30 disabled:cursor-not-allowed disabled:opacity-50 dark:text-green-300"
           >
             {sending ? "…" : "Send"}
           </button>

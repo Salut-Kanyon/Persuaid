@@ -1,29 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
 
-function formatElapsed(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  return [h, m, s].map((n) => n.toString().padStart(2, "0")).join(":");
-}
-
 export function Header() {
-  const { isRecording, setRecording, audioInputDeviceId, setAudioInputDeviceId } = useSession();
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const {
+    isRecording,
+    setRecording,
+    audioInputDeviceId,
+    setAudioInputDeviceId,
+  } = useSession();
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
-
-  useEffect(() => {
-    if (!isRecording) {
-      setElapsedSeconds(0);
-      return;
-    }
-    const t = setInterval(() => setElapsedSeconds((n) => n + 1), 1000);
-    return () => clearInterval(t);
-  }, [isRecording]);
 
   useEffect(() => {
     let mounted = true;
@@ -34,7 +23,9 @@ export function Header() {
         if (mounted) setAudioInputs(devices.filter((d) => d.kind === "audioinput"));
       } catch (_) {}
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [isRecording]);
 
   const handleAudioInputChange = (deviceId: string) => {
@@ -45,92 +36,61 @@ export function Header() {
     }
   };
 
+  if (isRecording) {
+    return null;
+  }
+
   return (
-    <header className="h-14 bg-background-elevated/35 backdrop-blur-2xl border-b border-border/8 flex items-center justify-between px-5">
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <div
-                className={cn(
-                  "w-1.5 h-1.5 rounded-full transition-all",
-                  isRecording
-                    ? "bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]"
-                    : "bg-text-dim/50"
-                )}
-              />
-              {isRecording && (
-                <div className="absolute inset-0 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping opacity-60" />
-              )}
-            </div>
-            <span className="text-sm font-medium text-text-primary">
-              {isRecording ? "Recording" : "Paused"}
-            </span>
-          </div>
-          <div className="h-3.5 w-px bg-border/12" />
-          <span className="text-sm text-text-muted/70 font-mono tracking-wider">
-            {formatElapsed(elapsedSeconds)}
-          </span>
-        </div>
-        <div className="hidden sm:flex items-center gap-2">
-          <label htmlFor="header-audio-input" className="text-xs text-text-dim/80 whitespace-nowrap">
-            Listen from:
-          </label>
-          <select
-            id="header-audio-input"
-            name="audioInputDevice"
-            value={audioInputDeviceId ?? ""}
-            onChange={(e) => handleAudioInputChange(e.target.value)}
-            className="rounded-lg border border-border/60 bg-background-surface/60 px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-green-primary/40 max-w-[180px]"
-          >
-            <option value="">Default</option>
-            {audioInputs.map((d, i) => (
-              <option key={d.deviceId} value={d.deviceId}>
-                {d.label || `Microphone ${i + 1}`}
-              </option>
-            ))}
-          </select>
-        </div>
+    <header className="grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 bg-white/[0.04] px-3 backdrop-blur-3xl backdrop-saturate-150 sm:h-[3.25rem] sm:gap-3 sm:px-5">
+      <div className="flex min-w-0 items-center gap-2 justify-self-start sm:gap-2.5">
+        <label
+          htmlFor="header-audio-input"
+          className="shrink-0 whitespace-nowrap text-[11px] font-normal tracking-label text-text-dim/70 sm:text-xs"
+        >
+          Listen from:
+        </label>
+        <select
+          id="header-audio-input"
+          name="audioInputDevice"
+          value={audioInputDeviceId ?? ""}
+          onChange={(e) => handleAudioInputChange(e.target.value)}
+          className="min-w-0 max-w-[min(100%,200px)] rounded-lg border border-white/[0.08] bg-white/[0.06] py-1.5 pl-2 pr-1 text-[11px] font-normal text-text-primary backdrop-blur-xl focus:border-white/[0.12] focus:outline-none focus:ring-1 focus:ring-white/10 sm:max-w-[260px] sm:px-2.5 sm:text-xs"
+        >
+          <option value="">Default</option>
+          {audioInputs.map((d, i) => (
+            <option key={d.deviceId} value={d.deviceId}>
+              {d.label || `Microphone ${i + 1}`}
+            </option>
+          ))}
+        </select>
       </div>
 
-      <div className="flex items-center">
+      <div className="flex shrink-0 justify-self-center">
         <button
           type="button"
-          onClick={() => setRecording(!isRecording)}
+          onClick={() => setRecording(true)}
           className={cn(
-            "group relative overflow-hidden rounded-xl px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-bold tracking-tight transition-[filter,box-shadow] duration-300 flex items-center gap-1.5",
-            isRecording
-              ? "bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/15 shadow-md"
-              : [
-                  "border border-white/25 bg-gradient-to-br from-[#5eead4] via-[#20D3A6] to-[#0f766e] text-[#04110D]",
-                  "shadow-[0_4px_18px_rgba(32,211,166,0.35),0_0_24px_-8px_rgba(45,212,191,0.45),inset_0_1px_0_rgba(255,255,255,0.35)]",
-                  "ring-1 ring-[#20D3A6]/50 ring-offset-1 ring-offset-background",
-                  "hover:brightness-[1.05] hover:shadow-[0_6px_26px_rgba(32,211,166,0.45),0_0_32px_-4px_rgba(45,212,191,0.5),inset_0_1px_0_rgba(255,255,255,0.4)]",
-                ]
+            "inline-flex shrink-0 items-center gap-2 rounded-full bg-green-primary px-4 py-2 text-[13px] font-semibold tracking-tight text-white",
+            "shadow-[0_1px_2px_rgba(0,0,0,0.2)]",
+            "transition-[transform,background-color,box-shadow] duration-300 ease-out",
+            "hover:bg-green-dark hover:shadow-[0_2px_6px_rgba(0,0,0,0.22)]",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-green-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background-near-black",
+            "active:scale-[0.99] sm:gap-2.5 sm:px-5 sm:py-2.5 sm:text-sm"
           )}
         >
-          {isRecording ? (
-            <>
-              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-              <span>Pause</span>
-            </>
-          ) : (
-            <>
-              <span
-                className="pointer-events-none absolute -left-1/4 top-0 h-full w-1/2 skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-70 transition-opacity duration-300 group-hover:opacity-100"
-                aria-hidden
-              />
-              <span className="relative z-[1]">Start Call</span>
-              <span
-                className="relative z-[1] inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[#04110D]/30"
-                aria-hidden
-              >
-                <span className="absolute inset-0 animate-ping rounded-full bg-[#04110D]/25" />
-              </span>
-            </>
-          )}
+          <span>Start PersuAId</span>
+          <Image
+            src="/PersuaidLogo.png"
+            alt=""
+            width={32}
+            height={32}
+            className="h-5 w-5 shrink-0 object-contain brightness-0 invert sm:h-[1.35rem] sm:w-[1.35rem]"
+            priority
+          />
         </button>
       </div>
+
+      <div className="min-w-0 justify-self-end" aria-hidden />
     </header>
   );
 }

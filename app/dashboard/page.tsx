@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import dynamic from "next/dynamic";
-
-const LiveSession = dynamic(
-  () => import("@/components/app/LiveSession").then((m) => m.LiveSession),
-  { ssr: false, loading: () => <div className="flex items-center justify-center h-full text-text-muted text-sm">Loading…</div> }
-);
+import { LiveSession } from "@/components/app/LiveSession";
 
 const DEFAULT_PANEL_VISIBILITY = { followUp: true, transcript: true, notes: true };
 
@@ -14,8 +9,8 @@ export default function DashboardPage() {
   const [panelVisibility, setPanelVisibility] = useState(DEFAULT_PANEL_VISIBILITY);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 min-h-0">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden overscroll-none">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <LiveSession panelVisibility={panelVisibility} setPanelVisibility={setPanelVisibility} />
       </div>
     </div>

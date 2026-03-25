@@ -156,18 +156,18 @@ export function DraggableResizablePanel({
     };
   }, [isDragging, isResizing, minWidth, minHeight]);
 
-  const minimizedHeight = 56; // Height when minimized (just header)
+  const minimizedHeight = 52; // Height when minimized (just header), matches h-[3.25rem]
 
   return (
     <div
       ref={panelRef}
       className={cn(
         "absolute will-change-transform",
-        "bg-background-surface/25 backdrop-blur-2xl",
-        "border border-border/12 rounded-3xl overflow-hidden z-10",
-        "shadow-[0_16px_48px_-12px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.04)]",
-        !isInteracting && "transition-all duration-200",
-        isDragging && "shadow-[0_20px_64px_-12px_rgba(0,0,0,0.5)] z-30",
+        "bg-background-surface/12 backdrop-blur-3xl backdrop-saturate-150",
+        "overflow-hidden rounded-2xl border border-white/[0.08] z-10",
+        "shadow-[0_8px_32px_rgba(0,0,0,0.2)]",
+        !isInteracting && "transition-[transform,box-shadow] duration-300 ease-out",
+        isDragging && "z-30 shadow-[0_12px_40px_rgba(0,0,0,0.28)]",
         isResizing && "z-30",
         className
       )}
@@ -180,11 +180,11 @@ export function DraggableResizablePanel({
     >
       <div
         className={cn(
-          "h-14 px-5 border-b border-border/8 flex items-center justify-between backdrop-blur-xl cursor-move select-none",
-          "hover:bg-background-elevated/20 transition-colors duration-200",
-          isDragging && "bg-background-elevated/25",
+          "flex h-[3.25rem] cursor-move select-none items-center justify-between border-b border-white/[0.06] px-4",
+          "transition-colors duration-300 ease-out hover:bg-white/[0.03]",
+          isDragging && "bg-white/[0.04]",
           minimized && "border-b-0",
-          headerClassName || "bg-background-elevated/15"
+          headerClassName || "bg-transparent"
         )}
         onMouseDown={(e) => handleMouseDown(e, "drag")}
       >
@@ -198,7 +198,7 @@ export function DraggableResizablePanel({
                   e.stopPropagation();
                   onMinimizeToggle();
                 }}
-                className="p-2.5 hover:bg-background-surface/30 rounded-2xl transition-all duration-300 text-text-dim/70 hover:text-text-primary"
+                className="rounded-xl p-2 text-text-dim/65 transition-colors duration-300 ease-out hover:bg-white/[0.06] hover:text-text-primary"
                 title="Expand panel"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -213,19 +213,19 @@ export function DraggableResizablePanel({
       </div>
       {!minimized && (
         <>
-          <div className="flex-1 overflow-hidden" style={{ height: "calc(100% - 3.5rem)" }}>
+          <div className="flex-1 overflow-hidden" style={{ height: "calc(100% - 3.25rem)" }}>
             {children}
           </div>
           {/* Full-edge resize handles (full width/height, 8px grab zone) */}
-          <div className="absolute inset-x-0 top-0 h-2 min-h-[8px] cursor-ns-resize z-20 hover:bg-green-primary/10" style={{ marginTop: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top"); }} />
-          <div className="absolute inset-x-0 bottom-0 h-2 min-h-[8px] cursor-ns-resize z-20 hover:bg-green-primary/10" style={{ marginBottom: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom"); }} />
-          <div className="absolute inset-y-0 left-0 w-2 min-w-[8px] cursor-ew-resize z-20 hover:bg-green-primary/10" style={{ marginLeft: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-left"); }} />
-          <div className="absolute inset-y-0 right-0 w-2 min-w-[8px] cursor-ew-resize z-20 hover:bg-green-primary/10" style={{ marginRight: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-right"); }} />
+          <div className="absolute inset-x-0 top-0 h-2 min-h-[8px] cursor-ns-resize z-20 hover:bg-white/[0.06]" style={{ marginTop: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top"); }} />
+          <div className="absolute inset-x-0 bottom-0 h-2 min-h-[8px] cursor-ns-resize z-20 hover:bg-white/[0.06]" style={{ marginBottom: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom"); }} />
+          <div className="absolute inset-y-0 left-0 w-2 min-w-[8px] cursor-ew-resize z-20 hover:bg-white/[0.06]" style={{ marginLeft: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-left"); }} />
+          <div className="absolute inset-y-0 right-0 w-2 min-w-[8px] cursor-ew-resize z-20 hover:bg-white/[0.06]" style={{ marginRight: 0 }} onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-right"); }} />
           {/* Corner handles (on top so they take precedence) */}
-          <div className="absolute top-0 right-0 w-4 h-4 cursor-nesw-resize z-30 hover:bg-green-primary/10 rounded-tl-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top-right"); }} />
-          <div className="absolute top-0 left-0 w-4 h-4 cursor-nwse-resize z-30 hover:bg-green-primary/10 rounded-tr-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top-left"); }} />
-          <div className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize z-30 hover:bg-green-primary/10 rounded-bl-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom-right"); }} />
-          <div className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize z-30 hover:bg-green-primary/10 rounded-br-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom-left"); }} />
+          <div className="absolute top-0 right-0 w-4 h-4 cursor-nesw-resize z-30 hover:bg-white/[0.06] rounded-tl-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top-right"); }} />
+          <div className="absolute top-0 left-0 w-4 h-4 cursor-nwse-resize z-30 hover:bg-white/[0.06] rounded-tr-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-top-left"); }} />
+          <div className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize z-30 hover:bg-white/[0.06] rounded-bl-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom-right"); }} />
+          <div className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize z-30 hover:bg-white/[0.06] rounded-br-3xl" onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, "resize-bottom-left"); }} />
         </>
       )}
     </div>

@@ -26,13 +26,13 @@ export function CTAButton({
   };
   
   const baseStyles =
-    `inline-flex items-center justify-center rounded-button font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background transform hover:scale-[1.02] active:scale-[0.98] ${sizeStyles[size]}`;
+    `inline-flex items-center justify-center rounded-button font-medium transition-colors duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background ${sizeStyles[size]}`;
 
   const variants = {
     primary:
-      "bg-green-primary text-white hover:bg-green-dark focus:ring-green-primary shadow-button hover:shadow-button-hover hover:shadow-glow-button relative overflow-hidden group",
+      "bg-green-primary text-white hover:bg-green-dark focus:ring-green-primary/40",
     secondary:
-      "bg-transparent text-text-primary border-2 border-border hover:border-green-primary hover:text-green-accent focus:ring-green-primary hover:bg-green-primary/5",
+      "border border-border bg-transparent text-text-primary hover:border-white/20 hover:bg-white/[0.04] focus:ring-white/20",
   };
 
   const Component = href ? "a" : "button";
@@ -44,10 +44,7 @@ export function CTAButton({
       disabled={disabled}
       className={cn(baseStyles, variants[variant], disabled && "opacity-60 cursor-not-allowed", className)}
     >
-      {variant === "primary" && (
-        <span className="absolute inset-0 bg-gradient-to-r from-green-accent/0 via-green-accent/20 to-green-accent/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-      )}
-      <span className="relative z-10">{children}</span>
+      {children}
     </Component>
   );
 }

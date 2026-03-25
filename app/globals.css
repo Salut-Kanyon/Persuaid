@@ -45,6 +45,49 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /*
+   * Live call HUD (Electron transparent window): strip all root paints so only
+   * floating UI (CallSessionOverlay) is visible. Inline styles + Tailwind @apply
+   * on body need this override so nothing fills the viewport with near-black.
+   */
+  html[data-call-active="1"],
+  html[data-call-active="1"] body,
+  html[data-call-active="1"] #app-shell {
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Dashboard: no viewport rubber-band / page scroll; inner panels scroll on their own. */
+  html[data-dashboard-shell="1"] {
+    overflow: hidden;
+    overscroll-behavior: none;
+    height: 100%;
+  }
+
+  html[data-dashboard-shell="1"] body {
+    overflow: hidden;
+    overscroll-behavior: none;
+    height: 100%;
+  }
+
+  html[data-dashboard-shell="1"] #app-shell {
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  html[data-dashboard-shell="1"].electron-frameless:not([data-call-active="1"]) #app-shell {
+    height: calc(100dvh - 2.5rem);
+    max-height: calc(100dvh - 2.5rem);
+  }
+
+  /* Room for in-app traffic lights when Electron uses a frameless macOS window. */
+  html.electron-frameless:not([data-call-active="1"]) body {
+    padding-top: 2.5rem;
+  }
+
   /* Ensure form controls match the app theme instead of browser defaults. */
   input,
   textarea,
@@ -81,7 +124,21 @@
     }
   }
   .notes-ai-connect-progress {
-    animation: notes-ai-connect-indeterminate 1.15s ease-in-out infinite;
+    animation: notes-ai-connect-indeterminate 1.65s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+  }
+
+  /* Notes “AI version” tab when selected — soft green halo */
+  @keyframes notes-ai-version-selected-pulse {
+    0%,
+    100% {
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 0 0 0 rgba(26, 157, 120, 0.4);
+    }
+    50% {
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 0 0 4px rgba(26, 157, 120, 0.08);
+    }
+  }
+  .notes-ai-version-selected {
+    animation: notes-ai-version-selected-pulse 2.4s ease-in-out infinite;
   }
 
   @keyframes notes-connect-recommended-blink {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { buildAiMomentContextForPrompt } from "@/lib/ai-moment-context";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
       { status: 503 }
     );
   }
-  let body: { text?: string; notesContext?: string };
+  let body: { text?: string; notesContext?: string; timeZone?: string };
   try {
     body = await req.json();
   } catch {
@@ -18,6 +19,9 @@ export async function POST(req: NextRequest) {
   }
   const text = (body.text ?? "").trim();
   const notesContext = (body.notesContext ?? "").trim();
+  const momentBlock = buildAiMomentContextForPrompt(
+    typeof body.timeZone === "string" ? body.timeZone : undefined
+  );
   if (!text) {
     return NextResponse.json({ error: "Missing or empty text" }, { status: 400 });
   }
@@ -46,7 +50,9 @@ Always:
 - When appropriate, end with a small forward-moving question (Momentum). If they raised an objection, use Acknowledge → Reframe → Continue—without inventing product numbers not in the knowledge.
 - Stay concise: usually 1–3 short sentences; use up to **4–5** when giving a full pricing or tier range **from product knowledge only**.
 - Do NOT output bullet points, headings, markdown, or menu-style multiple-choice lists. (A spoken walkthrough of low / mid / high from the knowledge base is required when applicable, not forbidden.)
-- Do NOT explain your reasoning, coach the rep, or talk about "what you typed" or "this question".`;
+- Do NOT explain your reasoning, coach the rep, or talk about "what you typed" or "this question".
+
+${momentBlock}`;
 
   const knowledgeBlock = notesContext
     ? `\n\nProvided product knowledge:\n${notesContext.slice(0, 4000)}`
