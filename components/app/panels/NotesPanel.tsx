@@ -450,12 +450,20 @@ export function NotesPanel() {
                 </p>
               ) : (
                 savedNotes.map((note) => (
-                  <button
+                  <div
                     key={note.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => selectSavedNote(note)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        selectSavedNote(note);
+                      }
+                    }}
                     className={cn(
                       "group w-full rounded-lg px-2.5 py-2 text-left transition-colors duration-300 ease-out",
+                      "focus:outline-none focus-visible:ring-2 focus-visible:ring-green-primary/35",
                       activeSavedNoteId === note.id
                         ? "bg-white/[0.07] text-text-primary"
                         : "text-text-muted hover:bg-white/[0.04] hover:text-text-primary"
@@ -510,7 +518,7 @@ export function NotesPanel() {
                         </button>
                       </div>
                     </div>
-                  </button>
+                  </div>
                 ))
               )}
             </div>
