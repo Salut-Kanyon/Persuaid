@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
 
@@ -85,13 +84,12 @@ export function Header() {
           )}
         >
           <span>Start PersuAId</span>
-          <Image
+          <img
             src="/PersuaidLogo.png"
             alt=""
             width={32}
             height={32}
             className="h-5 w-5 shrink-0 object-contain brightness-0 invert sm:h-[1.35rem] sm:w-[1.35rem]"
-            priority
           />
         </button>
       </div>

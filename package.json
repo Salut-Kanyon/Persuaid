@@ -31,6 +31,7 @@
     "appId": "com.persuaid.app",
     "productName": "Persuaid",
     "asar": true,
+    "afterSign": "scripts/notarize-macos.cjs",
     "files": [
       "electron/**/*",
       "package.json"
@@ -47,10 +48,18 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "icon": "build/icon.icns",
+      "icon": "public/ElectrongPP.png",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+      "gatekeeperAssess": false,
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ]
+    },
+    "dmg": {
+      "sign": false
     },
     "win": {
       "icon": "public/ElectrongPP.png",
@@ -80,6 +89,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@electron/notarize": "^2.5.0",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

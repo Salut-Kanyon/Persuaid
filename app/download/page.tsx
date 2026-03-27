@@ -1,265 +1,196 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
+import { cn } from "@/lib/utils";
 
 export default function DownloadPage() {
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadingTarget, setDownloadingTarget] = useState<"mac" | "windows" | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [isLocalhost, setIsLocalhost] = useState(false);
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  const macUrl =
+    process.env.NEXT_PUBLIC_MAC_DOWNLOAD_URL?.trim() || "/downloads/Persuaid.dmg";
+  const windowsUrl =
+    process.env.NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL?.trim() || "/downloads/Persuaid-Setup.exe";
 
   useEffect(() => {
     setIsLocalhost(/localhost|127\.0\.0\.1/.test(window.location?.host ?? ""));
+    const checkout = new URLSearchParams(window.location.search).get("checkout");
+    setCheckoutSuccess(checkout === "success");
   }, []);
 
-  const handleDownload = async () => {
-    setIsDownloading(true);
+  const supportMailto = useMemo(
+    () => "mailto:support@persuaid.ai?subject=Windows%20beta%20access%20request",
+    []
+  );
+
+  const startDownload = async (
+    target: "mac" | "windows",
+    assetUrl: string,
+    filename: string
+  ) => {
+    setDownloadingTarget(target);
     setDownloadError(null);
 
     try {
-      const dmgUrl = "/downloads/Persuaid.dmg";
-
       try {
-        const response = await fetch(dmgUrl, { method: "HEAD" });
+        const response = await fetch(assetUrl, { method: "HEAD" });
         if (response.status === 404) {
           setDownloadError(
             isLocalhost
-              ? "DMG not found. Run npm run desktop:build to generate it, then refresh this page."
-              : "Download is not available yet. Please try again later."
+              ? `${filename} not found. Generate a fresh desktop build, then refresh this page.`
+              : target === "windows"
+                ? "Windows build is not live yet. Join the beta list and we will send you the installer."
+                : "macOS download is not available yet. Please try again shortly."
           );
-          setIsDownloading(false);
+          setDownloadingTarget(null);
           return;
         }
       } catch {
-        // HEAD can fail (CORS etc.); still attempt download
+        // HEAD can fail (CORS etc.); still attempt download.
       }
-      
-      // Create download link
+
       const link = document.createElement("a");
-      link.href = dmgUrl;
-      link.download = "Persuaid.dmg";
+      link.href = assetUrl;
+      // For same-origin assets keep explicit filename; for remote hosts let server headers drive filename.
+      if (assetUrl.startsWith("/")) {
+        link.download = filename;
+      }
       link.style.display = "none";
-      
-      // Add to DOM, click, then remove
       document.body.appendChild(link);
       link.click();
-      
-      // Clean up after a short delay
+
       setTimeout(() => {
-        if (document.body.contains(link)) {
-          document.body.removeChild(link);
-        }
-        setIsDownloading(false);
+        if (document.body.contains(link)) document.body.removeChild(link);
+        setDownloadingTarget(null);
       }, 100);
-      
     } catch (error) {
       console.error("Download error:", error);
       setDownloadError("Failed to start download. Please try again or contact support.");
-      setIsDownloading(false);
+      setDownloadingTarget(null);
     }
   };
 
   return (
     <main className="min-h-screen bg-background-near-black">
       <Navbar />
-      
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-green-glow/8 via-green-glow/3 to-transparent pointer-events-none" />
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-green-primary/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-green-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative z-10">
-        <Section className="min-h-screen flex items-center justify-center py-20">
+      <div className="relative z-10 min-h-[calc(100vh-8rem)]">
+        <section className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center"
+            transition={{ duration: 0.45 }}
+            className="mx-auto max-w-3xl text-center"
           >
-            {/* Apple Logo Animation */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="mb-8 flex justify-center"
-            >
-              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-green-primary/20 to-green-primary/5 border border-green-primary/30 flex items-center justify-center relative overflow-hidden group">
-                <motion.svg
-                  className="w-12 h-12 text-green-primary"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  animate={{ rotate: [0, 5, -5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                >
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                </motion.svg>
-                <div className="absolute inset-0 bg-gradient-to-r from-green-accent/0 via-green-accent/30 to-green-accent/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+            {checkoutSuccess && (
+              <div className="mb-6 rounded-xl border border-green-primary/35 bg-green-primary/10 p-3 text-sm text-green-accent">
+                Payment successful. Choose your desktop download below.
               </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="inline-block mb-6"
-            >
-              <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
-                Download for macOS
-              </span>
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-text-primary mb-6 leading-[1.1] tracking-tight"
-            >
-              Get Persuaid for{" "}
-              <span className="text-green-primary">Mac</span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="text-xl sm:text-2xl text-text-muted mb-12 max-w-2xl mx-auto leading-relaxed font-light"
-            >
-              Start your free trial today. Download the desktop app and experience
-              real-time AI guidance for your sales conversations.
-            </motion.p>
-
-            {/* Download Button */}
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              onClick={handleDownload}
-              disabled={isDownloading}
-              className="inline-flex items-center justify-center px-12 py-5 rounded-button bg-green-primary text-white font-semibold text-lg hover:bg-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-button hover:shadow-button-hover hover:shadow-glow-button relative overflow-hidden group mb-8"
-            >
-              <span className="absolute inset-0 bg-gradient-to-r from-green-accent/0 via-green-accent/20 to-green-accent/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-              <span className="relative z-10 flex items-center gap-3">
-                {isDownloading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Downloading...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download for Mac
-                  </>
-                )}
-              </span>
-            </motion.button>
-
-            {/* Error Message */}
-            {downloadError && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm max-w-md mx-auto"
-              >
-                {downloadError}
-              </motion.div>
             )}
 
-            {/* Direct Download Link (fallback) */}
+            <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
+              Download Persuaid Desktop
+            </h1>
+            <p className="mt-4 text-base text-text-muted sm:text-lg">
+              Pick your platform and install in under a minute.
+            </p>
+          </motion.div>
+
+          <div className="mx-auto mt-10 grid max-w-4xl gap-5 md:grid-cols-2">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-              className="mt-4"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.08 }}
+              className="rounded-2xl border border-border/60 bg-background-surface/50 p-6"
             >
-              <a
-                href="/downloads/Persuaid.dmg"
-                download="Persuaid.dmg"
-                className="text-sm text-text-muted hover:text-green-accent transition-colors duration-200"
+              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                <svg className="h-6 w-6 text-text-primary" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-text-primary">macOS</h2>
+              <p className="mt-1 text-sm text-text-muted">Universal app (.dmg)</p>
+              <button
+                type="button"
+                onClick={() => void startDownload("mac", macUrl, "Persuaid.dmg")}
+                disabled={downloadingTarget !== null}
+                className={cn(
+                  "mt-5 inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors",
+                  "bg-green-primary text-white hover:bg-green-dark disabled:cursor-not-allowed disabled:opacity-60"
+                )}
               >
-                Or click here to download directly
+                {downloadingTarget === "mac" ? "Starting download..." : "Download for Mac"}
+              </button>
+              <p className="mt-3 text-xs text-text-dim">
+                If Gatekeeper warns, right-click app in Applications and choose Open.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.14 }}
+              className="rounded-2xl border border-border/60 bg-background-surface/40 p-6"
+            >
+              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                <svg className="h-6 w-6 text-text-primary" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M1 4l9.5-1.3v9.1H1V4zm10.5-1.4L23 1v10.8H11.5V2.6zM1 12.9h9.5V22L1 20.7v-7.8zm10.5 0H23V23l-11.5-1.6v-8.5z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-text-primary">Windows</h2>
+              <p className="mt-1 text-sm text-text-muted">Installer (.exe)</p>
+              <button
+                type="button"
+                disabled
+                className={cn(
+                  "mt-5 inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors",
+                  "border border-border/70 bg-background-elevated/50 text-text-muted cursor-not-allowed opacity-75"
+                )}
+              >
+                Windows beta soon
+              </button>
+              <a
+                href={supportMailto}
+                className="mt-3 inline-flex text-xs font-medium text-green-accent hover:text-green-primary"
+              >
+                Join Windows beta waitlist
               </a>
             </motion.div>
+          </div>
 
-            {/* Instructions */}
+          {downloadError && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-              className="mt-12 p-6 bg-background-elevated border border-border rounded-card max-w-2xl mx-auto"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mx-auto mt-5 max-w-3xl rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300"
             >
-              <h3 className="text-lg font-semibold text-text-primary mb-4">Installation Instructions</h3>
-              <ol className="text-left space-y-3 text-text-secondary text-sm">
-                <li className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-primary/20 text-green-primary flex items-center justify-center font-semibold text-xs mt-0.5">1</span>
-                  <span>Open the downloaded DMG file</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-primary/20 text-green-primary flex items-center justify-center font-semibold text-xs mt-0.5">2</span>
-                  <span>Drag Persuaid to your Applications folder</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-primary/20 text-green-primary flex items-center justify-center font-semibold text-xs mt-0.5">3</span>
-                  <span>Open Persuaid from Applications and start your free trial</span>
-                </li>
-              </ol>
-              <p className="mt-4 pt-4 border-t border-border text-text-muted text-xs">
-                If macOS says Persuaid &quot;is damaged&quot;, right‑click the app → <strong>Open</strong> → click <strong>Open</strong> in the dialog. That’s a security prompt for apps from the web; the app is safe.
-              </p>
+              {downloadError}
             </motion.div>
+          )}
 
-            {/* Dev note: same file customers get */}
-            {isLocalhost && (
-              <p className="text-xs text-text-dim/70 mt-6 max-w-md mx-auto">
-                Testing locally: the file above is the same build customers get. Run{" "}
-                <code className="bg-background-elevated px-1 rounded text-[10px]">npm run desktop:build</code> to
-                refresh the DMG, then download from this page to test.
-              </p>
-            )}
+          {isLocalhost && (
+            <p className="mx-auto mt-6 max-w-3xl text-center text-xs text-text-dim/80">
+              Local dev tip: run <code className="rounded bg-background-elevated/70 px-1">npm run desktop:build</code>{" "}
+              to refresh installer assets in <code className="rounded bg-background-elevated/70 px-1">public/downloads</code>.
+            </p>
+          )}
 
-            {/* Trust indicators */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="flex flex-wrap items-center justify-center gap-8 mt-12 text-sm"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-5 h-5 rounded-full bg-green-primary/20 flex items-center justify-center">
-                  <svg
-                    className="w-3 h-3 text-green-primary"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <span className="text-text-secondary">Native macOS app</span>
-              </div>
-            </motion.div>
-          </motion.div>
-        </Section>
+          <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-border/60 bg-background-elevated/35 p-6">
+            <h3 className="text-base font-semibold text-text-primary">Install in 3 steps</h3>
+            <ol className="mt-4 space-y-3 text-sm text-text-secondary">
+              <li>1. Download the installer for your OS.</li>
+              <li>2. Drag or run installer and place Persuaid in Applications/Programs.</li>
+              <li>3. Open Persuaid and sign in to start your trial.</li>
+            </ol>
+          </div>
+        </section>
       </div>
 
       <Footer />
     </main>
-  );
-}
-
-function Section({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <section className={`py-section-sm md:py-section-md lg:py-section ${className}`}>
-      {children}
-    </section>
   );
 }

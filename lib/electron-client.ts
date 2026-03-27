@@ -34,6 +34,16 @@ export async function openMarketingPricing(router: { push: (href: string) => voi
     return;
   }
   const url = `${MARKETING_SITE_ORIGIN}/pricing`;
+  await openMarketingUrl(url);
+}
+
+/** Open a marketing URL in default browser from Electron; in web fallback to same-tab navigation. */
+export async function openMarketingUrl(url: string): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (!isElectronApp()) {
+    window.location.href = url;
+    return;
+  }
   const api = (window as Window & { persuaid?: PersuaidPreload }).persuaid;
   if (api?.openExternal) {
     const r = await api.openExternal(url);

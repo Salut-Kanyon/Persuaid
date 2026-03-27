@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { MARKETING_SITE_ORIGIN, isElectronApp, openMarketingUrl } from "@/lib/electron-client";
 
 export type NavbarLiveDemoProps = {
   isOpen: boolean;
@@ -31,10 +32,10 @@ export function Navbar({ liveDemo, landing = false }: NavbarProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navLinks = [
-    { label: "Pricing", href: "/pricing" },
+  const navLinks: Array<{ label: string; href: string; marketingOnly?: boolean }> = [
+    { label: "Pricing", href: "/pricing", marketingOnly: true },
     { label: "Tutorial", href: "/tutorial" },
-  ] as const;
+  ];
 
   const scrollToDemo = useCallback(() => {
     const id = liveDemo?.scrollTargetId ?? "hero-demo-panel";
@@ -183,7 +184,20 @@ export function Navbar({ liveDemo, landing = false }: NavbarProps) {
               {navLinks.map((link) => (
                 <a
                   key={link.label}
-                  href={link.href}
+                  href={
+                    link.marketingOnly && isElectronApp()
+                      ? `${MARKETING_SITE_ORIGIN}${link.href}`
+                      : link.href
+                  }
+                  onClick={
+                    link.marketingOnly
+                      ? (e) => {
+                          if (!isElectronApp()) return;
+                          e.preventDefault();
+                          void openMarketingUrl(`${MARKETING_SITE_ORIGIN}${link.href}`);
+                        }
+                      : undefined
+                  }
                   className={cn(
                     "shrink-0 leading-none transition-colors",
                     landing

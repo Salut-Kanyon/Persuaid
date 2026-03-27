@@ -13,6 +13,8 @@ const path = require("path");
 const root = path.resolve(__dirname, "..");
 const apiDir = path.join(root, "app", "api");
 const stashDir = path.join(root, ".desktop-stash-api");
+const redeemTokenDir = path.join(root, "app", "redeem", "[token]");
+const redeemTokenStashDir = path.join(root, ".desktop-stash-redeem-token");
 
 function restoreApiIfStashed() {
   try {
@@ -29,12 +31,29 @@ function restoreApiIfStashed() {
   }
 }
 
+function restoreRedeemTokenIfStashed() {
+  try {
+    if (fs.existsSync(redeemTokenStashDir) && !fs.existsSync(redeemTokenDir)) {
+      fs.renameSync(redeemTokenStashDir, redeemTokenDir);
+      console.log("Restored app/redeem/[token] from static-export stash.");
+    }
+  } catch (e) {
+    console.error(
+      "CRITICAL: Failed to restore app/redeem/[token] from .desktop-stash-redeem-token — fix manually:",
+      e.message
+    );
+    process.exitCode = 1;
+  }
+}
+
 function main() {
   let stashed = false;
+  let stashedRedeemToken = false;
   let exitCode = 1;
 
   const onSignal = () => {
     restoreApiIfStashed();
+    restoreRedeemTokenIfStashed();
     process.exit(exitCode);
   };
   process.on("SIGINT", onSignal);
@@ -55,8 +74,21 @@ function main() {
       process.exit(1);
       return;
     }
+    if (fs.existsSync(redeemTokenStashDir)) {
+      console.error(
+        "Stale",
+        redeemTokenStashDir,
+        "exists. Remove it or move it aside, then retry."
+      );
+      process.exit(1);
+      return;
+    }
     fs.renameSync(apiDir, stashDir);
     stashed = true;
+    if (fs.existsSync(redeemTokenDir)) {
+      fs.renameSync(redeemTokenDir, redeemTokenStashDir);
+      stashedRedeemToken = true;
+    }
 
     const env = { ...process.env, OUTPUT_STATIC: "1" };
     const r = spawnSync("npx", ["next", "build"], {
@@ -72,6 +104,9 @@ function main() {
   } finally {
     if (stashed) {
       restoreApiIfStashed();
+    }
+    if (stashedRedeemToken) {
+      restoreRedeemTokenIfStashed();
     }
   }
 

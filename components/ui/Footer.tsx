@@ -1,3 +1,7 @@
+ "use client";
+
+import { MARKETING_SITE_ORIGIN, isElectronApp, openMarketingUrl } from "@/lib/electron-client";
+
 export function Footer() {
   const footerLinks = {
     Product: [
@@ -40,6 +44,15 @@ export function Footer() {
                   <li key={link.label}>
                     <a
                       href={link.href}
+                      onClick={
+                        link.href === "/pricing"
+                          ? (e) => {
+                              if (!isElectronApp()) return;
+                              e.preventDefault();
+                              void openMarketingUrl(`${MARKETING_SITE_ORIGIN}/pricing`);
+                            }
+                          : undefined
+                      }
                       className="text-text-muted hover:text-text-primary transition-colors duration-200 text-sm"
                     >
                       {link.label}
