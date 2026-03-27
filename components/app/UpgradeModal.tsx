@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { openMarketingPricing } from "@/lib/electron-client";
 
@@ -55,7 +56,7 @@ export function UpgradeModal({
           <div className="flex flex-col items-center mb-6">
             <div className="flex items-end gap-0 mb-3">
               <img
-                src="/PersuaidLogo.png"
+                src={PERSUAID_MARK_PNG}
                 alt="Persuaid"
                 className="w-12 h-12 flex-shrink-0 object-contain"
               />

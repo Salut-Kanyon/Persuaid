@@ -24,6 +24,7 @@ module.exports = async function notarizeMacOS(context) {
 
   console.log(`[notarize-macos] Submitting ${appPath}…`);
   await notarize({
+    tool: "notarytool",
     appPath,
     appleId: APPLE_ID,
     appleIdPassword: APPLE_APP_SPECIFIC_PASSWORD,

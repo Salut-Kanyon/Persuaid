@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ClearLegacyThemeClass } from "@/components/ClearLegacyThemeClass";
 import { ElectronFramelessChrome } from "@/components/app/ElectronFramelessChrome";
+import { PERSUAID_MARK_PNG } from "@/lib/branding";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
   title: "Persuaid - AI Copilot for Sales Calls",
   description: "Say the right thing on every sales call. Real-time AI guidance for sales conversations.",
   icons: {
-    icon: "/PersuaidLogo.png",
+    icon: PERSUAID_MARK_PNG,
   },
 };
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 
 const THUMB_SRC = "/LandingVid/Thumbnail.png";
@@ -214,7 +215,7 @@ export function LandingHeroVideo({ show }: Props) {
           <div className="w-full max-w-[32rem] rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/20">
               <img
-                src="/PersuaidLogo.png"
+                src={PERSUAID_MARK_PNG}
                 alt=""
                 className="h-7 w-7 shrink-0 object-contain brightness-0 invert opacity-90"
                 width={28}

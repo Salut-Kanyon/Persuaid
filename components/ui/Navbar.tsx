@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { MARKETING_SITE_ORIGIN, isElectronApp, openMarketingUrl } from "@/lib/electron-client";
 
@@ -79,7 +80,7 @@ export function Navbar({ liveDemo, landing = false }: NavbarProps) {
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <img
-                    src="/PersuaidLogo.png"
+                    src={PERSUAID_MARK_PNG}
                     alt=""
                     className="h-4 w-4 shrink-0 object-contain"
                     width={16}
@@ -152,32 +153,25 @@ export function Navbar({ liveDemo, landing = false }: NavbarProps) {
               className="group inline-flex min-w-0 shrink-0 items-end gap-0 py-1"
               aria-label="Persuaid home"
             >
-              {landing ? (
-                <>
-                  <img
-                    src="/PersuaidLogo.png"
-                    alt=""
-                    width={40}
-                    height={40}
-                    aria-hidden
-                    className="h-7 w-7 sm:h-8 sm:w-8 md:h-8 md:w-8 shrink-0 object-contain translate-y-0.5 group-hover:opacity-90 transition-opacity duration-300"
-                  />
-                  <span
-                    className="text-base sm:text-lg md:text-lg font-bold text-stone-100 tracking-[-0.02em] -ml-1 translate-y-1 group-hover:opacity-90 transition-opacity duration-300"
-                    aria-hidden
-                  >
-                    ersuaid
-                  </span>
-                </>
-              ) : (
+              <>
                 <img
-                  src="/Persuaid-wordmark.png?v=1"
-                  alt="Persuaid"
-                  className="h-10 w-auto max-w-[min(280px,50vw)] object-contain object-left sm:h-11 md:h-12 md:max-h-[3.25rem] lg:h-14 group-hover:opacity-90 transition-opacity duration-300"
-                  width={280}
-                  height={56}
+                  src={PERSUAID_MARK_PNG}
+                  alt=""
+                  width={40}
+                  height={40}
+                  aria-hidden
+                  className="h-7 w-7 sm:h-8 sm:w-8 md:h-8 md:w-8 shrink-0 object-contain translate-y-0.5 group-hover:opacity-90 transition-opacity duration-300"
                 />
-              )}
+                <span
+                  className={cn(
+                    "text-base sm:text-lg md:text-lg font-bold tracking-[-0.02em] -ml-1 translate-y-1 group-hover:opacity-90 transition-opacity duration-300",
+                    landing ? "text-stone-100" : "text-text-primary"
+                  )}
+                  aria-hidden
+                >
+                  ersuaid
+                </span>
+              </>
             </a>
 
             <div className="flex items-end gap-5 sm:gap-6 lg:gap-7">

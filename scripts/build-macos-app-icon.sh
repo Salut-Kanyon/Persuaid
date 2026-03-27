@@ -1,14 +1,25 @@
 #!/usr/bin/env bash
-# Build build/icon.icns from Assets.xcassets/AppIcon.appiconset (iconutil = macOS only).
-# Replace that file with a hand-tuned fixed.icns if you use an external tool; run this only to regenerate from PNGs.
+# Writes build/icon.icns for electron-builder (mac.icon).
+#
+# Default: copy Local/icon.icns (gold-master Dock icon — mint P on dark).
+# To rebuild from Assets.xcassets/AppIcon.appiconset instead, run:
+#   REGENERATE_APP_ICON_FROM_ASSETS=1 bash scripts/build-macos-app-icon.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/Assets.xcassets/AppIcon.appiconset"
 OUTSET="$ROOT/build/.appicon.iconset"
 ICNS="$ROOT/build/icon.icns"
+LOCAL_MASTER="$ROOT/Local/icon.icns"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "build-macos-app-icon: skipping (iconutil requires macOS). electron-builder will use PNG if configured."
+  exit 0
+fi
+
+if [[ -z "${REGENERATE_APP_ICON_FROM_ASSETS:-}" ]] && [[ -f "$LOCAL_MASTER" ]]; then
+  mkdir -p "$ROOT/build"
+  cp "$LOCAL_MASTER" "$ICNS"
+  echo "build-macos-app-icon: using Local/icon.icns -> $ICNS"
   exit 0
 fi
 
@@ -16,6 +27,9 @@ if ! command -v iconutil >/dev/null 2>&1; then
   echo "build-macos-app-icon: iconutil not found" >&2
   exit 1
 fi
+
+# Remove any stale iconset from a failed run (iconutil rejects incomplete sets).
+rm -rf "$OUTSET"
 
 for f in 16.png 32.png 64.png 128.png 256.png 512.png 1024.png; do
   if [[ ! -f "$SRC/$f" ]]; then
@@ -41,6 +55,17 @@ cp "$SRC/512.png" "$OUTSET/icon_512x512.png"
 cp "$SRC/1024.png" "$OUTSET/icon_512x512@2x.png"
 
 rm -f "$ICNS"
-iconutil -c icns "$OUTSET" -o "$ICNS"
+if iconutil -c icns "$OUTSET" -o "$ICNS"; then
+  echo "build-macos-app-icon: wrote $ICNS"
+else
+  echo "build-macos-app-icon: iconutil failed; falling back to Local/icon.icns" >&2
+  if [[ -f "$ROOT/Local/icon.icns" ]]; then
+    cp "$ROOT/Local/icon.icns" "$ICNS"
+    echo "build-macos-app-icon: fallback copied to $ICNS"
+  else
+    echo "build-macos-app-icon: fallback file not found: $ROOT/Local/icon.icns" >&2
+    exit 1
+  fi
+fi
+
 rm -rf "$OUTSET"
-echo "build-macos-app-icon: wrote $ICNS"

@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { FollowUpPanel } from "@/components/app/panels/FollowUpPanel";
@@ -104,7 +105,7 @@ export function CallSessionOverlay() {
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06]">
               <img
-                src="/PersuaidLogo.png"
+                src={PERSUAID_MARK_PNG}
                 alt=""
                 className="h-5 w-5 object-contain opacity-95"
                 width={20}

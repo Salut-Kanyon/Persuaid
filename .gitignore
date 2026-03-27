@@ -16,6 +16,10 @@
 /dist
 .desktop-stash-api
 
+# Local shortcuts into dist/ (keep README only)
+/DesktopBuild/*
+!/DesktopBuild/README.txt
+
 # production (track macOS app icon in this folder)
 /build/*
 !/build/icon.icns

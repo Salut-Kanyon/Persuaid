@@ -1,4 +1,24 @@
 const { app, BrowserWindow, session, protocol, Menu, ipcMain, screen, nativeImage, shell } = require('electron');
+
+/**
+ * Human-readable product name (menu bar, our menus, window title).
+ * macOS Dock *tooltip* while running `npx electron` still shows "Electron" — that comes from
+ * Electron.app's Info.plist, not from JS. Only the built Persuaid.app shows "Persuaid" in the Dock.
+ */
+const APP_DISPLAY_NAME = 'Persuaid';
+
+try {
+  app.setName(APP_DISPLAY_NAME);
+  process.title = APP_DISPLAY_NAME;
+} catch (_) {}
+if (process.platform === 'darwin') {
+  app.on('will-finish-launching', () => {
+    try {
+      app.setName(APP_DISPLAY_NAME);
+    } catch (_) {}
+  });
+}
+
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -73,14 +93,21 @@ console.log('Electron startup:', {
   OUT_DIR,
 });
 
-/** Desktop window / dock image (bundled copy of `public/ElectrongPP.png`). */
+/** Desktop window icon (bundled `ElectrongPP.png`; dev prefers `public/PersuaidLogo.png` then `ElectrongPP.png`). */
 function resolveAppLogoPath() {
   if (app.isPackaged) {
     const packaged = path.join(process.resourcesPath, 'ElectrongPP.png');
     if (fs.existsSync(packaged)) return packaged;
   }
-  const devPath = path.join(__dirname, '..', 'public', 'ElectrongPP.png');
-  return fs.existsSync(devPath) ? devPath : null;
+  const root = path.join(__dirname, '..');
+  const candidates = [
+    path.join(root, 'public', 'PersuaidLogo.png'),
+    path.join(root, 'public', 'ElectrongPP.png'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
 }
 
 function getWindowIcon() {
@@ -340,7 +367,7 @@ function buildAiMomentContextBlock(timeZone) {
 /** In-app handler for POST /api/ai/follow-up: mode=answer (Enter) or mode=follow_up_question (button). */
 function handleFollowUpApi(body, res) {
   console.log('[AI] /api/ai/follow-up called');
-  const key = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim();
+  const key = getOpenAiApiKey();
   if (!key) {
     res.writeHead(503, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'OPENAI_API_KEY is not configured. Add it to ~/Library/Application Support/Persuaid/.env' }));
@@ -549,7 +576,7 @@ Rules specific to this mode:
 /** In-app handler for POST /api/ai/rewrite-notes (Improve notes for sales). */
 function handleRewriteNotesApi(body, res) {
   console.log('[AI] /api/ai/rewrite-notes called');
-  const key = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim();
+  const key = getOpenAiApiKey();
   if (!key) {
     res.writeHead(503, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'OPENAI_API_KEY is not configured. Add it to ~/Library/Application Support/Persuaid/.env' }));
@@ -639,7 +666,7 @@ Output rules: no preamble, no "here is the rewritten version", no intro or wrapp
 /** In-app handler for POST /api/ai/deal-context (extract deal context from transcript). */
 function handleDealContextApi(body, res) {
   console.log('[AI] /api/ai/deal-context called');
-  const key = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim();
+  const key = getOpenAiApiKey();
   if (!key) {
     res.writeHead(503, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'OPENAI_API_KEY is not configured. Add it to ~/Library/Application Support/Persuaid/.env' }));
@@ -747,7 +774,7 @@ Return only the JSON object, no commentary.`;
 /** In-app handler for POST /api/ai/suggestions */
 function handleSuggestionsApi(body, res) {
   console.log('[AI] /api/ai/suggestions called');
-  const key = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim();
+  const key = getOpenAiApiKey();
   if (!key) {
     res.writeHead(503, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'OPENAI_API_KEY is not configured' }));
@@ -838,7 +865,7 @@ function handleSuggestionsApi(body, res) {
 /** In-app handler for POST /api/ai/answer */
 function handleAnswerApi(body, res) {
   console.log('[AI] /api/ai/answer called');
-  const key = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim();
+  const key = getOpenAiApiKey();
   if (!key) {
     res.writeHead(503, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'OPENAI_API_KEY is not configured' }));
@@ -917,7 +944,7 @@ function handleAnswerApi(body, res) {
 /** In-app handler for POST /api/ai/notes (summary + items; Supabase insert skipped in Electron if env not set). */
 function handleNotesApi(body, res) {
   console.log('[AI] /api/ai/notes called');
-  const key = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim();
+  const key = getOpenAiApiKey();
   if (!key) {
     res.writeHead(503, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'OPENAI_API_KEY is not configured' }));
@@ -1113,6 +1140,23 @@ function getDeepgramApiKey() {
   return null;
 }
 
+/** Same idea as getDeepgramApiKey: dotenv at startup can miss keys; read userData/.env directly as fallback. */
+function getOpenAiApiKey() {
+  if (process.env.OPENAI_API_KEY) return process.env.OPENAI_API_KEY.trim();
+  try {
+    const userDataDir = app.getPath('userData');
+    const envPath = path.join(userDataDir, '.env');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf8');
+      const m = content.match(/OPENAI_API_KEY\s*=\s*([^\r\n]+)/);
+      if (m) return m[1].trim().replace(/^["']|["']$/g, '');
+    }
+  } catch (e) {
+    console.warn('Could not read OPENAI_API_KEY from .env:', e.message);
+  }
+  return null;
+}
+
 /** Start in-app STT WebSocket proxy so the DMG can use transcription without a separate proxy. */
 function startSttProxy(apiKey) {
   if (!apiKey) {
@@ -1267,51 +1311,94 @@ function setupInspectorSupport(win) {
     !app.isPackaged ||
     process.env.DESKTOP_DEV === '1' ||
     process.env.ELECTRON_OPEN_DEVTOOLS === '1';
-  if (!showDevMenu) return;
+
   const isMac = process.platform === 'darwin';
-  const template = [];
+
+  // macOS: always install an app menu labeled "Persuaid". If we skip this (e.g. packaged + no dev flags),
+  // Electron's default menu keeps the name "Electron" in the menu bar.
   if (isMac) {
+    const template = [];
     template.push({
-      label: app.name,
+      label: APP_DISPLAY_NAME,
       submenu: [
         { role: 'about' },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
         { type: 'separator' },
         { role: 'quit' },
       ],
     });
-  } else {
-    template.push({
-      label: 'File',
-      submenu: [{ role: 'quit' }],
-    });
+    if (showDevMenu) {
+      template.push({
+        label: 'Edit',
+        submenu: [
+          { role: 'undo' },
+          { role: 'redo' },
+          { type: 'separator' },
+          { role: 'cut' },
+          { role: 'copy' },
+          { role: 'paste' },
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' },
+        ],
+      });
+      template.push({
+        label: 'View',
+        submenu: [
+          { role: 'reload' },
+          { type: 'separator' },
+          {
+            label: 'Toggle Developer Tools',
+            role: 'toggleDevTools',
+            accelerator: 'Alt+Command+I',
+          },
+        ],
+      });
+    }
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+    return;
   }
-  template.push({
-    label: 'Edit',
-    submenu: [
-      { role: 'undo' },
-      { role: 'redo' },
-      { type: 'separator' },
-      { role: 'cut' },
-      { role: 'copy' },
-      { role: 'paste' },
-      { role: 'pasteAndMatchStyle' },
-      { role: 'delete' },
-      { role: 'selectAll' },
-    ],
-  });
-  template.push({
-    label: 'View',
-    submenu: [
-      { role: 'reload' },
-      { type: 'separator' },
+
+  if (!showDevMenu) return;
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
       {
-        label: 'Toggle Developer Tools',
-        role: 'toggleDevTools',
-        accelerator: isMac ? 'Alt+Command+I' : 'Ctrl+Shift+I',
+        label: 'File',
+        submenu: [{ role: 'quit' }],
       },
-    ],
-  });
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+      {
+        label: 'Edit',
+        submenu: [
+          { role: 'undo' },
+          { role: 'redo' },
+          { type: 'separator' },
+          { role: 'cut' },
+          { role: 'copy' },
+          { role: 'paste' },
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' },
+        ],
+      },
+      {
+        label: 'View',
+        submenu: [
+          { role: 'reload' },
+          { type: 'separator' },
+          {
+            label: 'Toggle Developer Tools',
+            role: 'toggleDevTools',
+            accelerator: 'Ctrl+Shift+I',
+          },
+        ],
+      },
+    ])
+  );
 }
 
 function createWindow() {
@@ -1426,9 +1513,6 @@ function createWindow() {
 
 app.whenReady().then(() => {
   try {
-    app.setName('Persuaid');
-  } catch (_) {}
-  try {
     fs.writeFileSync('/tmp/persuaid-ready.txt', new Date().toISOString());
   } catch (e) {
     console.error('persuaid ready write failed', e.message);
@@ -1445,7 +1529,12 @@ app.whenReady().then(() => {
   } catch (_) {}
   registerAppProtocol();
   const envPath = path.join(app.getPath('userData'), '.env');
+  if (fs.existsSync(envPath)) {
+    require('dotenv').config({ path: envPath, override: true });
+  }
   debugLog('[STT] Reading .env from:', envPath);
+  const openAiKey = getOpenAiApiKey();
+  debugLog('[AI] OPENAI_API_KEY:', openAiKey ? 'yes (length ' + openAiKey.length + ')' : 'no — add OPENAI_API_KEY to', envPath);
   const deepgramKey = getDeepgramApiKey();
   if (deepgramKey) {
     debugLog('[STT] DEEPGRAM_API_KEY loaded: yes (length', deepgramKey.length + ')');

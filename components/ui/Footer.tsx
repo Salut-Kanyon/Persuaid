@@ -1,5 +1,6 @@
- "use client";
+"use client";
 
+import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { MARKETING_SITE_ORIGIN, isElectronApp, openMarketingUrl } from "@/lib/electron-client";
 
 export function Footer() {
@@ -10,8 +11,8 @@ export function Footer() {
       { label: "Our Message", href: "/manifesto" },
     ],
     Support: [
-      { label: "Help Center", href: "/contact" },
-      { label: "Contact", href: "/contact" },
+      { label: "Get in Touch", href: "/contact" },
+      { label: "Contact Us", href: "/contact-us" },
     ],
     Legal: [
       { label: "Privacy Policy", href: "/privacy" },
@@ -72,7 +73,7 @@ export function Footer() {
             aria-label="Persuaid home"
           >
             <img
-              src="/PersuaidLogo.png"
+              src={PERSUAID_MARK_PNG}
               alt=""
               width={32}
               height={32}

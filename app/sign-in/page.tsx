@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { supabase } from "@/lib/supabase/client";
+import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 
 /** Marketing CTAs use `/sign-in` → create account first. Auth redirects use `?signin=1` to open sign-in. */
@@ -106,7 +107,7 @@ function SignInForm() {
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
           >
             <img
-              src="/PersuaidLogo.png"
+              src={PERSUAID_MARK_PNG}
               alt="Persuaid"
               className="w-12 h-12 flex-shrink-0 object-contain translate-y-1"
             />

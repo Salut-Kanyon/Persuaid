@@ -41,34 +41,29 @@ export default function TutorialPage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen bg-[#121210] text-[#F5F7F7] selection:bg-[color:var(--landing-accent)]/20">
-      <div
-        className="pointer-events-none fixed inset-0 bg-cover bg-top bg-no-repeat opacity-[0.2]"
-        style={{
-          backgroundImage: "url(/hero-landing-bg.png?v=9)",
-        }}
-        aria-hidden
-      />
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-56 bg-gradient-to-b from-[#121210] via-[#121210]/80 to-transparent z-0" />
+    <main className="relative min-h-screen bg-[#000000] text-[#F5F7F7] selection:bg-[color:var(--landing-accent)]/20">
+      <div className="pointer-events-none fixed inset-0 bg-[#000000] z-0" aria-hidden />
+      <div className="pointer-events-none fixed inset-0 z-0 opacity-[0.22] [background-image:linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] [background-size:96px_96px]" />
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-56 bg-gradient-to-b from-[#000000] via-[#000000]/88 to-transparent z-0" />
 
       <Navbar landing />
 
       <div className="relative z-10">
-        <section className="pt-24 pb-20 sm:pt-28 sm:pb-28 px-5 sm:px-8 max-w-[980px] mx-auto">
+        <section className="pt-24 pb-20 sm:pt-28 sm:pb-28 px-5 sm:px-8 max-w-[1100px] mx-auto">
           <motion.header
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="text-center mb-12 sm:mb-16"
+            className="text-center mb-10 sm:mb-12"
           >
-            <p className="text-[11px] sm:text-xs font-medium uppercase tracking-[0.22em] text-[#7E8888] mb-4">
-              Persuaid · Quick start
+            <p className="text-[11px] sm:text-xs font-medium uppercase tracking-[0.22em] text-[#8A9494] mb-3">
+              Tutorial
             </p>
             <h1 className="text-[1.75rem] sm:text-[2.25rem] lg:text-[2.75rem] font-semibold tracking-[-0.03em] text-[#F5F7F7] leading-[1.1] max-w-2xl mx-auto text-balance">
-              Watch the walkthrough
+              Watch the walkthrough in the actual call flow
             </h1>
-            <p className="mt-4 text-[15px] sm:text-[17px] text-[#B7C0C0] font-normal leading-relaxed max-w-md mx-auto">
-              Turn sound on for narration. Same dark workspace vibe as the product.
+            <p className="mt-4 text-[15px] sm:text-[17px] text-[#AEB8B8] font-normal leading-relaxed max-w-xl mx-auto">
+              Same dark workspace style as the app, with the latest tutorial capture.
             </p>
           </motion.header>
 
@@ -76,26 +71,34 @@ export default function TutorialPage() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
-            className="mx-auto max-w-[880px]"
+            className="mx-auto max-w-[1020px]"
           >
             <div
               className={cn(
-                "rounded-[22px] sm:rounded-[28px] overflow-hidden",
-                "bg-[#0B0D0D] border border-white/[0.1] shadow-[0_24px_80px_-24px_rgba(0,0,0,0.75)]",
+                "rounded-[20px] sm:rounded-[26px] overflow-hidden",
+                "bg-[#040404] border border-white/[0.1] shadow-[0_36px_120px_-34px_rgba(0,0,0,0.95)]",
                 "ring-1 ring-white/[0.06]"
               )}
               style={{ WebkitMaskImage: "-webkit-radial-gradient(white, black)" }}
             >
-              <div className="aspect-video bg-black">
+              <div className="relative aspect-video bg-[#000000]">
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-14 bg-gradient-to-b from-black/60 to-transparent" />
+                <div className="pointer-events-none absolute left-4 top-4 z-20 rounded-xl border border-white/15 bg-black/55 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#c8d0d0]">Tutorial</p>
+                  <p className="mt-1 text-[12px] text-[#d7dddd] leading-snug">
+                    give me an example of a healthy young person price
+                  </p>
+                </div>
                 <video
                   ref={videoRef}
-                  className="w-full h-full object-contain"
-                  controls
+                  className="w-full h-full object-cover"
                   playsInline
-                  preload="metadata"
-                  muted={false}
+                  preload="auto"
+                  autoPlay
+                  loop
+                  muted
                 >
-                  <source src="/g.mp4" type="video/mp4" />
+                  <source src="/go.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
               </div>
@@ -103,7 +106,7 @@ export default function TutorialPage() {
 
             <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-1">
               <p className="text-left text-[13px] sm:text-sm text-[#7E8888] leading-snug max-w-md">
-                No audio? Use the player&apos;s speaker control and check system volume.
+                Want narration? Tap once to unmute and continue playing.
               </p>
               <button
                 type="button"
@@ -122,7 +125,7 @@ export default function TutorialPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.45, delay: 0.12 }}
-            className="mt-12 sm:mt-14 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-md sm:max-w-none mx-auto"
+            className="mt-10 sm:mt-12 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-md sm:max-w-none mx-auto"
           >
             <button
               type="button"

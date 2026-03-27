@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
 
@@ -85,7 +86,7 @@ export function Header() {
         >
           <span>Start PersuAId</span>
           <img
-            src="/PersuaidLogo.png"
+            src={PERSUAID_MARK_PNG}
             alt=""
             width={32}
             height={32}

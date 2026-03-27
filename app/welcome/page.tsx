@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { supabase } from "@/lib/supabase/client";
 
 export default function WelcomePage() {
@@ -73,7 +74,7 @@ export default function WelcomePage() {
           className="flex items-end justify-center gap-0 mb-8"
         >
           <img
-            src="/PersuaidLogo.png"
+            src={PERSUAID_MARK_PNG}
             alt="Persuaid"
             className="w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 object-contain translate-y-1"
           />

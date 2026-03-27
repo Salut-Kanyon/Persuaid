@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { useAppHomeHref } from "@/lib/electron-client";
 import { supabase } from "@/lib/supabase/client";
@@ -186,7 +187,7 @@ export function Sidebar() {
           )}
         >
           <img
-            src="/PersuaidLogo.png"
+            src={PERSUAID_MARK_PNG}
             alt="Persuaid"
             className={cn(
               "flex-shrink-0 object-contain translate-y-1 group-hover:opacity-90 transition-all duration-200",

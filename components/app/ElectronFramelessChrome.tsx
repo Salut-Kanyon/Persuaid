@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
+import { PERSUAID_MARK_PNG } from "@/lib/branding";
 
 type PersuaidApi = {
   frameless?: boolean;
@@ -75,7 +76,7 @@ export function ElectronFramelessChrome() {
       </div>
       <div className="flex min-w-0 flex-1 justify-center" style={dragStyle}>
         <img
-          src="/ElectrongPP.png"
+          src={PERSUAID_MARK_PNG}
           alt=""
           width={22}
           height={22}
