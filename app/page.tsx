@@ -370,7 +370,7 @@ function FastTutorialCard() {
 
       <div className="pointer-events-none absolute left-6 top-6 z-10">
         <div className="rounded-2xl border border-white/10 bg-black/55 px-3.5 py-2 backdrop-blur-xl">
-          <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/85">Fast Tutorial</p>
+          <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/85">Tutorial</p>
           <div className="mt-1 flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-white/50 animate-pulse" />
             <p className="text-[12px] text-white/90">Listening (subtitles)</p>
@@ -1212,7 +1212,7 @@ export default function Home() {
       <Section className="border-t border-white/[0.06] py-12 md:py-16 lg:py-22">
         <div className="max-w-6xl mx-auto">
           <div className="mb-4 md:mb-5">
-            <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/85">Fast Tutorial</p>
+            <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/85">Tutorial</p>
           </div>
           <FastTutorialCard />
         </div>
@@ -1221,119 +1221,6 @@ export default function Home() {
       <Section className="pt-24 pb-20 md:pt-28 md:pb-24 lg:pt-32 lg:pb-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <NotesToActionInteractiveDemo />
-        </div>
-      </Section>
-
-      <Section className="border-t border-white/[0.06] bg-[var(--bg-near-black)] py-20 md:py-24 lg:py-32 overflow-hidden">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.45, ease: "easeOut" }}
-            className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-14 lg:items-center"
-          >
-            <div className="lg:col-span-4">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/85">On every call</p>
-              <h2 className="mt-2 text-3xl sm:text-4xl lg:text-[2.65rem] font-semibold tracking-tight text-text-primary">
-                Real-time understanding
-              </h2>
-              <ul className="mt-5 space-y-2.5 text-sm sm:text-[15px] text-text-muted leading-relaxed">
-                <li className="flex gap-2.5">
-                  <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-emerald-400/50" aria-hidden />
-                  <span>New agents ramp faster.</span>
-                </li>
-                <li className="flex gap-2.5">
-                  <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-violet-400/45" aria-hidden />
-                  <span>Your team stays consistent.</span>
-                </li>
-                <li className="flex gap-2.5">
-                  <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-sky-400/45" aria-hidden />
-                  <span>
-                    You just{" "}
-                    <span className="bg-gradient-to-r from-emerald-200/85 via-violet-200/75 to-sky-200/80 bg-clip-text text-transparent font-medium">
-                      know what to say
-                    </span>
-                    .
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="lg:col-span-8">
-              <div className="relative overflow-hidden rounded-[1.85rem] bg-white/[0.02] shadow-[0_44px_160px_-110px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.06]">
-                <div
-                  className="pointer-events-none absolute -left-28 -top-36 h-80 w-80 rounded-full bg-emerald-400/12 blur-3xl"
-                  aria-hidden
-                />
-
-                <div className="relative p-5 sm:p-6">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 rounded-full bg-white/[0.04] px-3 py-1.5 ring-1 ring-white/10">
-                      <span aria-hidden className="h-2 w-2 rounded-full bg-emerald-300/70" />
-                      <span className="text-[11px] font-medium text-emerald-100/90">Live</span>
-                    </div>
-                    <span className="text-[11px] uppercase tracking-[0.14em] text-text-dim/80">On-call</span>
-                  </div>
-
-                  <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-5 lg:items-stretch">
-                    <div className="overflow-hidden rounded-2xl bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ring-1 ring-white/[0.07]">
-                      <div className="px-4 py-3 sm:px-5">
-                        <div className="flex items-start gap-3 text-[13px] sm:text-[14px]">
-                          <span className="w-11 shrink-0 pt-0.5 text-[11px] uppercase tracking-[0.14em] text-white/45">
-                            Rep
-                          </span>
-                          <p className="min-w-0 leading-relaxed text-white/72">
-                            &ldquo;What would this cost monthly?&rdquo;
-                          </p>
-                        </div>
-                      </div>
-                      <div className="h-px bg-white/[0.08]" aria-hidden />
-                      <div className="px-4 py-3 sm:px-5">
-                        <div className="flex items-start gap-3 text-[13px] sm:text-[14px]">
-                          <span className="w-11 shrink-0 pt-0.5 text-[11px] uppercase tracking-[0.14em] text-white/45">
-                            Client
-                          </span>
-                          <p className="min-w-0 leading-relaxed text-white/72">
-                            &ldquo;I&rsquo;m in my early 40s and healthy.&rdquo;
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "-40px" }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="flex min-h-0"
-                    >
-                      <div className="flex w-full flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-white/[0.11] to-white/[0.05] backdrop-blur-xl ring-1 ring-white/20 shadow-[0_18px_70px_-46px_rgba(0,0,0,0.85)]">
-                        <div className="p-4 sm:p-5">
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-300/10 ring-1 ring-emerald-200/20 text-[11px] font-semibold text-emerald-100/90">
-                              AI
-                            </span>
-                            <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-100/85">
-                              It&rsquo;s{" "}
-                              <span className="bg-gradient-to-r from-emerald-200/85 via-violet-200/75 to-sky-200/80 bg-clip-text text-transparent">
-                                already there
-                              </span>
-                            </p>
-                          </div>
-                          <p className="mt-3 text-[15px] sm:text-[16px] leading-relaxed text-white/92">
-                            For a healthy 42-year-old non-smoker, <span className="text-emerald-100/95">$500k</span> /{" "}
-                            <span className="text-emerald-100/95">20-year term</span> typically lands in a mid-range
-                            monthly band. If underwriting comes back preferred, the premium can drop meaningfully.
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </Section>
 
