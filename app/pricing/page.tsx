@@ -241,6 +241,37 @@ export default function PricingPage() {
           </div>
         </motion.div>
 
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.35 }}
+          className="max-w-6xl mx-auto mb-16"
+        >
+          <div
+            className={cn(
+              "rounded-2xl border p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4",
+              "bg-background-surface/40 border-border/50"
+            )}
+          >
+            <div className="min-w-0">
+              <h3 className="text-lg font-bold text-text-primary tracking-tight">Agency</h3>
+              <p className="text-text-muted text-sm mt-1 max-w-xl">
+                Bundle Pro-level access for many reps at a discounted per-seat rate. You get invite links so agents can
+                join your workspace—no shared logins.
+              </p>
+            </div>
+            <a
+              href="mailto:support@persuaid.ai?subject=Persuaid%20Agency%20plan"
+              className={cn(
+                "shrink-0 inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold",
+                "border border-white/[0.12] bg-white/[0.06] text-text-primary hover:bg-white/[0.09] transition-colors"
+              )}
+            >
+              Contact us
+            </a>
+          </div>
+        </motion.div>
+
         {/* FAQ */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

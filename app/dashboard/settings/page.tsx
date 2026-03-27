@@ -46,6 +46,31 @@ export default function SettingsPage() {
   const [usageLoading, setUsageLoading] = useState(true);
   const [usageError, setUsageError] = useState<string | null>(null);
 
+  type AgencyMe = {
+    role: "owner" | "member" | null;
+    agency: {
+      id: string;
+      name: string;
+      seatsTotal: number;
+      seatsUsed: number;
+    } | null;
+    invites: Array<{
+      id: string;
+      max_uses: number;
+      uses: number;
+      expires_at: string | null;
+      created_at: string;
+    }>;
+    /** Set when the API could not read agency tables (RLS, migration, etc.) */
+    error?: string;
+    detail?: string;
+  };
+  const [agencyMe, setAgencyMe] = useState<AgencyMe | null>(null);
+  const [agencyLoading, setAgencyLoading] = useState(true);
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+  const [lastRedeemUrl, setLastRedeemUrl] = useState<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -93,6 +118,43 @@ export default function SettingsPage() {
         }
       } finally {
         if (!cancelled) setUsageLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setAgencyLoading(true);
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const tok = session?.access_token;
+        if (!tok) {
+          if (!cancelled) setAgencyMe(null);
+          return;
+        }
+        const res = await fetch("/api/agency/me", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${tok}` },
+        });
+        const json = (await res.json()) as AgencyMe;
+        if (!cancelled && res.ok) setAgencyMe(json);
+        else if (!cancelled)
+          setAgencyMe({
+            role: null,
+            agency: null,
+            invites: [],
+            error: (json as { error?: string }).error ?? "Could not load agency (session or network).",
+          });
+      } catch {
+        if (!cancelled) setAgencyMe(null);
+      } finally {
+        if (!cancelled) setAgencyLoading(false);
       }
     })();
     return () => {
@@ -155,6 +217,53 @@ export default function SettingsPage() {
     setNewPassword("");
     setConfirmPassword("");
     setPasswordMessage({ type: "success", text: "Password updated." });
+  };
+
+  const handleCreateAgencyInvite = async () => {
+    setInviteMessage(null);
+    setInviteBusy(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const tok = session?.access_token;
+      if (!tok) {
+        setInviteMessage("Sign in required.");
+        setInviteBusy(false);
+        return;
+      }
+      const res = await fetch("/api/agency/invites", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tok}`,
+        },
+        body: JSON.stringify({ maxUses: 1 }),
+      });
+      const data = (await res.json()) as { redeemUrl?: string; error?: string };
+      if (!res.ok) {
+        setInviteMessage(data.error || "Could not create invite.");
+        return;
+      }
+      if (data.redeemUrl) {
+        setLastRedeemUrl(data.redeemUrl);
+        setInviteMessage("Invite link created. Copy it below.");
+        try {
+          await navigator.clipboard.writeText(data.redeemUrl);
+        } catch {
+          // ignore
+        }
+        const me = await fetch("/api/agency/me", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${tok}` },
+        });
+        if (me.ok) setAgencyMe((await me.json()) as AgencyMe);
+      }
+    } catch {
+      setInviteMessage("Could not create invite.");
+    } finally {
+      setInviteBusy(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -357,6 +466,106 @@ export default function SettingsPage() {
                 </a>
               }
             />
+          </SettingsSection>
+
+          <SettingsSection
+            title="Agency"
+            description="Multi-seat Pro access via invite links. Agency accounts are provisioned by Persuaid; owners can create invites for agents."
+          >
+            {agencyLoading ? (
+              <p className="text-sm text-text-muted">Loading…</p>
+            ) : agencyMe?.error ? (
+              <div className="space-y-2 text-sm">
+                <p className="text-amber-600 dark:text-amber-400">{agencyMe.error}</p>
+                {agencyMe.detail ? (
+                  <p className="text-xs font-mono text-text-dim break-all rounded-lg border border-border/40 bg-background-elevated/30 p-2">
+                    {agencyMe.detail}
+                  </p>
+                ) : null}
+              </div>
+            ) : !agencyMe?.agency ? (
+              <div className="space-y-2 text-sm text-text-muted">
+                <p>
+                  You don’t have an agency workspace yet. If you purchased an agency plan, contact support to link your
+                  account and seat count.
+                </p>
+                <p className="text-xs text-text-dim">
+                  Pro from a dev bypass does not create an agency — you still need an{" "}
+                  <code className="rounded bg-background-elevated/50 px-1">agencies</code> row with your Auth user id as{" "}
+                  <code className="rounded bg-background-elevated/50 px-1">owner_user_id</code>, in the same Supabase
+                  project as this app&apos;s env.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <SettingsItem
+                  label="Workspace"
+                  description={agencyMe.agency.name}
+                  control={
+                    <span className="text-xs font-medium text-text-muted capitalize">
+                      {agencyMe.role === "owner" ? "Owner" : "Member"}
+                    </span>
+                  }
+                />
+                <SettingsItem
+                  label="Seats"
+                  description="Members with a redeemed invite use one seat each (including you)."
+                  control={
+                    <span className="text-sm font-semibold tabular-nums text-text-primary">
+                      {agencyMe.agency.seatsUsed} / {agencyMe.agency.seatsTotal}
+                    </span>
+                  }
+                />
+                {agencyMe.role === "owner" && (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCreateAgencyInvite}
+                        disabled={inviteBusy || agencyMe.agency.seatsUsed >= agencyMe.agency.seatsTotal}
+                        className="px-3 py-2 rounded-xl bg-green-primary/20 border border-green-primary/35 text-green-accent text-xs font-semibold hover:bg-green-primary/28 disabled:opacity-50"
+                      >
+                        {inviteBusy ? "Creating…" : "Create invite link"}
+                      </button>
+                      {lastRedeemUrl && (
+                        <button
+                          type="button"
+                          onClick={() => void navigator.clipboard.writeText(lastRedeemUrl)}
+                          className="px-3 py-2 rounded-xl bg-background-surface/60 border border-border/50 text-xs font-medium text-text-primary hover:bg-background-surface"
+                        >
+                          Copy last link
+                        </button>
+                      )}
+                    </div>
+                    {inviteMessage && <p className="text-xs text-text-muted">{inviteMessage}</p>}
+                    {lastRedeemUrl && (
+                      <p className="text-[11px] text-text-dim break-all rounded-lg border border-border/40 bg-background-elevated/30 p-2">
+                        {lastRedeemUrl}
+                      </p>
+                    )}
+                    {agencyMe.invites.length > 0 && (
+                      <div className="rounded-xl border border-border/40 bg-background-elevated/20 p-3">
+                        <p className="text-[11px] font-medium text-text-dim uppercase tracking-wider mb-2">
+                          Recent invites
+                        </p>
+                        <ul className="space-y-1.5 text-xs text-text-muted">
+                          {agencyMe.invites.map((inv) => (
+                            <li key={inv.id} className="flex justify-between gap-2">
+                              <span>
+                                Uses {inv.uses}/{inv.max_uses}
+                                {inv.expires_at
+                                  ? ` · exp ${new Date(inv.expires_at).toLocaleDateString()}`
+                                  : ""}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </SettingsSection>
 
           <SettingsSection title="App settings" description="Defaults that affect the product">

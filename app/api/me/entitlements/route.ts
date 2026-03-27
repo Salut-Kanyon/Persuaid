@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getPlanForUser } from "@/lib/entitlements";
+import { resolveEffectivePlan } from "@/lib/agency";
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
@@ -27,8 +27,17 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Invalid or expired session" }, { status: 401 });
   }
 
-  const plan = getPlanForUser(user.id, user.email ?? undefined);
-  const body: { plan: string; bypassConfigured?: boolean } = { plan };
+  const { plan, agency } = await resolveEffectivePlan(supabase, user.id, user.email ?? undefined);
+  const body: {
+    plan: string;
+    agencyId?: string;
+    agencyRole?: "owner" | "member";
+    bypassConfigured?: boolean;
+  } = { plan };
+  if (agency) {
+    body.agencyId = agency.agencyId;
+    body.agencyRole = agency.role;
+  }
   if (process.env.NODE_ENV === "development") {
     const hasBypass =
       !!process.env.PAYWALL_BYPASS_EMAIL?.trim() ||

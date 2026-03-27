@@ -70,7 +70,11 @@ export function Header() {
       <div className="flex shrink-0 justify-self-end">
         <button
           type="button"
-          onClick={() => setRecording(true)}
+          onClick={() => {
+            // Default to the computer/system mic to avoid triggering phone/Bluetooth connection popups.
+            setAudioInputDeviceId(null);
+            setRecording(true);
+          }}
           className={cn(
             "inline-flex shrink-0 items-center gap-2 rounded-full bg-green-primary px-4 py-2 text-[13px] font-semibold tracking-tight text-white",
             "shadow-[0_1px_2px_rgba(0,0,0,0.2)]",

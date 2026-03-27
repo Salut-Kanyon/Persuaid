@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getPlanForUser } from "@/lib/entitlements";
+import { resolveEffectivePlan } from "@/lib/agency";
 import {
   currentMonthBoundsUtc,
   formatUsageMinutes,
@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Invalid or expired session" }, { status: 401 });
   }
 
-  const plan = getPlanForUser(user.id, user.email ?? undefined);
+  const { plan } = await resolveEffectivePlan(supabase, user.id, user.email ?? undefined);
   const limitMinutes = transcriptionLimitMinutes(plan);
   const { startIso, endIso } = currentMonthBoundsUtc();
 

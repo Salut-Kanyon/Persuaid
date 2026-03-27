@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAnalytics } from "@/components/app/analytics/useAnalytics";
 import { AnalyticsCard } from "@/components/app/analytics/AnalyticsCard";
 import { AnalyticsChart } from "@/components/app/analytics/AnalyticsChart";
-import { CallInsightsPanel } from "@/components/app/analytics/CallInsightsPanel";
+import { supabase } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 type ChartRange = 7 | 30 | 90;
 
@@ -30,15 +32,81 @@ const ICON_TAG = (
   </svg>
 );
 
+type UsagePayload = {
+  plan?: unknown;
+  limitMinutes: number;
+  usedMinutes: number;
+  remainingMinutes: number;
+  periodLabel: string;
+  usedLabel: string;
+  remainingLabel: string;
+  limitLabel: string;
+  error?: string;
+};
+
 export default function AnalyticsPage() {
   const {
     loading,
     summary,
     callsOverTime,
-    callInsights,
     formatDuration,
   } = useAnalytics();
   const [chartRange, setChartRange] = useState<ChartRange>(30);
+  const [usage, setUsage] = useState<UsagePayload | null>(null);
+  const [usageLoading, setUsageLoading] = useState(true);
+  const [usageError, setUsageError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchUsage = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        const token = data.session?.access_token ?? null;
+        if (error || !token) {
+          if (!mounted) return;
+          setUsage(null);
+          setUsageError("Sign in to view usage.");
+          setUsageLoading(false);
+          return;
+        }
+
+        const res = await fetch("/api/me/usage", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        const payload = (await res.json()) as UsagePayload;
+        if (!mounted) return;
+        if (!res.ok) {
+          setUsage(null);
+          setUsageError(payload?.error || "Could not load usage.");
+          setUsageLoading(false);
+          return;
+        }
+        setUsage(payload);
+        setUsageError(null);
+        setUsageLoading(false);
+      } catch {
+        if (!mounted) return;
+        setUsage(null);
+        setUsageError("Could not load usage.");
+        setUsageLoading(false);
+      }
+    };
+
+    void fetchUsage();
+
+    const onFocus = () => void fetchUsage();
+    window.addEventListener("focus", onFocus);
+    const id = window.setInterval(fetchUsage, 30000);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(id);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -76,6 +144,18 @@ export default function AnalyticsPage() {
   const callsLast7Days = callsOverTime(7).reduce((acc, d) => acc + d.calls, 0);
   const avgCallLength =
     summary.totalCalls === 0 ? 0 : Math.round(summary.totalTalkTimeMinutes / summary.totalCalls);
+  const usagePctExact =
+    usage && usage.limitMinutes > 0 ? (usage.usedMinutes / usage.limitMinutes) * 100 : 0;
+  const usagePctForBar =
+    usage && usage.limitMinutes > 0
+      ? Math.min(100, Math.max(0, usagePctExact > 0 && usagePctExact < 1 ? 1 : Math.round(usagePctExact)))
+      : 0;
+  const usagePctLabel =
+    usage && usage.limitMinutes > 0
+      ? usagePctExact > 0 && usagePctExact < 1
+        ? "<1%"
+        : `${Math.min(100, Math.max(0, Math.round(usagePctExact)))}%`
+      : "—";
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -123,9 +203,74 @@ export default function AnalyticsPage() {
             />
           </section>
 
-          {/* Conversation insights */}
-          <section className="grid grid-cols-1 gap-8">
-            <CallInsightsPanel insights={callInsights} />
+          {/* Usage (plan) */}
+          <section className="rounded-2xl bg-background-surface/60 border border-border/50 p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-text-primary">Usage</h2>
+                <p className="text-sm text-text-muted mt-0.5">
+                  {usage?.periodLabel ? `${usage.periodLabel} usage` : "This month"}
+                </p>
+              </div>
+              <div className="shrink-0 flex items-start gap-3">
+                {usage && (
+                  <div className="text-right">
+                    <p className="text-xs text-text-dim">Used</p>
+                    <p className="text-sm font-semibold text-text-primary tabular-nums">
+                      {usage.usedLabel} / {usage.limitLabel}
+                    </p>
+                  </div>
+                )}
+                <Link
+                  href="/pricing"
+                  className={cn(
+                    "inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
+                    "bg-green-primary text-white hover:bg-green-dark",
+                    "shadow-[0_1px_2px_rgba(0,0,0,0.2)]"
+                  )}
+                >
+                  Upgrade
+                </Link>
+              </div>
+            </div>
+
+            {usageLoading ? (
+              <div className="mt-5">
+                <div className="h-2 rounded-full bg-background-elevated/40 overflow-hidden">
+                  <div className="h-full w-1/3 bg-green-primary/25" />
+                </div>
+                <p className="mt-3 text-xs text-text-dim">Loading usage…</p>
+              </div>
+            ) : usageError ? (
+              <p className="mt-4 text-sm text-amber-400">{usageError}</p>
+            ) : usage ? (
+              <div className="mt-5 space-y-3">
+                <div className="h-2 rounded-full bg-background-elevated/40 overflow-hidden">
+                  <div
+                    className="h-full bg-green-primary"
+                    style={{ width: `${usagePctForBar}%` }}
+                    aria-label={`Usage ${usagePctLabel}`}
+                  />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs text-text-dim">
+                    Remaining: <span className="text-text-secondary tabular-nums">{usage.remainingLabel}</span>
+                  </p>
+                  <span
+                    className={cn(
+                      "text-[10px] px-2 py-0.5 rounded-full border",
+                      usagePctExact >= 100
+                        ? "border-red-500/30 bg-red-500/10 text-red-300"
+                        : usagePctExact >= 80
+                          ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                          : "border-green-primary/30 bg-green-primary/10 text-green-accent"
+                    )}
+                  >
+                    {usagePctLabel} used
+                  </span>
+                </div>
+              </div>
+            ) : null}
           </section>
         </div>
       </div>

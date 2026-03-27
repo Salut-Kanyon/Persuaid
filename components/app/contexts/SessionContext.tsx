@@ -60,6 +60,12 @@ interface SessionContextValue {
   setSuggestions: (s: Suggestion[] | ((prev: Suggestion[]) => Suggestion[])) => void;
   isRecording: boolean;
   setRecording: (value: boolean) => void;
+  /** ISO timestamp when the current/most recent call started (set when recording turns on). */
+  callStartedAtIso: string | null;
+  /** ISO timestamp when the current/most recent call ended (set when recording turns off). */
+  callEndedAtIso: string | null;
+  /** Reset transcript + timing + AI outputs after saving or discarding a call. */
+  resetCall: () => void;
   /** Set when mic fails to start (permission or device). Cleared on success or when user stops recording. */
   micError: string | null;
   setMicError: (value: string | null) => void;
@@ -171,6 +177,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isRecording, setRecording] = useState(false);
+  const [callStartedAtIso, setCallStartedAtIso] = useState<string | null>(null);
+  const [callEndedAtIso, setCallEndedAtIso] = useState<string | null>(null);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [scriptContext, setScriptContext] = useState("");
   const [notesContext, setNotesContext] = useState("");
@@ -209,6 +217,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isRecording) setCallParticipantName("");
   }, [isRecording]);
+
+  const prevRecordingRef = useRef(false);
+  useEffect(() => {
+    const prev = prevRecordingRef.current;
+    prevRecordingRef.current = isRecording;
+    if (!prev && isRecording) {
+      setCallStartedAtIso(new Date().toISOString());
+      setCallEndedAtIso(null);
+    } else if (prev && !isRecording) {
+      setCallEndedAtIso(new Date().toISOString());
+    }
+  }, [isRecording]);
+
   useEffect(() => {
     if (!isRecording) {
       setInterimTranscript("");
@@ -409,6 +430,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const clearTranscript = useCallback(() => setTranscript([]), []);
 
+  const resetCall = useCallback(() => {
+    setTranscript([]);
+    setCallStartedAtIso(null);
+    setCallEndedAtIso(null);
+    setSuggestions([]);
+    setDealContext({});
+    setSessionId(null);
+    setAnswerText("");
+    setAnswerSource("");
+    setSuggestedFollowUpText("");
+    setSuggestedFollowUpSource("");
+    setInterimTranscript("");
+    setInterimSpeakerId(null);
+    latestInterimTranscriptRef.current = "";
+    latestInterimSpeakerIdRef.current = null;
+    setDiarizationSpeakerIds([]);
+    clearRecentSpeech();
+  }, [clearRecentSpeech]);
+
   const value = useMemo<SessionContextValue>(
     () => ({
       transcript,
@@ -419,6 +459,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setSuggestions,
       isRecording,
       setRecording,
+      callStartedAtIso,
+      callEndedAtIso,
+      resetCall,
       micError,
       setMicError,
       selectedScriptId,
@@ -473,6 +516,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       clearTranscript,
       suggestions,
       isRecording,
+      callStartedAtIso,
+      callEndedAtIso,
       micError,
       selectedScriptId,
       scriptContext,
@@ -496,6 +541,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       interimSpeakerId,
       diarizationSpeakerIds,
       diarizationMeSpeakerId,
+      resetCall,
     ]
   );
 

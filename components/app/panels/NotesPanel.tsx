@@ -30,6 +30,13 @@ export function NotesPanel() {
   const [savedNotes, setSavedNotes] = useState<SavedNote[]>([]);
   const [savedSidebarOpen, setSavedSidebarOpen] = useState(true);
   const [activeSavedNoteId, setActiveSavedNoteId] = useState<string | null>(null);
+  const [savedNoteActionId, setSavedNoteActionId] = useState<string | null>(null);
+  const [renameModalOpen, setRenameModalOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<SavedNote | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<SavedNote | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refreshSavedNotes = useCallback(async () => {
@@ -202,12 +209,214 @@ export function NotesPanel() {
     setNotesView("my");
   };
 
+  const openRenameModal = (note: SavedNote) => {
+    if (savedNoteActionId) return;
+    setRenameTarget(note);
+    setRenameDraft((note.title ?? "").trim());
+    setRenameError(null);
+    setRenameModalOpen(true);
+  };
+
+  const closeRenameModal = () => {
+    if (savedNoteActionId) return;
+    setRenameModalOpen(false);
+    setRenameTarget(null);
+    setRenameDraft("");
+    setRenameError(null);
+  };
+
+  const submitRename = async () => {
+    if (!renameTarget || savedNoteActionId) return;
+    const title = renameDraft.trim();
+    setSavedNoteActionId(renameTarget.id);
+    setRenameError(null);
+    try {
+      const { error } = await supabase
+        .from("notes")
+        .update({ title: title ? title : null })
+        .eq("id", renameTarget.id);
+      if (error) {
+        setRenameError("Could not rename note.");
+        return;
+      }
+      setRenameModalOpen(false);
+      setRenameTarget(null);
+      setRenameDraft("");
+      void refreshSavedNotes();
+    } finally {
+      setSavedNoteActionId(null);
+    }
+  };
+
+  const openDeleteModal = (note: SavedNote) => {
+    if (savedNoteActionId) return;
+    setDeleteTarget(note);
+    setDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    if (savedNoteActionId) return;
+    setDeleteModalOpen(false);
+    setDeleteTarget(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget || savedNoteActionId) return;
+    setSavedNoteActionId(deleteTarget.id);
+    try {
+      const { error } = await supabase.from("notes").delete().eq("id", deleteTarget.id);
+      if (!error) {
+        if (activeSavedNoteId === deleteTarget.id) setActiveSavedNoteId(null);
+        setDeleteModalOpen(false);
+        setDeleteTarget(null);
+        void refreshSavedNotes();
+      }
+    } finally {
+      setSavedNoteActionId(null);
+    }
+  };
+
   const hasAiLayer = aiConnectedNotes.trim().length > 0;
   const editorValue = notesView === "my" ? myNotes : aiConnectedNotes;
   const editorReadOnly = notesView === "ai";
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col sm:flex-row">
+      {renameModalOpen && renameTarget && (
+        <div
+          className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rename-note-title"
+        >
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={closeRenameModal} aria-hidden />
+          <div className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-background-elevated border border-white/[0.08] shadow-2xl">
+            <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 id="rename-note-title" className="text-base font-semibold text-text-primary">
+                  Rename note
+                </h2>
+                <p className="text-sm text-text-muted mt-0.5">
+                  Set a title for this saved note.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeRenameModal}
+                className="shrink-0 rounded-lg p-2 text-text-dim hover:text-text-primary hover:bg-white/[0.06] transition-colors"
+                aria-label="Close"
+                disabled={savedNoteActionId === renameTarget.id}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label htmlFor="rename-note-input" className="block text-xs font-medium text-text-muted mb-1.5">
+                  Title (optional)
+                </label>
+                <input
+                  id="rename-note-input"
+                  type="text"
+                  value={renameDraft}
+                  onChange={(e) => setRenameDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void submitRename();
+                    if (e.key === "Escape") closeRenameModal();
+                  }}
+                  className="w-full px-4 py-2.5 rounded-xl bg-background-surface/60 border border-white/[0.10] text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/35 text-sm"
+                  placeholder="e.g. Horizon Life Insurance"
+                  autoFocus
+                  disabled={savedNoteActionId === renameTarget.id}
+                />
+              </div>
+              {renameError && <p className="text-xs text-amber-400">{renameError}</p>}
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={closeRenameModal}
+                  disabled={savedNoteActionId === renameTarget.id}
+                  className="px-4 py-2.5 rounded-xl text-text-muted hover:bg-white/[0.06] text-sm font-medium disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={submitRename}
+                  disabled={savedNoteActionId === renameTarget.id}
+                  className="px-4 py-2.5 rounded-xl bg-green-primary/20 border border-green-primary/35 text-green-accent text-sm font-medium hover:bg-green-primary/30 disabled:opacity-50"
+                >
+                  {savedNoteActionId === renameTarget.id ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteModalOpen && deleteTarget && (
+        <div
+          className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-note-title"
+        >
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={closeDeleteModal} aria-hidden />
+          <div className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-background-elevated border border-white/[0.08] shadow-2xl">
+            <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 id="delete-note-title" className="text-base font-semibold text-text-primary">
+                  Delete note?
+                </h2>
+                <p className="text-sm text-text-muted mt-0.5">
+                  This will permanently remove the saved note.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                className="shrink-0 rounded-lg p-2 text-text-dim hover:text-text-primary hover:bg-white/[0.06] transition-colors"
+                aria-label="Close"
+                disabled={savedNoteActionId === deleteTarget.id}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="rounded-xl border border-white/[0.08] bg-black/20 p-3">
+                <p className="text-xs text-text-dim">
+                  {deleteTarget.title?.trim()
+                    ? `“${deleteTarget.title.trim()}”`
+                    : (deleteTarget.content?.slice(0, 80) || "Untitled")}
+                </p>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={closeDeleteModal}
+                  disabled={savedNoteActionId === deleteTarget.id}
+                  className="px-4 py-2.5 rounded-xl text-text-muted hover:bg-white/[0.06] text-sm font-medium disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={savedNoteActionId === deleteTarget.id}
+                  className="px-4 py-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-sm font-medium hover:bg-red-500/22 disabled:opacity-50"
+                >
+                  {savedNoteActionId === deleteTarget.id ? "Deleting…" : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <aside
         className={cn(
           "flex shrink-0 flex-col bg-white/[0.02] transition-[width,max-height] duration-300 ease-out",
@@ -246,22 +455,61 @@ export function NotesPanel() {
                     type="button"
                     onClick={() => selectSavedNote(note)}
                     className={cn(
-                      "w-full rounded-lg px-2.5 py-2 text-left transition-colors duration-300 ease-out",
+                      "group w-full rounded-lg px-2.5 py-2 text-left transition-colors duration-300 ease-out",
                       activeSavedNoteId === note.id
                         ? "bg-white/[0.07] text-text-primary"
                         : "text-text-muted hover:bg-white/[0.04] hover:text-text-primary"
                     )}
                   >
-                    <span className="block truncate text-xs font-normal">
-                      {note.title || note.content?.slice(0, 56) || "Untitled"}
-                    </span>
-                    <span className="mt-1 block truncate text-[10px] text-text-dim/75">
-                      {new Date(note.updated_at).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-normal">
+                          {note.title || note.content?.slice(0, 56) || "Untitled"}
+                        </span>
+                        <span className="mt-1 block truncate text-[10px] text-text-dim/75">
+                          {new Date(note.updated_at).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openRenameModal(note);
+                          }}
+                          disabled={savedNoteActionId === note.id}
+                          className="rounded-md p-1.5 text-text-dim/70 hover:bg-white/[0.06] hover:text-text-primary disabled:opacity-50"
+                          title="Rename"
+                          aria-label="Rename"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.1 2.1 0 012.97 2.97L8.5 17.79 4 19l1.21-4.5L16.862 3.487z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-2-2" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openDeleteModal(note);
+                          }}
+                          disabled={savedNoteActionId === note.id}
+                          className="rounded-md p-1.5 text-red-400/80 hover:bg-red-500/[0.10] hover:text-red-300 disabled:opacity-50"
+                          title="Delete"
+                          aria-label="Delete"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0l1 14h8l1-14" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   </button>
                 ))
               )}
@@ -336,6 +584,37 @@ export function NotesPanel() {
               )}
             </span>
           )}
+        </button>
+
+        <div className="flex-1" aria-hidden />
+
+        {saveMessage && (
+          <div className="hidden sm:block animate-in fade-in text-xs font-normal text-text-muted">
+            {saveMessage}
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={handleClear}
+          disabled={!myNotes.trim() && !aiConnectedNotes.trim()}
+          className="rounded-lg px-3 py-2 text-xs font-medium text-text-muted transition-colors duration-300 ease-out hover:bg-white/[0.06] hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45"
+          title="Clear draft"
+        >
+          Clear
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving || !myNotes.trim()}
+          className={cn(
+            "rounded-lg px-3 py-2 text-xs font-semibold transition-colors duration-300 ease-out",
+            "bg-green-primary/18 border border-green-primary/25 text-green-accent hover:bg-green-primary/26",
+            "disabled:cursor-not-allowed disabled:opacity-45"
+          )}
+          title="Save note"
+        >
+          {saving ? "Saving…" : "Save to notes"}
         </button>
       </div>
       {connecting && (
@@ -429,32 +708,11 @@ export function NotesPanel() {
           )}
           style={{ fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif" }}
         />
-        <div className="flex-shrink-0 space-y-1.5 px-4 pb-4 sm:px-6">
-          {saveMessage && (
-            <div className="animate-in fade-in text-center text-xs font-normal text-text-muted">
-              {saveMessage}
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleClear}
-              disabled={!myNotes.trim() && !aiConnectedNotes.trim()}
-              className="px-2 py-2 text-sm font-normal text-text-muted transition-colors duration-300 ease-out hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45"
-              title="Clear draft"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || !myNotes.trim()}
-              className="flex-1 rounded-lg bg-green-primary/14 px-4 py-2 text-sm font-medium text-text-primary transition-colors duration-300 ease-out hover:bg-green-primary/20 disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              {saving ? "Saving…" : "Save"}
-            </button>
+        {saveMessage && (
+          <div className="sm:hidden flex-shrink-0 px-4 pb-4 text-center text-xs font-normal text-text-muted animate-in fade-in">
+            {saveMessage}
           </div>
-        </div>
+        )}
       </div>
       </div>
     </div>

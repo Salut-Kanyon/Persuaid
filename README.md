@@ -57,7 +57,7 @@ Create `.env.local` in the repo root:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `DEEPGRAM_API_KEY` (for STT token generation in dev/web)
 - `OPENAI_API_KEY` (for AI follow-ups, rewrites, summaries)
-- `SUPABASE_SERVICE_ROLE_KEY` (optional — enables delete-account API route)
+- `SUPABASE_SERVICE_ROLE_KEY` (optional — enables delete-account API route and **agency invite redemption**)
 
 ### Running the Project (Web)
 

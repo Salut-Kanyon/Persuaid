@@ -6,6 +6,7 @@ import { useSession } from "@/components/app/contexts/SessionContext";
 import { Sidebar } from "@/components/app/Sidebar";
 import { Header } from "@/components/app/Header";
 import { CallSessionOverlay } from "@/components/app/CallSessionOverlay";
+import { PostCallSaveModal } from "@/components/app/PostCallSaveModal";
 
 export function DashboardCallShell({ children }: { children: React.ReactNode }) {
   const { isRecording } = useSession();
@@ -95,6 +96,8 @@ export function DashboardCallShell({ children }: { children: React.ReactNode }) 
       </div>
 
       {isRecording && <CallSessionOverlay />}
+      {/* Must stay mounted so it can detect recording true→false transition. */}
+      <PostCallSaveModal />
     </div>
   );
 }

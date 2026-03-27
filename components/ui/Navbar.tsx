@@ -57,7 +57,12 @@ export function Navbar({ liveDemo, landing = false }: NavbarProps) {
     <>
       {/* Fixed CTA — Try Free (default) or Live demo (home) */}
       {showCtaButton && (
-        <div className="fixed top-4 right-4 z-50 hidden flex-col items-end md:flex animate-in fade-in slide-in-from-top-2">
+        <div
+          className={cn(
+            "fixed top-4 right-4 z-50 hidden w-[min(calc(100vw-2rem),320px)] flex-col items-stretch md:flex animate-in fade-in slide-in-from-top-2",
+            landing && "landing-floating-cta"
+          )}
+        >
           {liveDemo ? (
             <div
               className={cn(
@@ -131,6 +136,7 @@ export function Navbar({ liveDemo, landing = false }: NavbarProps) {
 
       {/* Landing: sits over hero in page flow (scrolls away); app: normal sticky chrome */}
       <nav
+        data-landing-navbar={landing ? "1" : "0"}
         className={cn(
           "w-full border-b",
           landing

@@ -98,6 +98,15 @@
     padding-top: 2.5rem;
   }
 
+  /* Landing navbar/CTA: offset below the frameless chrome bar. */
+  html.electron-frameless:not([data-call-active="1"]) nav[data-landing-navbar="1"] {
+    top: 2.5rem;
+  }
+
+  html.electron-frameless:not([data-call-active="1"]) .landing-floating-cta {
+    top: calc(1rem + 2.5rem);
+  }
+
   /* Ensure form controls match the app theme instead of browser defaults. */
   input,
   textarea,
