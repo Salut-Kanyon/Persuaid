@@ -53,7 +53,7 @@ export function ElectronFramelessChrome() {
       className="fixed left-0 right-0 top-0 z-[99999] flex h-10 items-center border-b border-white/[0.06] bg-[#0a0a0a]/85 px-3 pt-[max(0px,env(safe-area-inset-top))] backdrop-blur-xl"
       style={dragStyle}
     >
-      <div className="flex items-center gap-2" style={noDragStyle}>
+      <div className="flex w-14 shrink-0 items-center gap-2" style={noDragStyle}>
         <button
           type="button"
           aria-label="Close window"
@@ -73,6 +73,17 @@ export function ElectronFramelessChrome() {
           className="h-3 w-3 rounded-full bg-[#28c840] transition-opacity hover:opacity-90"
         />
       </div>
+      <div className="flex min-w-0 flex-1 justify-center" style={dragStyle}>
+        <img
+          src="/ElectrongPP.png"
+          alt=""
+          width={22}
+          height={22}
+          className="h-[22px] w-[22px] shrink-0 select-none opacity-95"
+          draggable={false}
+        />
+      </div>
+      <div className="w-14 shrink-0" style={dragStyle} aria-hidden />
     </div>
   );
 }

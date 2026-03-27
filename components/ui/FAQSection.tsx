@@ -53,33 +53,34 @@ export function FAQSection() {
   return (
     <Section
       id="faq"
-      className="border-t border-white/[0.06] bg-background-elevated py-16 md:py-20 lg:py-24"
+      className="border-t border-white/[0.06] bg-[var(--bg-near-black)] py-20 md:py-24 lg:py-32"
     >
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-40px" }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="max-w-2xl mx-auto"
+        className="max-w-3xl mx-auto"
       >
-        <header className="mb-8">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-text-primary">
+        <header className="mb-10">
+          <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/85">Questions</p>
+          <h2 className="mt-3 text-3xl sm:text-4xl lg:text-[2.6rem] font-semibold tracking-tight text-text-primary">
             Questions
           </h2>
         </header>
 
-        <div className="rounded-xl border border-stone-600/25 bg-[var(--bg-surface)]/30 overflow-hidden">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_22px_60px_-34px_rgba(0,0,0,0.85)] overflow-hidden">
           {FAQ_ITEMS.map((item, index) => {
             const isOpen = openIndex === index;
             return (
-              <div key={item.q} className="border-b border-stone-600/20 last:border-b-0">
+              <div key={item.q} className="border-b border-white/10 last:border-b-0">
                 <button
                   type="button"
                   onClick={() => setOpenIndex(isOpen ? null : index)}
-                  className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left hover:bg-white/[0.03] transition-colors"
+                  className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left hover:bg-white/[0.04] transition-colors"
                   aria-expanded={isOpen}
                 >
-                  <span className="text-sm sm:text-base font-medium text-text-primary pr-2">
+                  <span className="text-base sm:text-[17px] font-medium text-text-primary pr-2">
                     {item.q}
                   </span>
                   <ChevronIcon open={isOpen} />
@@ -90,10 +91,10 @@ export function FAQSection() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
                       className="overflow-hidden"
                     >
-                      <p className="px-4 pb-4 text-sm text-text-muted leading-relaxed">{item.a}</p>
+                      <p className="px-5 pb-5 text-[15px] text-text-muted leading-relaxed">{item.a}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>

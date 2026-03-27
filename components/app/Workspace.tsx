@@ -25,7 +25,7 @@ export const WORKSPACE_PANELS: { id: PanelId; label: string }[] = [
   { id: "notes", label: "Notes" },
 ];
 
-export const DEFAULT_PANEL_VISIBILITY: Record<PanelId, boolean> = { followUp: true, transcript: true, notes: true };
+export const DEFAULT_PANEL_VISIBILITY: Record<PanelId, boolean> = { followUp: true, transcript: false, notes: true };
 
 function computeLayout(containerWidth: number, containerHeight: number) {
   const pad = 16;

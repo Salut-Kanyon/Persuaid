@@ -16,8 +16,9 @@
 /dist
 .desktop-stash-api
 
-# production
-/build
+# production (track macOS app icon in this folder)
+/build/*
+!/build/icon.icns
 
 # misc
 .DS_Store

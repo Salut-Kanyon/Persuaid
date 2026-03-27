@@ -23,16 +23,7 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
           {/* Brand */}
           <div className="col-span-2">
-            <div className="mb-4">
-              <img
-                src="/Persuaid-wordmark.png?v=1"
-                alt="Persuaid"
-                className="h-12 sm:h-[3.25rem] md:h-14 w-auto max-w-[min(380px,100%)] object-contain object-left"
-                width={280}
-                height={56}
-              />
-            </div>
-            <p className="text-text-muted max-w-sm">
+            <p className="text-text-muted max-w-sm mb-0">
               The AI copilot for sales calls. Say the right thing on every
               conversation.
             </p>
@@ -60,9 +51,29 @@ export function Footer() {
           ))}
         </div>
 
-        {/* Bottom */}
-        <div className="pt-8 border-t border-white/[0.08]">
-          <p className="text-text-dim text-sm">
+        {/* Bottom — logo lockup + legal */}
+        <div className="pt-8 border-t border-white/[0.08] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
+          <a
+            href="/"
+            className="inline-flex items-end gap-0 self-start opacity-90 hover:opacity-100 transition-opacity"
+            aria-label="Persuaid home"
+          >
+            <img
+              src="/PersuaidLogo.png"
+              alt=""
+              width={32}
+              height={32}
+              aria-hidden
+              className="h-7 w-7 shrink-0 object-contain translate-y-0.5"
+            />
+            <span
+              className="text-base font-bold text-stone-100 tracking-tight -ml-1 translate-y-1"
+              aria-hidden
+            >
+              ersuaid
+            </span>
+          </a>
+          <p className="text-text-dim text-sm sm:text-right sm:pb-0.5">
             © {new Date().getFullYear()} Persuaid. All rights reserved.
           </p>
         </div>

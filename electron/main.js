@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session, protocol, Menu, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, session, protocol, Menu, ipcMain, screen, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -72,6 +72,27 @@ console.log('Electron startup:', {
   useBundledFrontend,
   OUT_DIR,
 });
+
+/** Desktop window / dock image (bundled copy of `public/ElectrongPP.png`). */
+function resolveAppLogoPath() {
+  if (app.isPackaged) {
+    const packaged = path.join(process.resourcesPath, 'ElectrongPP.png');
+    if (fs.existsSync(packaged)) return packaged;
+  }
+  const devPath = path.join(__dirname, '..', 'public', 'ElectrongPP.png');
+  return fs.existsSync(devPath) ? devPath : null;
+}
+
+function getWindowIcon() {
+  const logoPath = resolveAppLogoPath();
+  if (!logoPath) return undefined;
+  try {
+    const img = nativeImage.createFromPath(logoPath);
+    return img.isEmpty() ? undefined : img;
+  } catch (_) {
+    return undefined;
+  }
+}
 
 let mainWindow;
 /** Saved window bounds before shrinking to the compact call strip (macOS-style top pill). */
@@ -1288,6 +1309,7 @@ function createWindow() {
     frame: !framelessMac,
     transparent: framelessMac,
     backgroundColor: framelessMac ? '#00000000' : '#000000',
+    icon: getWindowIcon(),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -1389,6 +1411,9 @@ function createWindow() {
 
 app.whenReady().then(() => {
   try {
+    app.setName('Persuaid');
+  } catch (_) {}
+  try {
     fs.writeFileSync('/tmp/persuaid-ready.txt', new Date().toISOString());
   } catch (e) {
     console.error('persuaid ready write failed', e.message);
@@ -1417,6 +1442,17 @@ app.whenReady().then(() => {
     const allowed = permission === 'media';
     callback(allowed);
   });
+  // macOS: do not override the Dock icon when packaged — `app.dock.setIcon(PNG)` draws a flat
+  // square and ignores the bundle’s AppIcon.icns squircle treatment. Unpackaged dev: prefer .icns.
+  if (process.platform === 'darwin' && app.dock && !app.isPackaged) {
+    const icnsPath = path.join(__dirname, '..', 'build', 'icon.icns');
+    const dockPath = fs.existsSync(icnsPath) ? icnsPath : resolveAppLogoPath();
+    if (dockPath) {
+      try {
+        app.dock.setIcon(dockPath);
+      } catch (_) {}
+    }
+  }
   createWindow();
 });
 

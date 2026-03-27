@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { LiveSession } from "@/components/app/LiveSession";
 
-const DEFAULT_PANEL_VISIBILITY = { followUp: true, transcript: true, notes: true };
+const DEFAULT_PANEL_VISIBILITY = { followUp: true, transcript: false, notes: true };
 
 export default function DashboardPage() {
   const [panelVisibility, setPanelVisibility] = useState(DEFAULT_PANEL_VISIBILITY);

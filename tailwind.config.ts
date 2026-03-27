@@ -39,6 +39,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        display: ["var(--font-hero-display)", "Georgia", "serif"],
+        subtitle: ["var(--font-hero-subtitle)", "system-ui", "sans-serif"],
       },
       spacing: {
         section: "12rem",

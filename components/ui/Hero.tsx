@@ -10,21 +10,36 @@ import { LandingBenefitStrip } from "@/components/landing/LandingBenefitStrip";
 const FADE_START = 0;
 const FADE_END = 950;
 
-const HERO_TITLE_LINE1 = "Never freeze on a";
-const HERO_TITLE_LINE2 = "sales call again.";
+const HERO_TITLE_LINE1 = "Have the right information,";
+const HERO_TITLE_LINE2 = "when you need it.";
 const HERO_LINE1_WORDS = HERO_TITLE_LINE1.split(" ");
 const HERO_LINE2_WORDS = HERO_TITLE_LINE2.split(" ");
 
-const HERO_SUBTITLE_AFTER_PERSUAID =
-  "shows you what to say next—in real time, grounded in your playbook. No guesswork. You stay in control.";
+/** Hairline between headline and subtitle — wide flat center so it reads on busy hero art. */
+function HeroHeadlineSubtitleDivider() {
+  return (
+    <div
+      className="mx-auto mt-5 w-[min(18rem,88%)] max-w-full px-2 sm:mt-6 sm:w-[min(20rem,82%)]"
+      aria-hidden
+    >
+      <div
+        className="h-px w-full rounded-full"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, transparent 10%, rgba(244, 241, 234, 0.2) 22%, rgba(244, 241, 234, 0.52) 42%, rgba(244, 241, 234, 0.52) 58%, rgba(244, 241, 234, 0.2) 78%, transparent 90%, transparent 100%)",
+          boxShadow: "0 0 12px rgba(244, 241, 234, 0.12)",
+        }}
+      />
+    </div>
+  );
+}
 
 function HeroTitleTwoLines() {
   const reduce = useReducedMotion();
   const words1 = HERO_LINE1_WORDS;
   const words2 = HERO_LINE2_WORDS;
-  /* Tighter display type: confident, not shouty — reads editorial, not “growth hack” */
   const lineClass =
-    "block whitespace-nowrap text-[clamp(1.5rem,6.25vw,3.5rem)] leading-[1.08] font-semibold text-text-primary tracking-[-0.03em]";
+    "block whitespace-nowrap font-display text-[clamp(1.9rem,7.2vw,4.15rem)] leading-[1.05] font-normal text-text-primary tracking-[-0.02em]";
 
   const renderLine = (words: string[], baseIndex: number) =>
     words.map((word, i) => {
@@ -52,7 +67,7 @@ function HeroTitleTwoLines() {
     });
 
   return (
-    <span className="flex flex-col items-center gap-1.5 sm:gap-2">
+    <span className="flex flex-col items-center gap-0.5 sm:gap-1">
       <span className={lineClass}>{renderLine(words1, 0)}</span>
       <span className={lineClass}>{renderLine(words2, words1.length)}</span>
     </span>
@@ -73,6 +88,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
   const [scrollFade, setScrollFade] = useState(1);
   const [showSubtitle, setShowSubtitle] = useState(false);
   const [showCTA, setShowCTA] = useState(false);
+  const hasInlineDemo = Boolean(children && onDemoOpenChange);
 
   useEffect(() => {
     const onScroll = () => {
@@ -95,7 +111,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
     };
   }, []);
 
-  const bgOpacity = demoOpen ? 0 : scrollFade;
+  const bgOpacity = hasInlineDemo && demoOpen ? 0 : scrollFade;
 
   return (
     <div
@@ -105,15 +121,36 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
         landing ? "pt-24 sm:pt-28 lg:pt-28" : "pt-8 sm:pt-10 lg:pt-12"
       )}
     >
-      {/* Full-bleed art: cover fills viewport; top anchor keeps charcoal “sky” visible under the nav */}
-      <div
-        className="absolute inset-0 z-0 pointer-events-none bg-cover bg-top bg-no-repeat"
-        style={{
-          backgroundImage: "url(/hero-landing-bg.png?v=9)",
-          opacity: bgOpacity,
-        }}
-        aria-hidden
-      />
+      {/* Full-bleed art — landing: slight zoom + clip so wide screens don’t look stretched thin */}
+      {landing ? (
+        <div
+          className="absolute inset-0 z-0 overflow-hidden pointer-events-none bg-[var(--bg-near-black)]"
+          style={{ opacity: bgOpacity }}
+          aria-hidden
+        >
+          <div
+            className="absolute bg-no-repeat bg-cover"
+            style={{
+              /* .jpeg is the asset on disk; .png path 404s if only jpeg is present */
+              backgroundImage: "url(/LandingPageBack.jpeg?v=3)",
+              top: "-6%",
+              left: "-10%",
+              right: "-10%",
+              bottom: "-4%",
+              backgroundPosition: "50% 8%",
+            }}
+          />
+        </div>
+      ) : (
+        <div
+          className="absolute inset-0 z-0 pointer-events-none bg-cover bg-top bg-no-repeat"
+          style={{
+            backgroundImage: "url(/hero-landing-bg.png?v=9)",
+            opacity: bgOpacity,
+          }}
+          aria-hidden
+        />
+      )}
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-44 bg-gradient-to-t from-[var(--bg-near-black)] via-[var(--bg-near-black)]/70 to-transparent"
         style={{ opacity: bgOpacity }}
@@ -123,7 +160,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
       <div
         className={cn(
           "mx-auto w-full px-5 sm:px-8 lg:px-10 relative z-10",
-          demoOpen ? "max-w-[min(92rem,calc(100vw-2rem))]" : "max-w-5xl"
+          hasInlineDemo && demoOpen ? "max-w-[min(92rem,calc(100vw-2rem))]" : "max-w-5xl"
         )}
       >
         <div className="flex flex-col items-center w-full">
@@ -137,12 +174,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
               <HeroTitleTwoLines />
             </h1>
 
-            <div
-              className="mx-auto mt-4 max-w-[min(24rem,90vw)] px-2 sm:mt-5 sm:max-w-xl"
-              aria-hidden
-            >
-              <div className="h-px w-full max-w-xs mx-auto bg-[color:var(--landing-sand)]/30" />
-            </div>
+            <HeroHeadlineSubtitleDivider />
 
             <motion.p
               initial={{ opacity: 0, y: reduceMotion ? 0 : 6 }}
@@ -151,11 +183,11 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
                 y: reduceMotion ? 0 : showSubtitle ? 0 : 6,
               }}
               transition={{ duration: reduceMotion ? 0.01 : 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-              className="mt-6 text-[15px] sm:mt-8 sm:text-[16px] text-text-secondary mb-8 sm:mb-10 max-w-md sm:max-w-lg mx-auto leading-relaxed font-normal text-balance"
+              className="font-subtitle mt-4 text-[17px] leading-snug sm:mt-5 sm:text-[18px] sm:leading-relaxed lg:text-[19px] text-text-secondary mb-6 max-w-md sm:max-w-2xl mx-auto font-normal text-balance tracking-[-0.01em]"
             >
               <span className="block">
-                <span className="font-medium text-[color:var(--landing-accent-soft)]">Persuaid</span>{" "}
-                {HERO_SUBTITLE_AFTER_PERSUAID}
+                <span className="font-semibold text-green-accent">Persuaid</span> listens, understands the moment, and
+                surfaces the right information based on your knowledge.
               </span>
             </motion.p>
 
@@ -185,44 +217,29 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
                     },
                   },
                 }}
-                className="flex w-full max-w-xl flex-row flex-nowrap items-stretch justify-center gap-3 sm:mx-auto sm:gap-4"
+                className="flex w-full justify-center"
               >
-                {onDemoOpenChange && (
-                  <motion.button
-                    type="button"
-                    onClick={() => onDemoOpenChange(!demoOpen)}
-                    aria-expanded={demoOpen}
-                    aria-controls="hero-demo-panel"
-                    transition={{ type: "spring", stiffness: 520, damping: 32 }}
-                    className={cn(
-                      "inline-flex min-h-[48px] flex-1 items-center justify-center rounded-lg px-6 text-[15px] font-medium tracking-tight",
-                      "border border-stone-500/40 bg-stone-950/40 text-stone-200",
-                      "hover:bg-stone-900/60 hover:border-stone-500/55 transition-colors duration-200",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg-near-black)]",
-                      "min-w-0 sm:min-h-[48px] sm:min-w-[11rem]"
-                    )}
-                  >
-                    {demoOpen ? "Back" : "Free demo"}
-                  </motion.button>
-                )}
                 <motion.a
-                  href="/sign-in"
+                  href="/download"
                   transition={{ type: "spring", stiffness: 520, damping: 32 }}
                   className={cn(
-                    "group inline-flex min-h-[48px] flex-1 items-center justify-center rounded-lg px-5 text-center text-[15px] font-medium tracking-tight sm:px-7 sm:text-[15px]",
-                    "bg-[color:var(--landing-moss)] text-stone-100 border border-white/10",
-                    "shadow-sm hover:bg-[color:var(--landing-moss-hover)] transition-colors duration-200",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--landing-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg-near-black)]",
-                    "min-w-0 sm:min-h-[48px] sm:min-w-[11rem]"
+                    "relative isolate inline-flex h-11 min-h-11 items-center justify-center overflow-hidden rounded-full px-8 sm:h-12 sm:min-h-12 sm:px-10",
+                    "bg-gradient-to-b from-[#1fb388] via-green-primary to-[#127a5c] text-[15px] font-semibold tracking-[-0.02em] text-white antialiased",
+                    "border border-[#4dc49a]/50 shadow-[0_0_0_1px_rgba(26,157,120,0.35),0_4px_20px_rgba(26,157,120,0.45),0_12px_40px_-8px_rgba(0,0,0,0.55)]",
+                    "before:pointer-events-none before:absolute before:inset-x-3 before:top-0 before:h-px before:rounded-full before:bg-white/35",
+                    "transition-[transform,box-shadow,filter] duration-200 ease-out",
+                    "hover:border-[#6ad4b0]/55 hover:shadow-[0_0_0_1px_rgba(61,184,146,0.45),0_6px_28px_rgba(26,157,120,0.55),0_16px_48px_-10px_rgba(0,0,0,0.5)] hover:brightness-[1.04]",
+                    "active:scale-[0.98] active:brightness-[0.98]",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg-near-black)]"
                   )}
                 >
-                  Try it on your next call
+                  Download Now
                 </motion.a>
               </motion.div>
             </motion.div>
           </motion.div>
 
-          {/* Video ↔ demo: full width of hero row (not constrained by headline max-width) */}
+          {/* Video (optional in-hero demo swap when children + onDemoOpenChange are passed) */}
           <motion.div
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
             animate={
@@ -236,10 +253,10 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
               ease: [0.16, 1, 0.3, 1],
             }}
             className={cn(
-              "relative mt-4 scroll-mt-24 sm:mt-5 sm:scroll-mt-28 lg:mt-6 w-full max-w-full self-stretch",
-              demoOpen ? "min-h-0 max-h-none" : "min-h-[min(42vh,400px)] max-h-[min(72vh,720px)]"
+              "relative mt-6 scroll-mt-24 sm:scroll-mt-28 w-full max-w-full self-stretch",
+              hasInlineDemo && demoOpen ? "min-h-0 max-h-none" : "min-h-[min(42vh,400px)] max-h-[min(72vh,720px)]"
             )}
-            id="hero-demo-panel"
+            id={hasInlineDemo ? "hero-demo-panel" : "hero-media"}
           >
             {children && (
               <div

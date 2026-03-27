@@ -1,10 +1,7 @@
 import { cn } from "@/lib/utils";
 
-const STRIP_ITEMS = [
-  "What to say next, the moment you need it",
-  "Nothing joins the call—only you see the coaching",
-  "Lines from your playbook—not generic AI",
-] as const;
+// Landing hero benefit copy: removed as requested.
+const STRIP_ITEMS: string[] = [];
 
 function StripCheckIcon({ compact }: { compact?: boolean }) {
   return (
@@ -48,6 +45,8 @@ export function LandingBenefitStrip({
   className?: string;
   compact?: boolean;
 }) {
+  if (STRIP_ITEMS.length === 0) return null;
+
   return (
     <div
       className={cn(

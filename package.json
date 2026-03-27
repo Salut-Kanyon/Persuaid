@@ -20,6 +20,8 @@
     "desktop:artifact": "node -e \"const fs=require('fs');const path=require('path');const d='dist';const f=fs.existsSync(d)?fs.readdirSync(d).filter(x=>x.endsWith('.dmg')).sort().reverse()[0]:null;console.log(f?path.join(d,f):'');\"",
     "clean:out-downloads": "node scripts/clean-out-downloads.js",
     "clean:out-duplicates": "node scripts/clean-out-duplicates.js",
+    "build:mac-icon": "bash scripts/build-macos-app-icon.sh",
+    "dist": "npm run desktop:build",
     "desktop:build": "npm run clean:desktop && npm run build:desktop && npm run clean:out-downloads && npm run clean:out-duplicates && electron-builder && node -e \"const fs=require('fs');const path=require('path');const distDir='dist';const dmgFiles=fs.readdirSync(distDir).filter(f=>f.endsWith('.dmg'));if(dmgFiles.length>0){const latest=dmgFiles.sort().reverse()[0];fs.copyFileSync(path.join(distDir,latest),'public/downloads/Persuaid.dmg');console.log('DMG copied to public/downloads/Persuaid.dmg');}else{console.log('No DMG file found in dist/');}\"",
     "pack": "npm run clean:desktop && npm run build:desktop && npm run clean:out-downloads && npm run clean:out-duplicates && electron-builder --dir",
     "desktop:run": "dist/mac-arm64/Persuaid.app/Contents/MacOS/Persuaid",
@@ -37,20 +39,27 @@
       {
         "from": "out",
         "to": "out"
+      },
+      {
+        "from": "public/ElectrongPP.png",
+        "to": "ElectrongPP.png"
       }
     ],
     "mac": {
       "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
       "target": [
         "dmg"
       ]
     },
     "win": {
+      "icon": "public/ElectrongPP.png",
       "target": [
         "nsis"
       ]
     },
     "linux": {
+      "icon": "public/ElectrongPP.png",
       "target": [
         "AppImage"
       ]

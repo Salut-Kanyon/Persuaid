@@ -19,7 +19,6 @@ type NavbarProps = {
 };
 
 export function Navbar({ liveDemo, landing = false }: NavbarProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showCtaButton, setShowCtaButton] = useState(false);
 
   useEffect(() => {
@@ -34,9 +33,8 @@ export function Navbar({ liveDemo, landing = false }: NavbarProps) {
 
   const navLinks = [
     { label: "Pricing", href: "/pricing" },
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Home", href: "/" },
-  ];
+    { label: "Tutorial", href: "/tutorial" },
+  ] as const;
 
   const scrollToDemo = useCallback(() => {
     const id = liveDemo?.scrollTargetId ?? "hero-demo-panel";
@@ -59,11 +57,11 @@ export function Navbar({ liveDemo, landing = false }: NavbarProps) {
     <>
       {/* Fixed CTA — Try Free (default) or Live demo (home) */}
       {showCtaButton && (
-        <div className="fixed top-4 right-4 z-50 hidden w-[min(calc(100vw-2rem),320px)] flex-col items-stretch md:flex animate-in fade-in slide-in-from-top-2">
+        <div className="fixed top-4 right-4 z-50 hidden flex-col items-end md:flex animate-in fade-in slide-in-from-top-2">
           {liveDemo ? (
             <div
               className={cn(
-                "overflow-hidden rounded-xl border border-stone-600/40 bg-[color:var(--bg-near-black)]/95 shadow-lg shadow-black/35 backdrop-blur-md",
+                "w-[min(calc(100vw-2rem),320px)] overflow-hidden rounded-xl border border-stone-600/40 bg-[color:var(--bg-near-black)]/95 shadow-lg shadow-black/35 backdrop-blur-md",
                 liveDemo.isOpen ? "ring-1 ring-stone-500/25" : ""
               )}
             >
@@ -122,103 +120,70 @@ export function Navbar({ liveDemo, landing = false }: NavbarProps) {
             </div>
           ) : (
             <a
-              href="/sign-in"
-              className="flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-lg transition-colors duration-200 border border-stone-600/45 bg-[color:var(--bg-near-black)] text-stone-100 hover:bg-stone-900/80 hover:border-stone-500/55"
+              href="/download"
+              className="inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-gradient-to-b from-[#1fb388] via-green-primary to-[#127a5c] px-3.5 text-[12px] font-semibold tracking-[-0.02em] text-white shadow-[0_0_0_1px_rgba(26,157,120,0.4),0_3px_12px_rgba(26,157,120,0.35)] transition-[transform,box-shadow,filter] duration-200 ease-out hover:brightness-[1.05] hover:shadow-[0_0_0_1px_rgba(61,184,146,0.5),0_4px_16px_rgba(26,157,120,0.45)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-accent/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg-near-black)] border border-[#4dc49a]/45 sm:px-4 sm:text-[13px]"
             >
-              <img
-                src="/PersuaidLogo.png"
-                alt="Persuaid"
-                className="w-4 h-4 flex-shrink-0 object-contain"
-              />
-              <span>Try Free</span>
+              Download Now
             </a>
           )}
         </div>
       )}
 
-      {/* Regular Navbar — landing: fixed + solid bar (wordmark sits on black like the asset) */}
+      {/* Landing: sits over hero in page flow (scrolls away); app: normal sticky chrome */}
       <nav
         className={cn(
           "w-full border-b",
           landing
-            ? "fixed top-0 left-0 right-0 z-50 border-white/10 bg-black"
-            : "bg-background-near-black/80 backdrop-blur-xl border-border/50"
+            ? "absolute top-0 left-0 right-0 z-30 border-white/10 bg-black/45 backdrop-blur-md"
+            : "relative z-50 bg-background-near-black/80 backdrop-blur-xl border-border/50"
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-18 lg:h-20">
-            {/* Full wordmark (icon + logotype in one asset) */}
-            <div className="flex-shrink-0 min-w-0">
-              <a href="/" className="group inline-flex items-center py-1" aria-label="Persuaid home">
+          <div className="flex h-18 items-end gap-10 pb-3 sm:gap-16 lg:h-20 lg:gap-[4.5rem] lg:pb-4">
+            <a
+              href="/"
+              className="group inline-flex min-w-0 shrink-0 items-end gap-0 py-1"
+              aria-label="Persuaid home"
+            >
+              {landing ? (
+                <>
+                  <img
+                    src="/PersuaidLogo.png"
+                    alt=""
+                    width={40}
+                    height={40}
+                    aria-hidden
+                    className="h-7 w-7 sm:h-8 sm:w-8 md:h-8 md:w-8 shrink-0 object-contain translate-y-0.5 group-hover:opacity-90 transition-opacity duration-300"
+                  />
+                  <span
+                    className="text-base sm:text-lg md:text-lg font-bold text-stone-100 tracking-[-0.02em] -ml-1 translate-y-1 group-hover:opacity-90 transition-opacity duration-300"
+                    aria-hidden
+                  >
+                    ersuaid
+                  </span>
+                </>
+              ) : (
                 <img
                   src="/Persuaid-wordmark.png?v=1"
                   alt="Persuaid"
-                  className="h-12 sm:h-[3.25rem] md:h-14 w-auto max-w-[min(380px,72vw)] object-contain object-left group-hover:opacity-90 transition-opacity duration-300"
+                  className="h-10 w-auto max-w-[min(280px,50vw)] object-contain object-left sm:h-11 md:h-12 md:max-h-[3.25rem] lg:h-14 group-hover:opacity-90 transition-opacity duration-300"
                   width={280}
                   height={56}
                 />
-              </a>
-            </div>
+              )}
+            </a>
 
-            {/* Desktop Navigation - links + CTA */}
-            <div className="hidden md:flex md:items-center md:gap-8 md:ml-auto">
+            <div className="flex items-end gap-5 sm:gap-6 lg:gap-7">
               {navLinks.map((link) => (
                 <a
                   key={link.label}
                   href={link.href}
-                  className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors duration-300 relative group"
-                >
-                  {link.label}
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-stone-500/70 group-hover:w-full transition-all duration-300"></span>
-                </a>
-              ))}
-            </div>
-
-            {/* Mobile menu button */}
-            <button
-              className="md:hidden text-text-primary"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                {mobileMenuOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                )}
-              </svg>
-            </button>
-          </div>
-
-          {/* Mobile Navigation */}
-          <div
-            className={cn(
-              "md:hidden overflow-hidden transition-all duration-300",
-              mobileMenuOpen ? "max-h-64 pb-4" : "max-h-0"
-            )}
-          >
-            <div className="flex flex-col space-y-4 pt-4">
-              {navLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="text-text-secondary hover:text-text-primary transition-colors duration-200"
-                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "shrink-0 leading-none transition-colors",
+                    landing
+                      ? "-translate-y-1.5 pb-0 text-[0.8125rem] font-semibold tracking-[-0.02em] text-stone-200/95 hover:text-stone-100 sm:text-[0.9375rem]"
+                      : "-translate-y-1.5 pb-0.5 text-sm font-semibold tracking-tight text-text-secondary hover:text-text-primary"
+                  )}
                 >
                   {link.label}
                 </a>

@@ -1,15 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const THUMB_SRC = "/LandingVid/Thumbnail.png";
 /** Same path when you swap the file on disk — bump `v` so browsers load the new binary. */
-const VIDEO_SRC = "/LandingVid/newv.mp4?v=2";
-const CAPTIONS_SRC = "/LandingVid/captions.vtt";
+const VIDEO_SRC = "/Last Video.mp4?v=1";
 
-const SPEEDS = [0.75, 1, 1.25, 1.5] as const;
+type AiStage = "question" | "thinking" | "answer";
 
 type Props = {
   show: boolean;
@@ -22,10 +21,25 @@ export function LandingHeroVideo({ show }: Props) {
   const [countdown, setCountdown] = useState(5);
   const [expanded, setExpanded] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [captionsOn, setCaptionsOn] = useState(true);
   const [needsSoundHint, setNeedsSoundHint] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [aiOverlayVisible, setAiOverlayVisible] = useState(false);
+  const [aiStage, setAiStage] = useState<AiStage>("question");
+  const [pkScrollToObjections, setPkScrollToObjections] = useState(false);
+  const [pkHighlight, setPkHighlight] = useState<"pricing" | null>(null);
+  const transcriptTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const questionText = "IDK—how do I create an actual insurance claim?";
+  const answerText =
+    "Create the claim by confirming coverage, gathering the required documents, and using the right next line to request the next steps. Persuaid suggests wording that keeps the process clear—so you don’t lose momentum.";
+
+  const questionLabel = "Question";
+  const questionTextBetter =
+    "What are the typical pricing models for the insurance you offer—and roughly how much coverage does each include?";
+  const answerTextBetter =
+    "We usually frame it as simple tiers based on coverage amount and term length. For example: Starter covers around $250k, Standard around $500k, and Plus up to $1M—then we confirm age/health class and term to quote the closest fit.";
 
   const clearTimers = useCallback(() => {
     if (timerRef.current) {
@@ -42,21 +56,18 @@ export function LandingHeroVideo({ show }: Props) {
   playbackRateRef.current = playbackRate;
 
   const startVideo = useCallback(
-    (opts?: { userGesture?: boolean }) => {
+    (_opts?: { userGesture?: boolean }) => {
       clearTimers();
       setPhase("video");
       const v = videoRef.current;
       if (!v) return;
       v.playbackRate = playbackRateRef.current;
-      if (!opts?.userGesture) {
-        v.muted = true;
-        setNeedsSoundHint(true);
-      } else {
-        v.muted = false;
-        setNeedsSoundHint(false);
-      }
+      // Always play muted so autoplay works without any user gesture.
+      v.muted = true;
+      setNeedsSoundHint(false);
       void v.play().catch(() => {
-        setNeedsSoundHint(true);
+        // If autoplay is blocked, we keep it muted (no "tap for sound" UI).
+        setNeedsSoundHint(false);
       });
     },
     [clearTimers]
@@ -73,48 +84,70 @@ export function LandingHeroVideo({ show }: Props) {
       setCountdown(5);
       setExpanded(false);
       videoRef.current?.pause();
+      setAiOverlayVisible(false);
+      setAiStage("question");
+      setPkScrollToObjections(false);
+      setPkHighlight(null);
+      transcriptTimersRef.current.forEach((t) => clearTimeout(t));
+      transcriptTimersRef.current = [];
       return;
     }
-    setPhase("thumbnail");
-    setCountdown(5);
+    // Autoplay immediately (no user interaction).
+    setPhase("video");
+    setCountdown(0);
+    setExpanded(false);
     clearTimers();
-
-    countdownIntervalRef.current = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          if (countdownIntervalRef.current) {
-            clearInterval(countdownIntervalRef.current);
-            countdownIntervalRef.current = null;
-          }
-          return 0;
-        }
-        return c - 1;
-      });
-    }, 1000);
-
-    timerRef.current = setTimeout(() => {
-      startVideoRef.current({ userGesture: false });
-    }, 5000);
+    void startVideoRef.current({ userGesture: false });
 
     return clearTimers;
   }, [show, clearTimers]);
+
+  // Landing-only mock “Live AI transcript” overlay.
+  // Appears ~3s after the landing hero becomes visible, matching the desktop transcript panel look.
+  useEffect(() => {
+    transcriptTimersRef.current.forEach((t) => clearTimeout(t));
+    transcriptTimersRef.current = [];
+
+    if (!show) return;
+
+    transcriptTimersRef.current.push(
+      setTimeout(() => {
+        setAiOverlayVisible(true);
+        setAiStage("question");
+
+        transcriptTimersRef.current.push(
+          // 2) Thinking (linger a bit longer)
+          setTimeout(() => {
+            setAiStage("thinking");
+          }, 900),
+        );
+
+        transcriptTimersRef.current.push(
+          // 3) Answer (no auto-scroll on page)
+          setTimeout(() => {
+            setAiStage("answer");
+            setPkScrollToObjections(true);
+
+            transcriptTimersRef.current.push(
+              setTimeout(() => {
+                setPkHighlight("pricing");
+              }, 650),
+            );
+          }, 2800),
+        );
+      }, 3000),
+    );
+
+    return () => {
+      transcriptTimersRef.current.forEach((t) => clearTimeout(t));
+      transcriptTimersRef.current = [];
+    };
+  }, [show]);
 
   useEffect(() => {
     const v = videoRef.current;
     if (v) v.playbackRate = playbackRate;
   }, [playbackRate, phase]);
-
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    const sync = () => {
-      const t = v.textTracks[0];
-      if (t) t.mode = captionsOn ? "showing" : "hidden";
-    };
-    sync();
-    v.addEventListener("loadedmetadata", sync);
-    return () => v.removeEventListener("loadedmetadata", sync);
-  }, [captionsOn, phase]);
 
   useEffect(() => {
     if (!expanded) return;
@@ -129,16 +162,6 @@ export function LandingHeroVideo({ show }: Props) {
       document.body.style.overflow = prev;
     };
   }, [expanded]);
-
-  const onThumbClick = () => {
-    startVideo({ userGesture: true });
-  };
-
-  const cycleSpeed = () => {
-    const i = SPEEDS.indexOf(playbackRate as (typeof SPEEDS)[number]);
-    const next = SPEEDS[(i + 1) % SPEEDS.length];
-    setPlaybackRate(next);
-  };
 
   const shell = (
     <div
@@ -156,120 +179,126 @@ export function LandingHeroVideo({ show }: Props) {
           expanded ? "aspect-video max-h-[calc(100vh-4rem)] max-w-[min(100%,1400px)]" : "aspect-video max-h-[min(68vh,720px)] min-h-[240px] sm:min-h-[280px]"
         )}
       >
+          {/* Outline matches the video frame (black) */}
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-0 rounded-2xl border border-black/70 transition-opacity duration-500",
+              phase === "video" ? "opacity-100" : "opacity-0"
+            )}
+          />
         <video
           ref={videoRef}
           src={VIDEO_SRC}
           poster={THUMB_SRC}
           className={cn(
             "absolute inset-0 h-full w-full object-contain transition-opacity duration-500",
-            phase === "video" ? "z-[1] opacity-100" : "z-0 opacity-0 pointer-events-none"
+            // Let taps/scrolls go through the video area.
+            phase === "video" ? "z-[1] opacity-100 pointer-events-none" : "z-0 opacity-0 pointer-events-none"
           )}
           playsInline
+          muted
+          autoPlay
           preload="auto"
-          controls={phase === "video"}
-          controlsList="nodownload"
+          loop
+          controls={false}
         >
-          <track kind="captions" srcLang="en" label="English" src={CAPTIONS_SRC} default />
+          {/* No captions/transcript on purpose (requested: "delete the live transcript"). */}
         </video>
 
-        <AnimatePresence>
-          {phase === "thumbnail" && (
-            <motion.button
-              type="button"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
-              className="absolute inset-0 z-[2] flex flex-col items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              onClick={onThumbClick}
-              aria-label="Play video now"
-            >
+        {/* Mock “Live transcript” overlay above the landing hero video. */}
+        <div
+          className="pointer-events-none absolute left-0 right-0 top-0 z-[3] flex justify-center px-3 pt-4 transition-opacity duration-300"
+          style={{ opacity: aiOverlayVisible ? 1 : 0 }}
+          aria-hidden
+        >
+          <div className="w-full max-w-[32rem] rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
+            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/20">
               <img
-                src={THUMB_SRC}
+                src="/PersuaidLogo.png"
                 alt=""
-                className="absolute inset-0 h-full w-full object-cover"
+                className="h-7 w-7 shrink-0 object-contain brightness-0 invert opacity-90"
+                width={28}
+                height={28}
               />
-              <div
-                className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/20"
-                aria-hidden
-              />
-              <div className="relative z-[1] flex flex-col items-center gap-4 px-6 text-center">
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 text-white shadow-lg ring-2 ring-white/25 backdrop-blur-md transition-transform hover:scale-105">
-                  <svg className="ml-1 h-8 w-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="text-base font-semibold tracking-tight text-white sm:text-lg">
-                    Watch the product tour
-                  </p>
-                  <p className="mt-1 text-sm text-white/75">
-                    {countdown > 0 ? (
-                      <>
-                        Starts in <span className="tabular-nums font-mono font-semibold text-emerald-300">{countdown}</span>s — or tap to play now
-                      </>
-                    ) : (
-                      "Starting…"
+              <h3 className="text-base font-semibold text-text-primary tracking-tight">Persuaid</h3>
+              <span className="ml-auto text-[11px] font-medium text-text-dim/75">Live</span>
+            </div>
+
+            <div className="px-4 py-3 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-dim/85">{questionLabel}</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-text-dim/70">Enter</span>
+                  <span
+                    className={cn(
+                      "inline-flex h-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 px-2.5 text-[11px] font-semibold text-white/90",
+                      aiStage === "thinking" ? "scale-[0.92] opacity-85" : "scale-100 opacity-100",
                     )}
-                  </p>
+                    style={{
+                      transition: "transform 180ms ease, opacity 180ms ease",
+                      transform: aiStage === "thinking" ? "translateY(1px) scale(0.92)" : "translateY(0px) scale(1)",
+                    }}
+                  >
+                    ⏎
+                  </span>
                 </div>
               </div>
-            </motion.button>
-          )}
-        </AnimatePresence>
 
-        {phase === "video" && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-[3] flex justify-end gap-2 p-2 sm:p-3">
-            <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setCaptionsOn((c) => !c)}
-                className={cn(
-                  "rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide backdrop-blur-md transition-colors",
-                  captionsOn
-                    ? "border-emerald-500/40 bg-emerald-500/20 text-emerald-100"
-                    : "border-white/15 bg-black/50 text-white/80 hover:bg-black/70"
-                )}
-              >
-                CC
-              </button>
-              <button
-                type="button"
-                onClick={cycleSpeed}
-                className="rounded-lg border border-white/15 bg-black/50 px-2.5 py-1.5 text-[11px] font-semibold tabular-nums text-white/90 backdrop-blur-md hover:bg-black/70"
-                title="Playback speed"
-              >
-                {playbackRate}×
-              </button>
-              <button
-                type="button"
-                onClick={() => setExpanded((e) => !e)}
-                className="rounded-lg border border-white/15 bg-black/50 px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/90 backdrop-blur-md hover:bg-black/70"
-                aria-expanded={expanded}
-              >
-                {expanded ? "Exit" : "Expand"}
-              </button>
+              <p className="text-[15px] font-bold text-white leading-snug">{questionTextBetter}</p>
+
+              {aiStage === "thinking" ? (
+                <p className="text-xs text-text-dim/90 italic leading-snug">AI is thinking…</p>
+              ) : null}
+
+              {aiStage === "answer" ? (
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-green-accent">Answer</p>
+                  <p className="text-sm text-text-primary/95 leading-relaxed">{answerTextBetter}</p>
+                </div>
+              ) : null}
+
+              {aiStage === "answer" ? (
+                <div className="pt-0.5">
+                  <div className="flex items-center justify-between gap-3 mb-1">
+                    <p className="text-[11px] font-semibold text-text-dim/85">From product knowledge</p>
+                    <p className="text-[11px] text-text-dim/70">
+                      {pkHighlight === "pricing" ? "Highlighted" : "Scrolling…"}
+                    </p>
+                  </div>
+
+                  <div className="h-[92px] overflow-hidden rounded-xl border border-white/10 bg-black/20">
+                    <div
+                      className="transition-transform duration-1200 ease-in-out will-change-transform"
+                      style={{ transform: pkScrollToObjections ? "translateY(-84px)" : "translateY(0)" }}
+                    >
+                      <div className="h-[92px] px-3 py-2">
+                        <p className="mt-0.5 text-[11px] text-text-secondary leading-tight">
+                          We price by coverage + term length. Typical tiers: Starter $39/mo ($250k / 10-year), Standard
+                          $59/mo ($500k / 20-year), Plus $89/mo ($1M / 20-year). Confirm age + health class to finalize.
+                        </p>
+                      </div>
+                      <div className="h-[92px] px-3 py-2">
+                        <p className="mt-0.5 text-[11px] text-text-secondary leading-tight">
+                          <span
+                            className={cn(
+                              "inline-block rounded-md px-1.5 py-0.5 transition-colors",
+                              pkHighlight === "pricing"
+                                ? "text-white bg-emerald-400/30 ring-1 ring-emerald-300/45 shadow-[0_0_0_1px_rgba(16,185,129,0.22),0_12px_34px_rgba(16,185,129,0.16)]"
+                                : "text-text-secondary bg-transparent"
+                            )}
+                          >
+                            Starter ≈ $250k, Standard ≈ $500k, Plus ≈ $1M — then match term length and quote the closest
+                            tier.
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
-        )}
-
-        {phase === "video" && needsSoundHint && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-14 z-[3] flex justify-center px-3 sm:bottom-16">
-            <button
-              type="button"
-              className="pointer-events-auto rounded-full border border-white/20 bg-black/70 px-4 py-2 text-xs font-medium text-white backdrop-blur-md hover:bg-black/85"
-              onClick={() => {
-                const v = videoRef.current;
-                if (!v) return;
-                v.muted = false;
-                setNeedsSoundHint(false);
-                void v.play();
-              }}
-            >
-              Tap for sound
-            </button>
-          </div>
-        )}
+        </div>
       </div>
 
       {expanded && (
