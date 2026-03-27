@@ -18,9 +18,11 @@ type NavbarProps = {
   liveDemo?: NavbarLiveDemoProps;
   /** Home marketing: fixed bar, translucent — hero art shows through the top */
   landing?: boolean;
+  /** P mark + “ersuaid” text (same as home) instead of the wordmark image */
+  landingLogo?: boolean;
 };
 
-export function Navbar({ liveDemo, landing = false }: NavbarProps) {
+export function Navbar({ liveDemo, landing = false, landingLogo = false }: NavbarProps) {
   const [showCtaButton, setShowCtaButton] = useState(false);
 
   useEffect(() => {
@@ -147,34 +149,56 @@ export function Navbar({ liveDemo, landing = false }: NavbarProps) {
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-18 items-end gap-10 pb-3 sm:gap-16 lg:h-20 lg:gap-[4.5rem] lg:pb-4">
+          <div className="flex h-18 items-center gap-10 sm:gap-16 lg:h-20 lg:gap-[4.5rem]">
             <a
               href="/"
-              className="group inline-flex min-w-0 shrink-0 items-end gap-0 py-1"
+              className="group inline-flex min-w-0 shrink-0 items-center gap-0"
               aria-label="Persuaid home"
             >
-              <>
-                <img
-                  src={PERSUAID_MARK_PNG}
-                  alt=""
-                  width={40}
-                  height={40}
-                  aria-hidden
-                  className="h-7 w-7 sm:h-8 sm:w-8 md:h-8 md:w-8 shrink-0 object-contain translate-y-0.5 group-hover:opacity-90 transition-opacity duration-300"
-                />
-                <span
-                  className={cn(
-                    "text-base sm:text-lg md:text-lg font-bold tracking-[-0.02em] -ml-1 translate-y-1 group-hover:opacity-90 transition-opacity duration-300",
-                    landing ? "text-stone-100" : "text-text-primary"
-                  )}
-                  aria-hidden
-                >
-                  ersuaid
-                </span>
-              </>
+              {landing || landingLogo ? (
+                <>
+                  <img
+                    src="/PersuaidLogo.png"
+                    alt=""
+                    width={40}
+                    height={40}
+                    aria-hidden
+                    className="h-7 w-7 sm:h-8 sm:w-8 md:h-8 md:w-8 shrink-0 object-contain group-hover:opacity-90 transition-opacity duration-300"
+                  />
+                  <span
+                    className={cn(
+                      "text-base sm:text-lg md:text-lg font-bold tracking-[-0.02em] -ml-1 group-hover:opacity-90 transition-opacity duration-300",
+                      landing ? "text-stone-100" : "text-text-primary"
+                    )}
+                    aria-hidden
+                  >
+                    ersuaid
+                  </span>
+                </>
+              ) : (
+                <>
+                  <img
+                    src={PERSUAID_MARK_PNG}
+                    alt=""
+                    width={40}
+                    height={40}
+                    aria-hidden
+                    className="h-7 w-7 sm:h-8 sm:w-8 md:h-8 md:w-8 shrink-0 object-contain translate-y-0.5 group-hover:opacity-90 transition-opacity duration-300"
+                  />
+                  <span
+                    className={cn(
+                      "text-base sm:text-lg md:text-lg font-bold tracking-[-0.02em] -ml-1 translate-y-1 group-hover:opacity-90 transition-opacity duration-300",
+                      landing ? "text-stone-100" : "text-text-primary"
+                    )}
+                    aria-hidden
+                  >
+                    ersuaid
+                  </span>
+                </>
+              )}
             </a>
 
-            <div className="flex items-end gap-5 sm:gap-6 lg:gap-7">
+            <div className="flex items-center gap-5 sm:gap-6 lg:gap-7">
               {navLinks.map((link) => (
                 <a
                   key={link.label}
@@ -193,10 +217,10 @@ export function Navbar({ liveDemo, landing = false }: NavbarProps) {
                       : undefined
                   }
                   className={cn(
-                    "shrink-0 leading-none transition-colors",
+                    "shrink-0 leading-none transition-colors py-1",
                     landing
-                      ? "-translate-y-1.5 pb-0 text-[0.8125rem] font-semibold tracking-[-0.02em] text-stone-200/95 hover:text-stone-100 sm:text-[0.9375rem]"
-                      : "-translate-y-1.5 pb-0.5 text-sm font-semibold tracking-tight text-text-secondary hover:text-text-primary"
+                      ? "text-[0.8125rem] font-semibold tracking-[-0.02em] text-stone-200/95 hover:text-stone-100 sm:text-[0.9375rem]"
+                      : "text-sm font-semibold tracking-tight text-text-secondary hover:text-text-primary"
                   )}
                 >
                   {link.label}

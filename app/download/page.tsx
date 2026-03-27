@@ -172,13 +172,6 @@ export default function DownloadPage() {
             </motion.div>
           )}
 
-          {isLocalhost && (
-            <p className="mx-auto mt-6 max-w-3xl text-center text-xs text-text-dim/80">
-              Local dev tip: run <code className="rounded bg-background-elevated/70 px-1">npm run desktop:build</code>{" "}
-              to refresh installer assets in <code className="rounded bg-background-elevated/70 px-1">public/downloads</code>.
-            </p>
-          )}
-
           <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-border/60 bg-background-elevated/35 p-6">
             <h3 className="text-base font-semibold text-text-primary">Install in 3 steps</h3>
             <ol className="mt-4 space-y-3 text-sm text-text-secondary">

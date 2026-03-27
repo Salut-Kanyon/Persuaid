@@ -3,15 +3,31 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/ui/Navbar";
-import { Section } from "@/components/ui/Section";
-import { PricingCard } from "@/components/ui/PricingCard";
+import { PricingCard, PricingFeatureCheck } from "@/components/ui/PricingCard";
 import { CTAButton } from "@/components/ui/CTAButton";
 import { Footer } from "@/components/ui/Footer";
+import { Section } from "@/components/ui/Section";
 import { cn } from "@/lib/utils";
 
 type BillingInterval = "monthly" | "yearly";
 
 const YEARLY_DISCOUNT = 0.2;
+
+function PlanBadge({ variant, children }: { variant: "popular" | "best"; children: React.ReactNode }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center justify-center rounded-full px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.12em]",
+        variant === "popular" &&
+          "border border-green-primary/55 bg-green-primary/[0.22] text-green-accent shadow-[0_0_40px_-10px_rgba(26,157,120,0.65),inset_0_1px_0_rgba(255,255,255,0.14)]",
+        variant === "best" &&
+          "border border-green-accent/50 bg-gradient-to-b from-green-primary/40 via-green-primary/25 to-green-darker/55 text-white shadow-[0_0_48px_-8px_rgba(61,184,146,0.55),0_12px_32px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)]"
+      )}
+    >
+      {children}
+    </span>
+  );
+}
 
 export default function PricingPage() {
   const [interval, setInterval] = useState<BillingInterval>("monthly");
@@ -40,63 +56,46 @@ export default function PricingPage() {
   };
 
   const proMonthly = 20;
-  const teamPerUserMonthly = 50;
+  const proPlusMonthly = 50;
   const proYearlyPerMonth = Math.round(proMonthly * (1 - YEARLY_DISCOUNT));
-  const teamYearlyPerMonth = Math.round(teamPerUserMonthly * (1 - YEARLY_DISCOUNT));
+  const proPlusYearlyPerMonth = Math.round(proPlusMonthly * (1 - YEARLY_DISCOUNT));
 
   const proPrice = interval === "monthly" ? "$20" : `$${proYearlyPerMonth}`;
-  const teamPrice = interval === "monthly" ? "$49" : `$${teamYearlyPerMonth}`;
-  const proPeriod = interval === "monthly" ? "/month" : "/month";
-  const teamPeriod = interval === "monthly" ? "/user/month" : "/user/month";
-  const yearlySuffix = interval === "yearly" ? " (billed yearly)" : "";
+  const proPlusPrice = interval === "monthly" ? "$50" : `$${proPlusYearlyPerMonth}`;
+  const periodSuffix = interval === "yearly" ? " (billed yearly)" : "";
+
+  const badgeSlotClass =
+    "flex min-h-[3.75rem] shrink-0 flex-col items-center justify-end pb-3 pt-1 sm:min-h-[4rem]";
 
   return (
-    <main className="min-h-screen bg-background-near-black">
-      <Navbar />
+    <main className="min-h-screen overflow-x-hidden bg-gradient-to-b from-green-primary/[0.16] via-[color:var(--bg-near-black)] via-45% to-green-darker/[0.28]">
+      <Navbar landingLogo />
 
-      <Section className="pt-28 pb-16 sm:pt-32 sm:pb-20">
+      <Section className="pt-20 pb-16 sm:pt-24 sm:pb-20 lg:pb-24">
+        {/* Hero — minimal; pricing visible immediately */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-14"
+          transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
+          className="mx-auto max-w-3xl text-center"
         >
-          <span className="text-sm font-semibold text-green-accent uppercase tracking-wider">
-            Pricing
-          </span>
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary mt-4 mb-5 leading-tight tracking-tight"
-          >
-            Close more deals with AI on every call
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="text-lg sm:text-xl text-text-muted max-w-2xl mx-auto"
-          >
-            Persuaid listens to your sales calls, generates real-time responses, and helps you handle objections instantly.
-          </motion.p>
+          <h1 className="font-display text-4xl font-normal leading-[1.08] tracking-[-0.02em] text-text-primary sm:text-5xl lg:text-[3.25rem] xl:text-[3.5rem]">
+            Never freeze on a sales call again.
+          </h1>
+          <p className="font-subtitle mx-auto mt-4 max-w-2xl text-balance text-lg font-normal leading-relaxed text-text-muted sm:mt-5 sm:text-xl lg:text-2xl lg:leading-snug">
+            Real-time answers while you&apos;re still on the call.
+          </p>
         </motion.div>
 
-        {/* Billing toggle — only affects paid plans */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.25 }}
-          className="flex justify-center mb-16"
-        >
-          <div className="inline-flex items-center gap-2 p-1.5 rounded-xl bg-background-surface/50 border border-border/50">
+        <div className="mx-auto mt-8 flex max-w-6xl flex-col items-center sm:mt-10">
+          <div className="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-background-surface/50 p-1.5">
             <button
               type="button"
               onClick={() => setInterval("monthly")}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                "rounded-lg px-5 py-2 text-sm font-medium transition-colors",
                 interval === "monthly"
-                  ? "bg-green-primary/20 text-green-accent border border-green-primary/30"
+                  ? "border border-green-primary/30 bg-green-primary/20 text-green-accent"
                   : "text-text-muted hover:text-text-primary"
               )}
             >
@@ -106,209 +105,182 @@ export default function PricingPage() {
               type="button"
               onClick={() => setInterval("yearly")}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5",
+                "inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-medium transition-colors",
                 interval === "yearly"
-                  ? "bg-green-primary/20 text-green-accent border border-green-primary/30"
+                  ? "border border-green-primary/30 bg-green-primary/20 text-green-accent"
                   : "text-text-muted hover:text-text-primary"
               )}
             >
               Yearly
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-primary/30 text-green-accent">
-                Save 20%
+              <span className="rounded bg-green-primary/30 px-1.5 py-0.5 text-[10px] font-semibold text-green-accent">
+                −20%
               </span>
             </button>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Three-tier grid */}
+        {/* Cards */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto mb-20 items-stretch"
+          transition={{ duration: 0.4, delay: 0.06 }}
+          className="mx-auto mt-10 grid max-w-6xl grid-cols-1 items-stretch gap-7 md:mt-12 md:grid-cols-3 md:gap-4 lg:gap-6"
         >
-          {/* Free */}
-          <div className="flex flex-col h-full min-h-0">
+          {/* Free — quieter, smaller feel */}
+          <div className="flex min-h-0 w-full flex-col">
+            <div className={badgeSlotClass} aria-hidden>
+              <span className="invisible select-none rounded-full px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.12em]">
+                Most popular
+              </span>
+            </div>
             <div
               className={cn(
-                "flex-1 rounded-2xl border p-8 flex flex-col min-h-0",
-                "bg-background-surface/40 border-border/50"
+                "flex min-h-0 flex-1 flex-col rounded-3xl border border-white/[0.06] bg-background-surface/15 p-6 sm:p-7",
+                "opacity-[0.92]"
               )}
             >
-              <h3 className="text-xl font-bold text-text-primary tracking-tight shrink-0">Free</h3>
-              <p className="text-text-muted text-sm mt-1 mb-6 shrink-0">30 minutes free for the AI Sales Agent.</p>
-              <div className="flex items-baseline mb-8 shrink-0">
-                <span className="text-4xl font-bold text-text-primary">$0</span>
+              <h3 className="text-lg font-bold tracking-tight text-text-primary sm:text-xl">Free</h3>
+              <p className="mt-1 text-[13px] text-text-muted">Try it on real calls — no pressure.</p>
+              <div className="mt-5 flex items-baseline gap-1">
+                <span className="text-3xl font-bold tracking-tight text-text-primary sm:text-[2.25rem]">$0</span>
               </div>
-              <div className="w-fit max-w-full self-start shrink-0 rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-2 shadow-sm backdrop-blur-md">
-                <ul className="space-y-1.5 text-sm font-medium list-none">
-                  <li>
-                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
-                      30 minutes per month
-                    </span>
-                  </li>
-                  <li>
-                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
-                      Product knowledge integration
-                    </span>
-                  </li>
-                </ul>
-              </div>
-              <div className="flex-1 min-h-0" aria-hidden />
-              <div className="w-full shrink-0 pt-8">
+              <ul className="mt-6 space-y-2 text-[13px] font-medium leading-snug">
+                <li className="flex gap-2">
+                  <PricingFeatureCheck className="!h-5 !w-5" />
+                  <span className="text-text-primary/90">Live AI support during calls</span>
+                </li>
+                <li className="flex gap-2">
+                  <PricingFeatureCheck className="!h-5 !w-5" />
+                  <span className="text-text-primary/90">Unlimited responses while active</span>
+                </li>
+                <li className="flex gap-2">
+                  <PricingFeatureCheck className="!h-5 !w-5" />
+                  <span className="text-text-primary/90">Bring your own talk tracks & notes</span>
+                </li>
+              </ul>
+              <p className="mt-4 text-[11px] leading-relaxed text-text-dim">Perfect for testing real conversations</p>
+              <div className="min-h-0 flex-1" aria-hidden />
+              <div className="pt-6">
                 <CTAButton variant="secondary" className="w-full" href="/download">
                   Download free app
                 </CTAButton>
               </div>
             </div>
-            {/* Reserve space so CTAs line up with Pro column (“Most popular” row) */}
-            <div className="mt-2 min-h-[2rem] shrink-0" aria-hidden />
           </div>
 
-          {/* Pro — highlighted, no star */}
-          <div className="flex flex-col h-full min-h-0 md:-mt-2 md:mb-2">
+          {/* Pro — most popular */}
+          <div className="relative z-[2] flex min-h-0 w-full flex-col">
+            <div className={badgeSlotClass}>
+              <PlanBadge variant="popular">Most popular</PlanBadge>
+            </div>
             <PricingCard
               name="Persuaid Pro"
               price={proPrice}
-              period={proPeriod + yearlySuffix}
-              description="For reps who want live help on real sales calls."
+              period={`/month${periodSuffix}`}
+              description="For reps who want to sound sharp every time."
               features={[
-                "20 hours per month",
-                "Meeting transcript analysis",
-                "Product knowledge integration",
-                "Customer support 24/7",
+                "Generous monthly live call listening",
+                "Instant answers, rebuttals, and follow-ups while you’re talking",
+                "Uses your product knowledge, pricing, and notes in real time",
+                "Saved transcripts with coaching insights after every call",
               ]}
+              footnote="Your safety net on every call"
               cta="Subscribe"
-              highlighted={true}
-              className="flex-1 w-full min-h-0"
+              tier="featured"
+              className="min-h-0 flex-1 md:scale-[1.03] md:shadow-xl lg:scale-[1.04]"
               onCheckout={() => startCheckout("pro")}
               checkoutLoading={checkoutLoading === "pro"}
             />
-            <p className="text-center text-xs text-text-dim mt-2 shrink-0">Most popular</p>
           </div>
 
-          {/* Team */}
-          <div className="flex flex-col h-full min-h-0">
-            <div
-              className={cn(
-                "flex-1 rounded-2xl border p-8 flex flex-col min-h-0",
-                "bg-background-surface border-border/50 hover:border-green-primary/30 transition-colors"
-              )}
-            >
-              <h3 className="text-xl font-bold text-text-primary tracking-tight shrink-0">Persuaid Pro Plus</h3>
-              <p className="text-text-muted text-sm mt-1 mb-6 shrink-0">For teams that need more live call coverage.</p>
-              <div className="flex items-baseline mb-8 shrink-0">
-                <span className="text-4xl font-bold text-text-primary">{teamPrice}</span>
-                <span className="text-text-dim ml-2 text-base">{teamPeriod}{yearlySuffix && " "}{yearlySuffix}</span>
-              </div>
-              <div className="w-fit max-w-full self-start shrink-0 rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-2 shadow-sm backdrop-blur-md">
-                <ul className="space-y-1.5 text-sm font-medium list-none">
-                  <li>
-                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
-                      50 hours per month
-                    </span>
-                  </li>
-                  <li>
-                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
-                      Meeting transcript analysis
-                    </span>
-                  </li>
-                  <li>
-                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
-                      Product knowledge integration
-                    </span>
-                  </li>
-                  <li>
-                    <span className="block bg-gradient-to-r from-white via-zinc-300 to-zinc-500 bg-clip-text text-transparent leading-snug">
-                      Customer support 24/7
-                    </span>
-                  </li>
-                </ul>
-              </div>
-              <div className="flex-1 min-h-0" aria-hidden />
-              <div className="w-full shrink-0 pt-8">
-                <CTAButton
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => startCheckout("team")}
-                  disabled={checkoutLoading === "team"}
-                >
-                  {checkoutLoading === "team" ? "Redirecting…" : "Subscribe"}
-                </CTAButton>
-              </div>
+          {/* Pro Plus — best deal */}
+          <div className="relative z-[2] flex min-h-0 w-full flex-col">
+            <div className={badgeSlotClass}>
+              <PlanBadge variant="best">Best deal</PlanBadge>
             </div>
-            <div className="mt-2 min-h-[2rem] shrink-0" aria-hidden />
+            <PricingCard
+              name="Persuaid Pro Plus"
+              price={proPlusPrice}
+              period={`/month${periodSuffix}`}
+              description="For people with heavy call volume who want more airtime every month."
+              features={[
+                "Maximum monthly live call listening",
+                "Instant answers, rebuttals, and follow-ups while you’re talking",
+                "Uses your product knowledge, pricing, and notes in real time",
+                "Saved transcripts with coaching insights after every call",
+              ]}
+              footnote="More airtime, same unlimited help"
+              cta="Subscribe"
+              tier="bestDeal"
+              className="min-h-0 flex-1 md:scale-[1.03] md:shadow-xl lg:scale-[1.04]"
+              onCheckout={() => startCheckout("team")}
+              checkoutLoading={checkoutLoading === "team"}
+            />
           </div>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.35 }}
-          className="max-w-6xl mx-auto mb-16"
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.4 }}
+          className="mx-auto mt-16 max-w-6xl rounded-2xl border border-border/50 bg-background-surface/35 p-6 sm:flex sm:items-center sm:justify-between sm:gap-8 sm:p-8"
         >
-          <div
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold tracking-tight text-text-primary sm:text-xl">Selling Persuaid to others?</h2>
+            <p className="mt-2 text-sm leading-relaxed text-text-muted sm:text-[15px]">
+              If you need a custom arrangement—partners, resellers, or an unusual volume ask—email us and we&apos;ll work
+              it out person to person.
+            </p>
+          </div>
+          <a
+            href="mailto:support@persuaid.ai?subject=Persuaid%20pricing%20question"
             className={cn(
-              "rounded-2xl border p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4",
-              "bg-background-surface/40 border-border/50"
+              "mt-5 inline-flex shrink-0 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors sm:mt-0",
+              "border border-border bg-transparent text-text-primary hover:border-white/20 hover:bg-white/[0.04]"
             )}
           >
-            <div className="min-w-0">
-              <h3 className="text-lg font-bold text-text-primary tracking-tight">Agency</h3>
-              <p className="text-text-muted text-sm mt-1 max-w-xl">
-                Bundle Pro-level access for many reps at a discounted per-seat rate. You get invite links so agents can
-                join your workspace—no shared logins.
-              </p>
-            </div>
-            <a
-              href="mailto:support@persuaid.ai?subject=Persuaid%20Agency%20plan"
-              className={cn(
-                "shrink-0 inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold",
-                "border border-white/[0.12] bg-white/[0.06] text-text-primary hover:bg-white/[0.09] transition-colors"
-              )}
-            >
-              Contact us
-            </a>
-          </div>
+            Get in touch
+          </a>
         </motion.div>
 
-        {/* FAQ */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="max-w-3xl mx-auto"
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4 }}
+          className="mx-auto mt-16 max-w-3xl"
         >
-          <h2 className="text-2xl font-bold text-text-primary mb-8 text-center">
-            Frequently asked questions
-          </h2>
-          <div className="space-y-4">
+          <h2 className="text-center text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">Common questions</h2>
+          <p className="mx-auto mt-3 max-w-lg text-center text-sm text-text-muted">
+            Straight answers—no spreadsheet required.
+          </p>
+          <div className="mt-10 space-y-4">
             {[
               {
-                q: "How does the free plan work?",
-                a: "Sign up and get 30 minutes of transcription per month, limited AI suggestions, live transcript, and basic notes. No credit card required.",
+                q: "What am I actually paying for?",
+                a: "Listening time each month. While Persuaid is connected to a live call, you can ask for as many answers and rebuttals as you need—there’s no cap on how many times you tap for help.",
               },
               {
-                q: "Can I change plans later?",
-                a: "Yes. Upgrade or downgrade anytime. Changes take effect immediately.",
+                q: "Why is Pro Plus more expensive?",
+                a: "Same experience as Pro—just more monthly listening time for people who live on the phone. It’s not a “team” plan and it isn’t priced per seat.",
               },
               {
-                q: "Do you offer refunds?",
-                a: "We offer a 30-day money-back guarantee on paid plans. Contact us if you’re not satisfied.",
+                q: "What if I blank mid-call?",
+                a: "That’s the point. You stay in the conversation; Persuaid pulls from what you’ve taught it and suggests what to say next before the silence gets awkward.",
               },
-            ].map((faq, i) => (
-              <div
-                key={i}
-                className="bg-background-surface/60 border border-border/50 rounded-xl p-5"
-              >
-                <h3 className="text-sm font-semibold text-text-primary mb-1.5">{faq.q}</h3>
-                <p className="text-sm text-text-muted">{faq.a}</p>
+              {
+                q: "Can I change plans?",
+                a: "Yes. When your workload shifts, move up or down—billing catches up on your next cycle where our checkout supports it.",
+              },
+            ].map((faq) => (
+              <div key={faq.q} className="rounded-xl border border-border/50 bg-background-surface/40 p-5">
+                <h3 className="text-sm font-semibold text-text-primary">{faq.q}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-text-muted">{faq.a}</p>
               </div>
             ))}
           </div>
         </motion.div>
-
-        {/* CTA removed to keep pricing page minimal */}
       </Section>
 
       <Footer />
