@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase/client";
 import { useSession } from "@/components/app/contexts/SessionContext";
+import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 
 function formatTranscriptFull(transcript: { speaker: string; text: string }[]) {
   return transcript
@@ -21,6 +22,7 @@ function minutesBetween(startIso: string, endIso: string) {
 
 export function PostCallSaveModal() {
   const router = useRouter();
+  const { refetchUsage } = useEntitlements();
   const { isRecording, transcript, callStartedAtIso, callEndedAtIso, resetCall } = useSession();
 
   const prevRecordingRef = useRef(false);
@@ -102,6 +104,7 @@ export function PostCallSaveModal() {
 
       resetCall();
       close();
+      refetchUsage();
       router.push(`/dashboard/calls?session=${encodeURIComponent(inserted.id)}`);
     } catch {
       setError("Something went wrong.");

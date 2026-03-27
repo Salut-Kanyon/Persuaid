@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useAppHomeHref } from "@/lib/electron-client";
 import { supabase } from "@/lib/supabase/client";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import type { User } from "@supabase/supabase-js";
@@ -82,6 +83,7 @@ function getEmailInitial(email: string | undefined): string {
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const homeHref = useAppHomeHref();
   const { isRecording } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -177,7 +179,7 @@ export function Sidebar() {
         )}
       >
         <Link
-          href="/"
+          href={homeHref}
           className={cn(
             "group flex min-w-0 items-end gap-0 transition-colors duration-300 ease-out",
             collapsed ? "flex-none justify-center" : "flex-1"

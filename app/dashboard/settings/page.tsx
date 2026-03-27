@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
@@ -11,6 +12,8 @@ import { DropdownSetting } from "@/components/app/settings/DropdownSetting";
 import { useSettings } from "@/components/app/settings/useSettings";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import type { ExportFormat } from "@/lib/settings";
+import { openMarketingPricing } from "@/lib/electron-client";
+import { computeMeUsage } from "@/lib/me-usage";
 
 function getEmailInitial(email: string | undefined): string {
   if (!email) return "?";
@@ -29,6 +32,7 @@ type UsagePayload = {
 };
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
@@ -73,44 +77,43 @@ export default function SettingsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      setUsageLoading(true);
-      setUsageError(null);
+
+    const loadUsage = async (showLoading = false) => {
+      if (showLoading) {
+        setUsageLoading(true);
+        setUsageError(null);
+      }
       try {
         const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (!token) {
+          data: { user },
+          error: userErr,
+        } = await supabase.auth.getUser();
+        if (userErr || !user) {
           if (!cancelled) {
             setUsage(null);
             setUsageLoading(false);
           }
           return;
         }
-        const res = await fetch("/api/me/usage", {
-          cache: "no-store",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const json = (await res.json()) as UsagePayload & { error?: string };
-        if (!res.ok) {
-          if (!cancelled) {
-            setUsage(null);
-            setUsageError(json.error || "Could not load usage");
-          }
+        const result = await computeMeUsage(supabase, user.id, user.email ?? undefined);
+        if (cancelled) return;
+        if (!result.ok) {
+          setUsage(null);
+          setUsageError("Could not load usage");
+          setUsageLoading(false);
           return;
         }
-        if (!cancelled) {
-          setUsage({
-            limitMinutes: json.limitMinutes,
-            usedMinutes: json.usedMinutes,
-            remainingMinutes: json.remainingMinutes,
-            periodLabel: json.periodLabel,
-            usedLabel: json.usedLabel,
-            remainingLabel: json.remainingLabel,
-            limitLabel: json.limitLabel,
-          });
-        }
+        const d = result.data;
+        setUsage({
+          limitMinutes: d.limitMinutes,
+          usedMinutes: d.usedMinutes,
+          remainingMinutes: d.remainingMinutes,
+          periodLabel: d.periodLabel,
+          usedLabel: d.usedLabel,
+          remainingLabel: d.remainingLabel,
+          limitLabel: d.limitLabel,
+        });
+        setUsageError(null);
       } catch {
         if (!cancelled) {
           setUsage(null);
@@ -119,9 +122,21 @@ export default function SettingsPage() {
       } finally {
         if (!cancelled) setUsageLoading(false);
       }
-    })();
+    };
+
+    void loadUsage(true);
+
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      void loadUsage(false);
+    };
+    document.addEventListener("visibilitychange", onVis);
+    const id = window.setInterval(() => void loadUsage(false), 30000);
+
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", onVis);
+      window.clearInterval(id);
     };
   }, []);
 
@@ -458,12 +473,13 @@ export default function SettingsPage() {
               label="Manage subscription"
               description="Upgrade, downgrade, or view plan details."
               control={
-                <a
-                  href="/pricing"
+                <button
+                  type="button"
+                  onClick={() => void openMarketingPricing(router)}
                   className="px-3 py-2 rounded-xl bg-background-surface/60 border border-border/50 text-text-primary text-xs font-semibold hover:bg-background-surface transition-colors"
                 >
                   Manage
-                </a>
+                </button>
               }
             />
           </SettingsSection>

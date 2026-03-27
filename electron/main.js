@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session, protocol, Menu, ipcMain, screen, nativeImage } = require('electron');
+const { app, BrowserWindow, session, protocol, Menu, ipcMain, screen, nativeImage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -129,6 +129,21 @@ ipcMain.handle('persuaid-window', (_event, action) => {
     }
   } catch (e) {
     console.error('[persuaid-window]', e && e.message);
+  }
+});
+
+/** Open https://persuaid.app/* in the system browser (pricing, marketing). Renderer must only pass allowed URLs. */
+ipcMain.handle('persuaid-open-external', async (_event, url) => {
+  try {
+    const u = new URL(String(url));
+    if (u.protocol !== 'https:') return { ok: false, error: 'protocol' };
+    const host = u.hostname.toLowerCase();
+    if (host !== 'persuaid.app' && host !== 'www.persuaid.app') return { ok: false, error: 'host' };
+    await shell.openExternal(u.toString());
+    return { ok: true };
+  } catch (e) {
+    console.error('[persuaid-open-external]', e && e.message);
+    return { ok: false, error: 'invalid' };
   }
 });
 

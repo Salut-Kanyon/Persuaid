@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAnalytics } from "@/components/app/analytics/useAnalytics";
 import { AnalyticsCard } from "@/components/app/analytics/AnalyticsCard";
 import { AnalyticsChart } from "@/components/app/analytics/AnalyticsChart";
 import { supabase } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { openMarketingPricing } from "@/lib/electron-client";
+import { computeMeUsage } from "@/lib/me-usage";
 
 type ChartRange = 7 | 30 | 90;
 
@@ -45,6 +47,7 @@ type UsagePayload = {
 };
 
 export default function AnalyticsPage() {
+  const router = useRouter();
   const {
     loading,
     summary,
@@ -61,9 +64,11 @@ export default function AnalyticsPage() {
 
     const fetchUsage = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
-        const token = data.session?.access_token ?? null;
-        if (error || !token) {
+        const {
+          data: { user },
+          error: userErr,
+        } = await supabase.auth.getUser();
+        if (userErr || !user) {
           if (!mounted) return;
           setUsage(null);
           setUsageError("Sign in to view usage.");
@@ -71,20 +76,15 @@ export default function AnalyticsPage() {
           return;
         }
 
-        const res = await fetch("/api/me/usage", {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        });
-        const payload = (await res.json()) as UsagePayload;
+        const result = await computeMeUsage(supabase, user.id, user.email ?? undefined);
         if (!mounted) return;
-        if (!res.ok) {
+        if (!result.ok) {
           setUsage(null);
-          setUsageError(payload?.error || "Could not load usage.");
+          setUsageError("Could not load usage.");
           setUsageLoading(false);
           return;
         }
-        setUsage(payload);
+        setUsage(result.data);
         setUsageError(null);
         setUsageLoading(false);
       } catch {
@@ -221,8 +221,9 @@ export default function AnalyticsPage() {
                     </p>
                   </div>
                 )}
-                <Link
-                  href="/pricing"
+                <button
+                  type="button"
+                  onClick={() => void openMarketingPricing(router)}
                   className={cn(
                     "inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
                     "bg-green-primary text-white hover:bg-green-dark",
@@ -230,7 +231,7 @@ export default function AnalyticsPage() {
                   )}
                 >
                   Upgrade
-                </Link>
+                </button>
               </div>
             </div>
 

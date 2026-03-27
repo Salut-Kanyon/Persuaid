@@ -11,6 +11,8 @@ import {
 import { supabase } from "@/lib/supabase/client";
 import { UpgradeModal } from "@/components/app/UpgradeModal";
 import type { Plan } from "@/lib/entitlements";
+import { resolveEffectivePlan } from "@/lib/agency";
+import { computeMeUsage } from "@/lib/me-usage";
 
 interface EntitlementsContextValue {
   plan: Plan | null;
@@ -56,26 +58,25 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const [entRes, usageRes] = await Promise.all([
-        fetch("/api/me/entitlements", {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }),
-        fetch("/api/me/usage", {
-          cache: "no-store",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }),
-      ]);
+      const user = session.user;
 
       let nextPlan: Plan = "free";
+      const entRes = await fetch("/api/me/entitlements", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
       if (entRes.ok) {
         const data = (await entRes.json()) as { plan?: Plan };
         nextPlan = data.plan ?? "free";
+      } else {
+        const resolved = await resolveEffectivePlan(supabase, user.id, user.email ?? undefined);
+        nextPlan = resolved.plan;
       }
       setPlan(nextPlan);
 
-      if (usageRes.ok) {
-        const u = (await usageRes.json()) as { remainingMinutes?: number };
-        const remaining = Number(u.remainingMinutes);
+      // Direct Supabase (same as /api/me/usage) so Electron’s static build without Next API stays accurate.
+      const usageResult = await computeMeUsage(supabase, user.id, user.email ?? undefined);
+      if (usageResult.ok) {
+        const remaining = usageResult.data.remainingMinutes;
         setFreeMinutesExhausted(nextPlan === "free" && Number.isFinite(remaining) && remaining <= 0);
       } else {
         setFreeMinutesExhausted(false);

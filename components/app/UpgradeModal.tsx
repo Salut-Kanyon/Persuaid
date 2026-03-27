@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { openMarketingPricing } from "@/lib/electron-client";
 
 interface UpgradeModalProps {
   open: boolean;
@@ -20,7 +21,7 @@ export function UpgradeModal({
 
   const handleViewPricing = () => {
     onClose();
-    router.push("/pricing");
+    void openMarketingPricing(router);
   };
 
   if (!open) return null;

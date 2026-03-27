@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 export type TranscriptSpeaker = "user" | "prospect";
 
@@ -179,6 +180,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [isRecording, setRecording] = useState(false);
   const [callStartedAtIso, setCallStartedAtIso] = useState<string | null>(null);
   const [callEndedAtIso, setCallEndedAtIso] = useState<string | null>(null);
+  const [sttUsageEventId, setSttUsageEventId] = useState<string | null>(null);
+  const sttUsageEventIdRef = useRef<string | null>(null);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
   const [scriptContext, setScriptContext] = useState("");
   const [notesContext, setNotesContext] = useState("");
@@ -223,12 +226,89 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const prev = prevRecordingRef.current;
     prevRecordingRef.current = isRecording;
     if (!prev && isRecording) {
-      setCallStartedAtIso(new Date().toISOString());
+      const startedIso = new Date().toISOString();
+      setCallStartedAtIso(startedIso);
       setCallEndedAtIso(null);
+      // Start STT usage tracking immediately (counts Deepgram time even if user never saves).
+      (async () => {
+        try {
+          const {
+            data: { user },
+            error: userErr,
+          } = await supabase.auth.getUser();
+          if (userErr || !user) return;
+
+          // Best-effort: close any previously open events (e.g. app crash) by setting duration from started_at → now.
+          // We avoid RPC and keep this simple + RLS-friendly.
+          const { data: openRows } = await supabase
+            .from("stt_usage_events")
+            .select("id, started_at")
+            .eq("user_id", user.id)
+            .is("ended_at", null)
+            .order("started_at", { ascending: false })
+            .limit(3);
+
+          if (openRows && openRows.length > 0) {
+            const nowIso = new Date().toISOString();
+            await Promise.all(
+              openRows.map((r) => {
+                const sMs = Date.parse((r as { started_at?: string }).started_at ?? "");
+                const sec = Number.isFinite(sMs) ? Math.max(0, Math.round((Date.now() - sMs) / 1000)) : 0;
+                return supabase
+                  .from("stt_usage_events")
+                  .update({ ended_at: nowIso, duration_seconds: sec })
+                  .eq("id", (r as { id: string }).id);
+              })
+            );
+          }
+
+          const { data: inserted } = await supabase
+            .from("stt_usage_events")
+            .insert({
+              user_id: user.id,
+              started_at: startedIso,
+              ended_at: null,
+              duration_seconds: 0,
+            })
+            .select("id")
+            .single();
+
+          const id = (inserted as { id?: string } | null)?.id ?? null;
+          setSttUsageEventId(id);
+          sttUsageEventIdRef.current = id;
+        } catch {
+          // Best-effort; usage will still be recomputed from any rows that exist.
+        }
+      })();
     } else if (prev && !isRecording) {
-      setCallEndedAtIso(new Date().toISOString());
+      const endedIso = new Date().toISOString();
+      setCallEndedAtIso(endedIso);
+      const startedMs = callStartedAtIso ? Date.parse(callStartedAtIso) : NaN;
+      const durationSeconds = Number.isFinite(startedMs)
+        ? Math.max(0, Math.round((Date.now() - startedMs) / 1000))
+        : 0;
+
+      const id = sttUsageEventIdRef.current;
+      if (id) {
+        (async () => {
+          try {
+            await supabase
+              .from("stt_usage_events")
+              .update({ ended_at: endedIso, duration_seconds: durationSeconds })
+              .eq("id", id);
+          } catch {
+            // ignore
+          } finally {
+            setSttUsageEventId(null);
+            sttUsageEventIdRef.current = null;
+          }
+        })();
+      } else {
+        setSttUsageEventId(null);
+        sttUsageEventIdRef.current = null;
+      }
     }
-  }, [isRecording]);
+  }, [isRecording, callStartedAtIso]);
 
   useEffect(() => {
     if (!isRecording) {
@@ -437,6 +517,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setSuggestions([]);
     setDealContext({});
     setSessionId(null);
+    setSttUsageEventId(null);
+    sttUsageEventIdRef.current = null;
     setAnswerText("");
     setAnswerSource("");
     setSuggestedFollowUpText("");
