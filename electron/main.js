@@ -1,4 +1,16 @@
-const { app, BrowserWindow, session, protocol, Menu, ipcMain, screen, nativeImage, shell } = require('electron');
+const {
+  app,
+  BrowserWindow,
+  session,
+  protocol,
+  Menu,
+  ipcMain,
+  dialog,
+  screen,
+  nativeImage,
+  shell,
+  systemPreferences,
+} = require('electron');
 
 /**
  * Human-readable product name (menu bar, our menus, window title).
@@ -28,6 +40,23 @@ const { WebSocketServer } = require('ws');
 const STT_PROXY_PORT = 2998;
 const DEEPGRAM_ORIGIN = 'wss://api.deepgram.com';
 let sttProxyServer = null;
+
+/** Last resort: Electron sometimes surfaces listen EADDRINUSE as uncaught even with server.on('error'). */
+process.on('uncaughtException', (err) => {
+  const code = err && err.code;
+  const port = err && err.port;
+  const msg = String((err && err.message) || '');
+  if (code === 'EADDRINUSE' && (port === STT_PROXY_PORT || msg.includes(String(STT_PROXY_PORT)))) {
+    try {
+      console.warn(
+        '[STT] Port',
+        STT_PROXY_PORT,
+        'already in use — quit other Persuaid windows, or stop `npm run desktop:dev` / `npm run stt:proxy`. App continues; STT uses the process already listening on that port.'
+      );
+    } catch (_) {}
+    return;
+  }
+});
 
 /** Write to debug.log in userData and /tmp so you can tail -f it when running the app from Finder. */
 let debugLogStream = null;
@@ -171,6 +200,56 @@ ipcMain.handle('persuaid-open-external', async (_event, url) => {
   } catch (e) {
     console.error('[persuaid-open-external]', e && e.message);
     return { ok: false, error: 'invalid' };
+  }
+});
+
+/** macOS microphone TCC — used by in-app onboarding (user gesture), not on boot. */
+ipcMain.handle('mic:get-status', () => {
+  if (process.platform !== 'darwin') return { status: 'unknown' };
+  try {
+    const status = systemPreferences.getMediaAccessStatus('microphone');
+    return { status };
+  } catch (e) {
+    debugLog('[mic:get-status]', e && e.message);
+    return { status: 'unknown' };
+  }
+});
+
+ipcMain.handle('mic:request-access', async () => {
+  if (process.platform !== 'darwin') return { status: 'unknown', granted: false };
+  const win = mainWindow;
+  if (win && !win.isDestroyed()) {
+    try {
+      win.show();
+    } catch (_) {}
+    try {
+      win.focus();
+    } catch (_) {}
+  }
+  try {
+    app.focus({ steal: true });
+  } catch (_) {
+    try {
+      app.focus();
+    } catch (_) {}
+  }
+  const before = systemPreferences.getMediaAccessStatus('microphone');
+  if (before === 'granted') return { status: 'granted', granted: true };
+  if (before === 'denied' || before === 'restricted') return { status: before, granted: false };
+  const granted = await systemPreferences.askForMediaAccess('microphone');
+  const after = systemPreferences.getMediaAccessStatus('microphone');
+  debugLog('[macOS] mic:request-access IPC →', after, granted);
+  return { status: after, granted };
+});
+
+ipcMain.handle('mic:open-settings', async () => {
+  const url = 'x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone';
+  try {
+    await shell.openExternal(url);
+    return { ok: true };
+  } catch (e) {
+    debugLog('[mic:open-settings]', e && e.message);
+    return { ok: false };
   }
 });
 
@@ -369,6 +448,7 @@ function handleFollowUpApi(body, res) {
   console.log('[AI] /api/ai/follow-up called');
   const key = getOpenAiApiKey();
   if (!key) {
+    debugLog('[AI] follow-up: no OPENAI_API_KEY');
     res.writeHead(503, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'OPENAI_API_KEY is not configured. Add it to ~/Library/Application Support/Persuaid/.env' }));
     return;
@@ -377,6 +457,7 @@ function handleFollowUpApi(body, res) {
   try {
     parsed = JSON.parse(body);
   } catch {
+    debugLog('[AI] follow-up: invalid JSON body');
     res.writeHead(400, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Invalid JSON body' }));
     return;
@@ -389,10 +470,12 @@ function handleFollowUpApi(body, res) {
   const momentBlock = buildAiMomentContextBlock(parsed.timeZone);
   const conversation = buildConversation(transcript);
   if (!conversation.trim()) {
+    debugLog('[AI] follow-up: empty transcript → short prompt (mode=' + mode + ', messages=' + transcript.length + ')');
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ text: 'Say something so I can suggest what to say next.' }));
     return;
   }
+  debugLog('[AI] follow-up: calling OpenAI (mode=' + mode + ', transcriptMessages=' + transcript.length + ')');
   const lastExchange = getLastExchange(transcript);
   const lastExchangeWide = getLastExchange(transcript, 40);
   const lastProspectMessage = (transcript.filter((m) => m.speaker === 'prospect').slice(-1)[0]?.text ?? '').trim();
@@ -544,6 +627,7 @@ Rules specific to this mode:
       res.setHeader('Content-Type', 'application/json');
       if (!outRes.statusCode || outRes.statusCode < 200 || outRes.statusCode >= 300) {
         console.error('OpenAI follow-up error:', outRes.statusCode, chunks);
+        debugLog('[AI] follow-up: OpenAI HTTP', outRes.statusCode, String(chunks || '').slice(0, 400));
         res.writeHead(502);
         res.end(JSON.stringify({ error: 'AI follow-up failed' }));
         return;
@@ -557,8 +641,10 @@ Rules specific to this mode:
         text = text.replace(/^[\-\u2022]\s*/, '').trim();
         res.writeHead(200);
         const fallback = mode === 'follow_up_question' ? 'Press the button again after more conversation.' : 'Press Enter again after more conversation.';
+        debugLog('[AI] follow-up: OK, replyChars=' + (text || fallback).length);
         res.end(JSON.stringify({ text: text || fallback }));
       } catch (e) {
+        debugLog('[AI] follow-up: parse error', e && e.message);
         res.writeHead(502);
         res.end(JSON.stringify({ error: 'AI follow-up failed' }));
       }
@@ -566,6 +652,7 @@ Rules specific to this mode:
   });
   outReq.on('error', (e) => {
     console.error('OpenAI request error:', e);
+    debugLog('[AI] follow-up: network error', e && e.message);
     res.writeHead(500, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'AI follow-up failed' }));
   });
@@ -1169,6 +1256,23 @@ function startSttProxy(apiKey) {
   }
 
   const server = http.createServer();
+
+  // Attach before WebSocketServer and before listen so EADDRINUSE is always handled (avoids main-process crash dialog).
+  server.on('error', (err) => {
+    debugLog('[STT] Proxy server error:', err && err.message);
+    if (err && err.code === 'EADDRINUSE') {
+      debugLog(
+        '[STT] Port',
+        STT_PROXY_PORT,
+        'already in use — another Persuaid, `desktop:dev`, or `stt:proxy`. Not starting a second proxy; existing listener on 2998 will be used.'
+      );
+    }
+    try {
+      server.close();
+    } catch (_) {}
+    if (sttProxyServer === server) sttProxyServer = null;
+  });
+
   const wss = new WebSocketServer({ server });
 
   wss.on('connection', (clientWs, req) => {
@@ -1238,22 +1342,6 @@ function startSttProxy(apiKey) {
       debugLog('[STT] Deepgram upstream closed:', code, String(reason || ''));
       try { clientWs.close(); } catch (_) {}
     });
-  });
-
-  // Register before listen — otherwise EADDRINUSE can throw before a handler exists.
-  server.on('error', (err) => {
-    debugLog('[STT] Proxy server error:', err && err.message);
-    if (err && err.code === 'EADDRINUSE') {
-      debugLog(
-        '[STT] Port',
-        STT_PROXY_PORT,
-        'already in use (e.g. `npm run stt:proxy` or another Persuaid window). Reusing that proxy is OK; in-app STT proxy not started.'
-      );
-    }
-    try {
-      server.close();
-    } catch (_) {}
-    if (sttProxyServer === server) sttProxyServer = null;
   });
 
   server.listen(STT_PROXY_PORT, '127.0.0.1', () => {
@@ -1401,6 +1489,20 @@ function setupInspectorSupport(win) {
   );
 }
 
+/** Packaged macOS app launched from the DMG volume: permissions are unreliable — force copy to /Applications. */
+function enforceApplicationsInstallOnMac() {
+  if (process.platform !== 'darwin' || !app.isPackaged) return true;
+  const execPath = process.execPath || '';
+  if (!execPath.startsWith('/Volumes/')) return true;
+  try {
+    dialog.showErrorBox(
+      'Move Persuaid to Applications',
+      'Open Persuaid from Applications for microphone access and reliable updates.\n\nQuit, drag Persuaid from the disk image into your Applications folder, then launch it from there.'
+    );
+  } catch (_) {}
+  return false;
+}
+
 function createWindow() {
   const isMac = process.platform === 'darwin';
   /** Frameless + transparent on macOS so the app can look like a floating glass HUD (no native title bar). */
@@ -1511,7 +1613,11 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  if (!enforceApplicationsInstallOnMac()) {
+    app.quit();
+    return;
+  }
   try {
     fs.writeFileSync('/tmp/persuaid-ready.txt', new Date().toISOString());
   } catch (e) {
@@ -1542,9 +1648,39 @@ app.whenReady().then(() => {
   } else {
     debugLog('[STT] DEEPGRAM_API_KEY loaded: no – add it to', envPath, 'and restart.');
   }
-  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-    const allowed = permission === 'media';
-    callback(allowed);
+  // macOS: never blindly callback(true) for "media". That skips TCC — Persuaid never appears under
+  // System Settings → Microphone and getUserMedia can fail or see silence. Route through askForMediaAccess.
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    if (permission !== 'media') {
+      callback(false);
+      return;
+    }
+    if (process.platform !== 'darwin') {
+      callback(true);
+      return;
+    }
+    const types =
+      details && Array.isArray(details.mediaTypes) && details.mediaTypes.length > 0
+        ? details.mediaTypes
+        : ['audio'];
+    (async () => {
+      try {
+        let granted = true;
+        if (types.includes('audio')) {
+          const m = await systemPreferences.askForMediaAccess('microphone');
+          granted = granted && m;
+        }
+        if (types.includes('video')) {
+          const v = await systemPreferences.askForMediaAccess('camera');
+          granted = granted && v;
+        }
+        debugLog('[macOS] Chromium media permission → TCC:', types.join(',') || 'audio', '→', granted ? 'granted' : 'denied');
+        callback(granted);
+      } catch (e) {
+        debugLog('[macOS] media permission handler error:', e && e.message);
+        callback(false);
+      }
+    })();
   });
   // macOS: do not override the Dock icon when packaged — `app.dock.setIcon(PNG)` draws a flat
   // square and ignores the bundle’s AppIcon.icns squircle treatment. Unpackaged dev: prefer .icns.

@@ -4,6 +4,11 @@ const isMac = process.platform === 'darwin';
 
 contextBridge.exposeInMainWorld('persuaid', {
   sttProxyUrl: 'ws://127.0.0.1:2998',
+  /** `process.platform` from main — use `darwin` to gate macOS mic onboarding. */
+  platform: process.platform,
+  getMicStatus: () => ipcRenderer.invoke('mic:get-status'),
+  requestMicAccess: () => ipcRenderer.invoke('mic:request-access'),
+  openMicSettings: () => ipcRenderer.invoke('mic:open-settings'),
   /** Open https://persuaid.app/... in the default browser (e.g. pricing). */
   openExternal: (url) => ipcRenderer.invoke('persuaid-open-external', url),
   setCallCompactLayout: (compact) => ipcRenderer.invoke('call-compact-layout', compact),

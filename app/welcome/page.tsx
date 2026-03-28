@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { supabase } from "@/lib/supabase/client";
+import { MicMacOnboardingGate } from "@/components/app/MicMacOnboardingGate";
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -46,6 +47,8 @@ export default function WelcomePage() {
   }
 
   return (
+    <>
+      <MicMacOnboardingGate />
     <main className="min-h-screen bg-background-near-black flex flex-col items-center justify-center px-6 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-green-glow/8 via-green-glow/3 to-transparent pointer-events-none" />
@@ -143,5 +146,6 @@ export default function WelcomePage() {
         </motion.div>
       </div>
     </main>
+    </>
   );
 }
