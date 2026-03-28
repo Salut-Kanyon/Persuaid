@@ -8,6 +8,7 @@ import { Header } from "@/components/app/Header";
 import { CallSessionOverlay } from "@/components/app/CallSessionOverlay";
 import { PostCallSaveModal } from "@/components/app/PostCallSaveModal";
 import { MicMacOnboardingGate } from "@/components/app/MicMacOnboardingGate";
+import { MicDebugPanel } from "@/components/app/MicDebugPanel";
 
 export function DashboardCallShell({ children }: { children: React.ReactNode }) {
   const { isRecording } = useSession();
@@ -76,6 +77,7 @@ export function DashboardCallShell({ children }: { children: React.ReactNode }) 
   return (
     <>
       <MicMacOnboardingGate />
+      <MicDebugPanel />
     <div
       className={cn(
         "relative flex h-screen w-full overflow-hidden shadow-none",

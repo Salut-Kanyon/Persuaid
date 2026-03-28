@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld('persuaid', {
   getMicStatus: () => ipcRenderer.invoke('mic:get-status'),
   requestMicAccess: () => ipcRenderer.invoke('mic:request-access'),
   openMicSettings: () => ipcRenderer.invoke('mic:open-settings'),
-  /** Open https://persuaid.app/... in the default browser (e.g. pricing). */
+  /** Open http(s)://persuaid.app/... in the default browser (e.g. pricing). */
   openExternal: (url) => ipcRenderer.invoke('persuaid-open-external', url),
   setCallCompactLayout: (compact) => ipcRenderer.invoke('call-compact-layout', compact),
   /** True when the native window has no title bar (macOS); use in-app traffic lights + drag regions. */

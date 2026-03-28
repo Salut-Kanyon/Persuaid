@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://persuaid.app";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://persuaid.app";
   const successUrl = `${baseUrl}/download?checkout=success`;
   const cancelUrl = `${baseUrl}/pricing`;
 

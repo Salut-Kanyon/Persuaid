@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 const site =
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://persuaid.app";
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://persuaid.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(site),

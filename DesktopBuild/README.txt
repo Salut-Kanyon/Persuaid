@@ -59,5 +59,5 @@ DEBUGGING (why AI / Enter might “do nothing”)
   Tip: open debug.log in Console.app or: tail -f "~/Library/Application Support/Persuaid/debug.log"
 
 DOCK / APP ICON (mint P on dark)
-  Desktop builds use Local/icon.icns copied to build/icon.icns (see scripts/build-macos-app-icon.sh).
+  Desktop builds run scripts/build-macos-app-icon.sh → build/icon.icns (default: Pillow preprocess + iconutil; optional USE_LOCAL_ICON_MASTER=1 for Local/icon.icns).
   Reinstall from a fresh DMG after `npm run desktop:build` to refresh the icon in Finder/Dock.

@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 /** Public marketing site (Stripe checkout, pricing page). */
-export const MARKETING_SITE_ORIGIN = "https://persuaid.app";
+export const MARKETING_SITE_ORIGIN = "http://persuaid.app";
 
 export function isElectronApp(): boolean {
   if (typeof navigator === "undefined") return false;
