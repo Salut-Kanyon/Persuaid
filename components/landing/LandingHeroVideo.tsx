@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 
-const THUMB_SRC = "/LandingVid/Thumbnail.png";
 /** Same path when you swap the file on disk — bump `v` so browsers load the new binary. */
 const VIDEO_SRC = "/Last Video.mp4?v=1";
 
@@ -18,13 +17,7 @@ type Props = {
 export function LandingHeroVideo({ show }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
-  const [phase, setPhase] = useState<"thumbnail" | "video">("thumbnail");
-  const [countdown, setCountdown] = useState(5);
   const [expanded, setExpanded] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState(1);
-  const [needsSoundHint, setNeedsSoundHint] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [aiOverlayVisible, setAiOverlayVisible] = useState(false);
   const [aiStage, setAiStage] = useState<AiStage>("question");
@@ -32,47 +25,19 @@ export function LandingHeroVideo({ show }: Props) {
   const [pkHighlight, setPkHighlight] = useState<"pricing" | null>(null);
   const transcriptTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const questionText = "IDK—how do I create an actual insurance claim?";
-  const answerText =
-    "Create the claim by confirming coverage, gathering the required documents, and using the right next line to request the next steps. Persuaid suggests wording that keeps the process clear—so you don’t lose momentum.";
-
   const questionLabel = "Question";
   const questionTextBetter =
     "What are the typical pricing models for the insurance you offer—and roughly how much coverage does each include?";
   const answerTextBetter =
     "We usually frame it as simple tiers based on coverage amount and term length. For example: Starter covers around $250k, Standard around $500k, and Plus up to $1M—then we confirm age/health class and term to quote the closest fit.";
 
-  const clearTimers = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
+  const startVideo = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.playbackRate = 1;
+    v.muted = true;
+    void v.play().catch(() => {});
   }, []);
-
-  const playbackRateRef = useRef(playbackRate);
-  playbackRateRef.current = playbackRate;
-
-  const startVideo = useCallback(
-    (_opts?: { userGesture?: boolean }) => {
-      clearTimers();
-      setPhase("video");
-      const v = videoRef.current;
-      if (!v) return;
-      v.playbackRate = playbackRateRef.current;
-      // Always play muted so autoplay works without any user gesture.
-      v.muted = true;
-      setNeedsSoundHint(false);
-      void v.play().catch(() => {
-        // If autoplay is blocked, we keep it muted (no "tap for sound" UI).
-        setNeedsSoundHint(false);
-      });
-    },
-    [clearTimers]
-  );
 
   const startVideoRef = useRef(startVideo);
   startVideoRef.current = startVideo;
@@ -80,9 +45,6 @@ export function LandingHeroVideo({ show }: Props) {
   /** Reset when hero CTAs appear */
   useEffect(() => {
     if (!show) {
-      clearTimers();
-      setPhase("thumbnail");
-      setCountdown(5);
       setExpanded(false);
       videoRef.current?.pause();
       setAiOverlayVisible(false);
@@ -93,15 +55,11 @@ export function LandingHeroVideo({ show }: Props) {
       transcriptTimersRef.current = [];
       return;
     }
-    // Autoplay immediately (no user interaction).
-    setPhase("video");
-    setCountdown(0);
     setExpanded(false);
-    clearTimers();
-    void startVideoRef.current({ userGesture: false });
+    void startVideoRef.current();
 
-    return clearTimers;
-  }, [show, clearTimers]);
+    return undefined;
+  }, [show]);
 
   // Landing-only mock “Live AI transcript” overlay.
   // Appears ~3s after the landing hero becomes visible, matching the desktop transcript panel look.
@@ -117,14 +75,12 @@ export function LandingHeroVideo({ show }: Props) {
         setAiStage("question");
 
         transcriptTimersRef.current.push(
-          // 2) Thinking (linger a bit longer)
           setTimeout(() => {
             setAiStage("thinking");
           }, 900),
         );
 
         transcriptTimersRef.current.push(
-          // 3) Answer (no auto-scroll on page)
           setTimeout(() => {
             setAiStage("answer");
             setPkScrollToObjections(true);
@@ -144,11 +100,6 @@ export function LandingHeroVideo({ show }: Props) {
       transcriptTimersRef.current = [];
     };
   }, [show]);
-
-  useEffect(() => {
-    const v = videoRef.current;
-    if (v) v.playbackRate = playbackRate;
-  }, [playbackRate, phase]);
 
   useEffect(() => {
     if (!expanded) return;
@@ -180,31 +131,18 @@ export function LandingHeroVideo({ show }: Props) {
           expanded ? "aspect-video max-h-[calc(100vh-4rem)] max-w-[min(100%,1400px)]" : "aspect-video max-h-[min(68vh,720px)] min-h-[240px] sm:min-h-[280px]"
         )}
       >
-          {/* Outline matches the video frame (black) */}
-          <div
-            className={cn(
-              "pointer-events-none absolute inset-0 rounded-2xl border border-black/70 transition-opacity duration-500",
-              phase === "video" ? "opacity-100" : "opacity-0"
-            )}
-          />
+        <div className="pointer-events-none absolute inset-0 rounded-2xl border border-black/70" />
         <video
           ref={videoRef}
           src={VIDEO_SRC}
-          poster={THUMB_SRC}
-          className={cn(
-            "absolute inset-0 h-full w-full object-contain transition-opacity duration-500",
-            // Let taps/scrolls go through the video area.
-            phase === "video" ? "z-[1] opacity-100 pointer-events-none" : "z-0 opacity-0 pointer-events-none"
-          )}
+          className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-contain opacity-100"
           playsInline
           muted
           autoPlay
           preload="auto"
           loop
           controls={false}
-        >
-          {/* No captions/transcript on purpose (requested: "delete the live transcript"). */}
-        </video>
+        />
 
         {/* Mock “Live transcript” overlay above the landing hero video. */}
         <div
@@ -285,7 +223,7 @@ export function LandingHeroVideo({ show }: Props) {
                               "inline-block rounded-md px-1.5 py-0.5 transition-colors",
                               pkHighlight === "pricing"
                                 ? "text-white bg-emerald-400/30 ring-1 ring-emerald-300/45 shadow-[0_0_0_1px_rgba(16,185,129,0.22),0_12px_34px_rgba(16,185,129,0.16)]"
-                                : "text-text-secondary bg-transparent"
+                                : "text-text-secondary bg-transparent",
                             )}
                           >
                             Starter ≈ $250k, Standard ≈ $500k, Plus ≈ $1M — then match term length and quote the closest
