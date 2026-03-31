@@ -187,7 +187,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
             >
               <span className="block">
                 <span className="font-semibold text-green-accent">Persuaid</span> listens, understands the moment, and
-                surfaces the right information based on your knowledge.
+                surfaces the right answers based on your knowledge.
               </span>
             </motion.p>
 

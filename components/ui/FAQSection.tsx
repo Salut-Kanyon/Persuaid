@@ -8,7 +8,7 @@ import { FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
 const FAQ_ITEMS = [
   {
     q: "What does Persuaid do?",
-    a: "It sits beside your call: live transcript, your product notes, and a shortcut (Enter) when you want a suggested next line. Built for sales, not generic meeting summaries.",
+    a: "It sits beside your call: live transcript, your product notes, and a shortcut (Enter) when you want a suggested next line.",
   },
   {
     q: "How is it different from a typical AI notetaker?",

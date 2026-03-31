@@ -10,6 +10,12 @@ module.exports = async function notarizeMacOS(context) {
   const { electronPlatformName, appOutDir } = context;
   if (electronPlatformName !== "darwin") return;
 
+  try {
+    const dotenv = require("dotenv");
+    const projectDir = context?.packager?.projectDir || process.cwd();
+    dotenv.config({ path: path.join(projectDir, ".env.local") });
+  } catch (_) {}
+
   const { APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID } = process.env;
   if (!APPLE_ID || !APPLE_APP_SPECIFIC_PASSWORD || !APPLE_TEAM_ID) {
     console.warn(
@@ -22,10 +28,12 @@ module.exports = async function notarizeMacOS(context) {
   const { notarize } = require("@electron/notarize");
   const appName = context.packager.appInfo.productFilename;
   const appPath = path.join(appOutDir, `${appName}.app`);
+  const appBundleId = context?.packager?.appInfo?.id || context?.packager?.appInfo?.appId || "com.persuaid.app";
 
-  console.log(`[notarize-macos] Submitting ${appPath}…`);
+  console.log(`[notarize-macos] Submitting ${appPath}… (bundleId=${appBundleId})`);
   await notarize({
     tool: "notarytool",
+    appBundleId,
     appPath,
     appleId: APPLE_ID,
     appleIdPassword: APPLE_APP_SPECIFIC_PASSWORD,

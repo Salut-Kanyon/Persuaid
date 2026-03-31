@@ -35,7 +35,7 @@
     "productName": "Persuaid",
     "publish": null,
     "asar": true,
-    "afterSign": "scripts/notarize-macos.cjs",
+    "afterSign": "scripts/notarize.js",
     "files": [
       "electron/**/*",
       "package.json"
@@ -55,6 +55,7 @@
       "extendInfo": {
         "NSMicrophoneUsageDescription": "Persuaid uses your microphone to transcribe calls and suggest what to say in real time."
       },
+      "notarize": false,
       "icon": "build/icon.icns",
       "hardenedRuntime": true,
       "entitlements": "build/entitlements.mac.plist",
