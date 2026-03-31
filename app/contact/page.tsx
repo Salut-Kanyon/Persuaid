@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Get in touch with the Persuaid team.",
 };
 
-const SUPPORT_EMAIL = "kanyonefvd@gmail.com";
+const SUPPORT_EMAIL = "persuaidapp@gmail.com";
 
 export default function ContactPage() {
   return (

@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 
 export type TranscriptSpeaker = "user" | "prospect";
 
@@ -175,6 +176,7 @@ function getStoredDiarizationMeSpeakerId(): number | null {
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
+  const { refetchUsage } = useEntitlements();
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isRecording, setRecording] = useState(false);
@@ -216,6 +218,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const stored = getStoredDiarizationMeSpeakerId();
     if (stored !== null) setDiarizationMeSpeakerIdState(stored);
   }, []);
+
+  const prevIsRecordingForUsageRef = useRef(false);
+  useEffect(() => {
+    const wasRecording = prevIsRecordingForUsageRef.current;
+    prevIsRecordingForUsageRef.current = isRecording;
+    if (wasRecording && !isRecording) {
+      const t = window.setTimeout(() => {
+        void refetchUsage();
+      }, 500);
+      return () => window.clearTimeout(t);
+    }
+  }, [isRecording, refetchUsage]);
 
   useEffect(() => {
     if (!isRecording) setCallParticipantName("");

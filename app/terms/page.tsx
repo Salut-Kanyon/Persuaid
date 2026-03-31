@@ -98,8 +98,8 @@ export default function TermsPage() {
             </h2>
             <p className="leading-relaxed">
               For questions about these terms, contact us at{" "}
-              <a href="mailto:legal@persuaid.app" className="text-green-accent hover:underline">
-                legal@persuaid.app
+              <a href="mailto:persuaidapp@gmail.com" className="text-green-accent hover:underline">
+                persuaidapp@gmail.com
               </a>.
             </p>
           </section>

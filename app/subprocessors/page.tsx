@@ -110,8 +110,8 @@ export default function SubprocessorsPage() {
             </h2>
             <p className="leading-relaxed">
               We may add or replace subprocessors to maintain or improve the Service. If you have a reasonable objection to a new subprocessor on data protection grounds, contact us at{" "}
-              <a href="mailto:privacy@persuaid.app" className="text-green-accent hover:underline">
-                privacy@persuaid.app
+              <a href="mailto:persuaidapp@gmail.com" className="text-green-accent hover:underline">
+                persuaidapp@gmail.com
               </a>
               . We will work with you to address your concerns, which may include continuing without that subprocessor for your account where feasible.
             </p>

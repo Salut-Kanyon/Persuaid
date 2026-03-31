@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
 import { PricingCard, PricingFeatureCheck } from "@/components/ui/PricingCard";
 import { CTAButton } from "@/components/ui/CTAButton";
 import { Footer } from "@/components/ui/Footer";
 import { Section } from "@/components/ui/Section";
 import { cn } from "@/lib/utils";
+import { FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
 
 type BillingInterval = "monthly" | "yearly";
 
@@ -30,15 +33,27 @@ function PlanBadge({ variant, children }: { variant: "popular" | "best"; childre
 }
 
 export default function PricingPage() {
+  const router = useRouter();
   const [interval, setInterval] = useState<BillingInterval>("monthly");
   const [checkoutLoading, setCheckoutLoading] = useState<"pro" | "team" | null>(null);
 
   const startCheckout = async (plan: "pro" | "team") => {
     setCheckoutLoading(plan);
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        router.push(`/sign-in?signin=1&next=${encodeURIComponent("/pricing")}`);
+        return;
+      }
+
       const res = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ plan, interval }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
@@ -157,6 +172,12 @@ export default function PricingPage() {
                   <PricingFeatureCheck className="!h-5 !w-5" />
                   <span className="text-text-primary/90">Bring your own talk tracks & notes</span>
                 </li>
+                <li className="flex gap-2">
+                  <PricingFeatureCheck className="!h-5 !w-5" />
+                  <span className="text-text-primary/90">
+                    {FREE_PLAN_MONTHLY_MINUTES} minutes of live listening per month
+                  </span>
+                </li>
               </ul>
               <p className="mt-4 text-[11px] leading-relaxed text-text-dim">Perfect for testing real conversations</p>
               <div className="min-h-0 flex-1" aria-hidden />
@@ -234,7 +255,7 @@ export default function PricingPage() {
             </p>
           </div>
           <a
-            href="mailto:support@persuaid.ai?subject=Persuaid%20pricing%20question"
+            href="mailto:persuaidapp@gmail.com?subject=Persuaid%20pricing%20question"
             className={cn(
               "mt-5 inline-flex shrink-0 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors sm:mt-0",
               "border border-border bg-transparent text-text-primary hover:border-white/20 hover:bg-white/[0.04]"

@@ -23,6 +23,12 @@ interface EntitlementsContextValue {
    * While entitlements or usage are loading, this stays true so a slow network does not false-block.
    */
   canUseAiCoach: boolean;
+  /** True while monthly usage for the current user is loading (live-time gating uses this). */
+  usageLoading: boolean;
+  /**
+   * Whether the user may start a new live call (mic/STT). False while usage loads, or when monthly minutes are exhausted for the current plan.
+   */
+  canStartLiveSession: boolean;
   isLoading: boolean;
   openUpgradeModal: () => void;
   /** Refetch usage (e.g. after tab focus) so free-tier limits stay accurate. */
@@ -43,8 +49,8 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [usageLoading, setUsageLoading] = useState(true);
-  /** When true, Free plan has no AI minutes left this month (usage fetch succeeded). */
-  const [freeMinutesExhausted, setFreeMinutesExhausted] = useState(false);
+  /** When true, monthly live-listening allowance is used up (usage fetch succeeded; any plan). */
+  const [liveMinutesExhausted, setLiveMinutesExhausted] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
   const loadPlanAndUsage = useCallback(async () => {
@@ -54,7 +60,7 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
       } = await supabase.auth.getSession();
       if (!session?.access_token) {
         setPlan("free");
-        setFreeMinutesExhausted(false);
+        setLiveMinutesExhausted(false);
         return;
       }
 
@@ -77,13 +83,13 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
       const usageResult = await computeMeUsage(supabase, user.id, user.email ?? undefined);
       if (usageResult.ok) {
         const remaining = usageResult.data.remainingMinutes;
-        setFreeMinutesExhausted(nextPlan === "free" && Number.isFinite(remaining) && remaining <= 0);
+        setLiveMinutesExhausted(Number.isFinite(remaining) && remaining <= 0);
       } else {
-        setFreeMinutesExhausted(false);
+        setLiveMinutesExhausted(false);
       }
     } catch {
       setPlan("free");
-      setFreeMinutesExhausted(false);
+      setLiveMinutesExhausted(false);
     } finally {
       setIsLoading(false);
       setUsageLoading(false);
@@ -131,15 +137,16 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
   const effectivePlan = plan ?? "free";
   const paid = effectivePlan === "pro" || effectivePlan === "team";
   const canUseAiCoach =
-    isLoading ||
-    usageLoading ||
-    paid ||
-    (effectivePlan === "free" && !freeMinutesExhausted);
+    isLoading || usageLoading || !liveMinutesExhausted;
+
+  const canStartLiveSession = !usageLoading && !liveMinutesExhausted;
 
   const value: EntitlementsContextValue = {
     plan: effectivePlan,
     canUseProFeatures: paid || isLoading,
     canUseAiCoach,
+    usageLoading,
+    canStartLiveSession,
     isLoading,
     openUpgradeModal,
     refetchUsage: loadPlanAndUsage,
@@ -151,6 +158,7 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
       <UpgradeModal
         open={upgradeModalOpen}
         onClose={() => setUpgradeModalOpen(false)}
+        plan={effectivePlan}
       />
     </EntitlementsContext.Provider>
   );

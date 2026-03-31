@@ -430,7 +430,7 @@ export default function SettingsPage() {
 
           </SettingsSection>
 
-          <SettingsSection title="Billing" description="Plan and subscription management">
+          <SettingsSection title="Billing" description="Subscribe on the web while signed in—your plan syncs to this account (web and desktop).">
             <SettingsItem
               label="Current plan"
               description="Your plan is managed through pricing."
@@ -471,7 +471,7 @@ export default function SettingsPage() {
             />
             <SettingsItem
               label="Manage subscription"
-              description="Upgrade, downgrade, or view plan details."
+              description="Opens the marketing site to change plans or upgrade (desktop opens your browser)."
               control={
                 <button
                   type="button"
@@ -611,7 +611,7 @@ export default function SettingsPage() {
               description="Email support."
               control={
                 <a
-                  href="mailto:support@persuaid.ai?subject=Persuaid%20Support"
+                  href="mailto:persuaidapp@gmail.com?subject=Persuaid%20Support"
                   className="text-xs font-semibold text-green-accent hover:underline"
                 >
                   Email
@@ -623,7 +623,7 @@ export default function SettingsPage() {
               description="Send a bug report with details."
               control={
                 <a
-                  href="mailto:support@persuaid.ai?subject=Bug%20report&body=Steps%20to%20reproduce%3A%0A%0AExpected%3A%0A%0AActual%3A%0A%0AEnvironment%3A"
+                  href="mailto:persuaidapp@gmail.com?subject=Bug%20report&body=Steps%20to%20reproduce%3A%0A%0AExpected%3A%0A%0AActual%3A%0A%0AEnvironment%3A"
                   className="text-xs font-semibold text-green-accent hover:underline"
                 >
                   Report

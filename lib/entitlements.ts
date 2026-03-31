@@ -36,7 +36,7 @@ export function getPlanForUser(userId: string, email?: string | null): Plan {
   if (bypassEmails.length && email?.toLowerCase()) {
     if (bypassEmails.includes(email.toLowerCase())) return "pro";
   }
-  // TODO: read from subscriptions table when Stripe webhooks are in place
+  // Paid plans from `billing_subscriptions` are resolved in resolveEffectivePlan (lib/agency.ts).
   return "free";
 }
 

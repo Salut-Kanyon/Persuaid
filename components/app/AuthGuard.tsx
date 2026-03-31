@@ -1,29 +1,37 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { getSafeInternalPath } from "@/lib/safe-path";
+
+function signInUrl(returnToPath: string) {
+  const next = getSafeInternalPath(returnToPath, "/dashboard");
+  return `/sign-in?signin=1&next=${encodeURIComponent(next)}`;
+}
 
 /**
- * Dashboard access: uses Supabase anonymous auth when there is no session so RLS and APIs still get a JWT.
- * Enable "Anonymous sign-ins" in Supabase → Authentication → Providers.
+ * Dashboard access: requires a normal Supabase session (email, OAuth, etc.).
+ * Anonymous sign-in is not used.
  */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const router = useRouter();
-  const signedInAtRef = useRef<number | null>(null);
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
   const resolvedRef = useRef(false);
-  /** While true, ignore null-session auth events so INITIAL_SESSION does not race ahead of signInAnonymously(). */
   const bootstrapPendingRef = useRef(true);
 
   useEffect(() => {
     let cancelled = false;
     resolvedRef.current = false;
     bootstrapPendingRef.current = true;
-    const resolve = (readyState: boolean) => {
+
+    const resolve = (ok: boolean) => {
       if (!cancelled) {
         resolvedRef.current = true;
-        setReady(readyState);
+        setReady(ok);
       }
     };
 
@@ -34,21 +42,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         } = await supabase.auth.getSession();
         if (cancelled) return;
         if (session) {
-          signedInAtRef.current = Date.now();
           resolve(true);
           return;
         }
-        const { data, error } = await supabase.auth.signInAnonymously();
-        if (cancelled) return;
-        if (error || !data.session) {
-          console.warn("[AuthGuard] Anonymous sign-in failed:", error?.message);
-          router.replace("/sign-in?guest=1");
-          return;
-        }
-        signedInAtRef.current = Date.now();
-        resolve(true);
+        router.replace(signInUrl(pathnameRef.current));
+        resolve(false);
       } catch {
-        if (!cancelled) router.replace("/");
+        if (!cancelled) router.replace(signInUrl(pathnameRef.current));
       } finally {
         if (!cancelled) bootstrapPendingRef.current = false;
       }
@@ -58,21 +58,21 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        signedInAtRef.current = Date.now();
         resolve(true);
         return;
       }
       if (bootstrapPendingRef.current) return;
-      const graceMs = 5000;
-      const signedInAt = signedInAtRef.current;
-      const withinGrace = signedInAt && Date.now() - signedInAt < graceMs;
-      if (event === "SIGNED_OUT" || !withinGrace) {
-        router.replace("/");
+      if (event === "SIGNED_OUT" || !session) {
+        const p =
+          typeof window !== "undefined" ? window.location.pathname : "/dashboard";
+        router.replace(signInUrl(p));
       }
     });
 
     const t = setTimeout(() => {
-      if (!cancelled && !resolvedRef.current) router.replace("/");
+      if (!cancelled && !resolvedRef.current) {
+        router.replace(signInUrl(pathnameRef.current));
+      }
     }, 12000);
 
     return () => {

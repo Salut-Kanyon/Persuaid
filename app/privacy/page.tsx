@@ -96,8 +96,8 @@ export default function PrivacyPage() {
             </p>
             <p className="leading-relaxed">
               For questions about this policy or our practices, contact us at{" "}
-              <a href="mailto:privacy@persuaid.app" className="text-green-accent hover:underline">
-                privacy@persuaid.app
+              <a href="mailto:persuaidapp@gmail.com" className="text-green-accent hover:underline">
+                persuaidapp@gmail.com
               </a>.
             </p>
           </section>

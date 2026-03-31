@@ -11,8 +11,9 @@ export default function DownloadPage() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [isLocalhost, setIsLocalhost] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  /** Direct CDN/GitHub URL at build time, or `/api/download/mac` (server redirect + env at runtime). */
   const macUrl =
-    process.env.NEXT_PUBLIC_MAC_DOWNLOAD_URL?.trim() || "/downloads/Persuaid.dmg";
+    process.env.NEXT_PUBLIC_MAC_DOWNLOAD_URL?.trim() || "/api/download/mac";
   const windowsUrl =
     process.env.NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL?.trim() || "/downloads/Persuaid-Setup.exe";
 
@@ -23,7 +24,7 @@ export default function DownloadPage() {
   }, []);
 
   const supportMailto = useMemo(
-    () => "mailto:support@persuaid.ai?subject=Windows%20beta%20access%20request",
+    () => "mailto:persuaidapp@gmail.com?subject=Windows%20beta%20access%20request",
     []
   );
 

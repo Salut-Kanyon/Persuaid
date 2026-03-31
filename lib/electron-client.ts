@@ -2,8 +2,14 @@
 
 import { useSyncExternalStore } from "react";
 
-/** Public marketing site (Stripe checkout, pricing page). */
-export const MARKETING_SITE_ORIGIN = "http://persuaid.app";
+/**
+ * Public marketing site (Stripe checkout, pricing). Desktop opens this in the browser.
+ * Set NEXT_PUBLIC_MARKETING_ORIGIN in production (e.g. https://persuaid.app); falls back to NEXT_PUBLIC_APP_URL.
+ */
+export const MARKETING_SITE_ORIGIN =
+  (typeof process !== "undefined" &&
+    (process.env.NEXT_PUBLIC_MARKETING_ORIGIN || process.env.NEXT_PUBLIC_APP_URL)?.replace(/\/$/, "")) ||
+  "https://persuaid.app";
 
 export function isElectronApp(): boolean {
   if (typeof navigator === "undefined") return false;

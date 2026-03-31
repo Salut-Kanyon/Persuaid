@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
+import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 
 export function Header() {
   const {
@@ -12,6 +13,7 @@ export function Header() {
     audioInputDeviceId,
     setAudioInputDeviceId,
   } = useSession();
+  const { canStartLiveSession, usageLoading, openUpgradeModal, plan } = useEntitlements();
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
 
   useEffect(() => {
@@ -28,9 +30,30 @@ export function Header() {
     };
   }, [isRecording]);
 
+  const limitTitle =
+    usageLoading || canStartLiveSession
+      ? undefined
+      : plan === "pro"
+        ? "Pro monthly listening limit reached — upgrade to Team or wait until next month"
+        : plan === "team"
+          ? "Team monthly limit reached — your allowance resets next month"
+          : "You’ve used your included time this month — upgrade for more";
+
+  const limitButtonLabel = (() => {
+    if (usageLoading) return "Checking…";
+    if (canStartLiveSession) return "Start PersuAId";
+    if (plan === "pro") return "View Team upgrade";
+    if (plan === "team") return "Limit reached";
+    return "Upgrade to continue";
+  })();
+
   const handleAudioInputChange = (deviceId: string) => {
     setAudioInputDeviceId(deviceId === "" ? null : deviceId);
     if (isRecording) {
+      if (!canStartLiveSession) {
+        if (!usageLoading) openUpgradeModal();
+        return;
+      }
       setRecording(false);
       setTimeout(() => setRecording(true), 200);
     }
@@ -70,7 +93,13 @@ export function Header() {
       <div className="flex shrink-0 justify-self-end">
         <button
           type="button"
+          disabled={usageLoading}
           onClick={() => {
+            if (usageLoading) return;
+            if (!canStartLiveSession) {
+              openUpgradeModal();
+              return;
+            }
             // Default to the computer/system mic to avoid triggering phone/Bluetooth connection popups.
             setAudioInputDeviceId(null);
             setRecording(true);
@@ -81,10 +110,14 @@ export function Header() {
             "transition-[transform,background-color,box-shadow] duration-300 ease-out",
             "hover:bg-green-dark hover:shadow-[0_2px_6px_rgba(0,0,0,0.22)]",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-green-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background-near-black",
-            "active:scale-[0.99] sm:gap-2.5 sm:px-5 sm:py-2.5 sm:text-sm"
+            "active:scale-[0.99] sm:gap-2.5 sm:px-5 sm:py-2.5 sm:text-sm",
+            "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-green-primary disabled:hover:shadow-[0_1px_2px_rgba(0,0,0,0.2)]"
           )}
+          title={
+            usageLoading ? "Checking your plan allowance…" : limitTitle
+          }
         >
-          <span>Start PersuAId</span>
+          <span>{limitButtonLabel}</span>
           <img
             src={PERSUAID_MARK_PNG}
             alt=""

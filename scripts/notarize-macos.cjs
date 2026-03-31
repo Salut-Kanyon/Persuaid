@@ -12,8 +12,9 @@ module.exports = async function notarizeMacOS(context) {
 
   const { APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID } = process.env;
   if (!APPLE_ID || !APPLE_APP_SPECIFIC_PASSWORD || !APPLE_TEAM_ID) {
-    console.log(
-      "[notarize-macos] Skipping notarization (set APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID)."
+    console.warn(
+      "\n[notarize-macos] WARNING: Notarization skipped. Without it, Gatekeeper often reports the app as \"damaged\" on other Macs.\n" +
+        "  Set APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD (app-specific password from appleid.apple.com), and APPLE_TEAM_ID, then rebuild.\n"
     );
     return;
   }

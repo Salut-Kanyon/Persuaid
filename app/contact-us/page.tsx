@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Contact the Persuaid team by email or phone.",
 };
 
-const SUPPORT_EMAIL = "kanyonefvd@gmail.com";
+const SUPPORT_EMAIL = "persuaidapp@gmail.com";
 const SUPPORT_PHONE = "6267374463";
 const PHONE_DISPLAY = "(626) 737-4463";
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Section } from "@/components/ui/Section";
+import { FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
 
 const FAQ_ITEMS = [
   {
@@ -19,7 +20,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Is there a free tier?",
-    a: "Yes. Sign up and try it without a card.",
+    a: `Yes. Sign up and try it without a card—you get ${FREE_PLAN_MONTHLY_MINUTES} minutes of live call listening per month, with paid plans for more airtime.`,
   },
 ];
 

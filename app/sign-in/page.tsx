@@ -1,18 +1,21 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { supabase } from "@/lib/supabase/client";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
+import { GoogleGIcon } from "@/components/ui/GoogleGIcon";
+import { getSafeInternalPath } from "@/lib/safe-path";
 
 /** Marketing CTAs use `/sign-in` → create account first. Auth redirects use `?signin=1` to open sign-in. */
 function SignInForm() {
   const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
+  const afterAuthPath = () => getSafeInternalPath(nextParam, "/dashboard");
   const signinParam = searchParams.get("signin");
   const openSignIn = signinParam === "1" || signinParam === "true";
-  const guestUnavailable = searchParams.get("guest") === "1";
 
   const reduceMotion = useReducedMotion();
   const [email, setEmail] = useState("");
@@ -21,9 +24,21 @@ function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSignUp, setIsSignUp] = useState(!openSignIn);
   const router = useRouter();
+
+  useEffect(() => {
+    const oauthErr = searchParams.get("oauth_error");
+    if (oauthErr) {
+      try {
+        setError(decodeURIComponent(oauthErr));
+      } catch {
+        setError(oauthErr);
+      }
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,7 +65,7 @@ function SignInForm() {
         setError(err.message);
         return;
       }
-      router.replace("/dashboard");
+      router.replace(afterAuthPath());
     } else {
       const { error: err } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       setLoading(false);
@@ -58,7 +73,7 @@ function SignInForm() {
         setError(err.message);
         return;
       }
-      router.replace("/dashboard");
+      router.replace(afterAuthPath());
     }
   }
 
@@ -67,6 +82,24 @@ function SignInForm() {
     setIsSignUp(next);
     setError(null);
     if (!next) setConfirmPassword("");
+  }
+
+  async function handleGoogleSignIn() {
+    setError(null);
+    setGoogleLoading(true);
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const callback = nextParam
+      ? `${origin}/auth/callback?next=${encodeURIComponent(getSafeInternalPath(nextParam, "/dashboard"))}`
+      : `${origin}/auth/callback`;
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: callback },
+    });
+    if (err) {
+      setGoogleLoading(false);
+      setError(err.message);
+    }
+    // On success the browser navigates away; no need to clear loading.
   }
 
   const spring = { type: "spring" as const, stiffness: 380, damping: 28 };
@@ -153,12 +186,6 @@ function SignInForm() {
               </>
             )}
 
-            {guestUnavailable ? (
-              <p className="text-sm text-amber-400/95 mb-4 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2.5">
-                We couldn&apos;t start a guest session. Create a free account below to use the dashboard.
-              </p>
-            ) : null}
-
             {/* Mode toggle */}
             <div
               className="relative mb-8 rounded-2xl bg-background-surface-elevated/80 p-1 border border-border/80"
@@ -222,6 +249,28 @@ function SignInForm() {
               </p>
             </motion.div>
 
+            <div className="mb-6 space-y-4">
+              <motion.button
+                type="button"
+                disabled={loading || googleLoading}
+                whileTap={reduceMotion ? undefined : { scale: 0.99 }}
+                onClick={() => void handleGoogleSignIn()}
+                className={cn(
+                  "w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border font-semibold text-sm transition-colors",
+                  "bg-white text-gray-900 border-gray-200/90 hover:bg-gray-50",
+                  "disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                )}
+              >
+                <GoogleGIcon className="h-5 w-5 shrink-0" />
+                {googleLoading ? "Redirecting…" : "Continue with Google"}
+              </motion.button>
+              <div className="relative flex items-center gap-3">
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-xs font-medium text-text-dim uppercase tracking-wide">or</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-5">
                 <div>
@@ -237,7 +286,7 @@ function SignInForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border border-border bg-background-surface-elevated text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/50 focus:border-green-primary/50 transition-all duration-200"
-                    disabled={loading}
+                    disabled={loading || googleLoading}
                     required
                   />
                 </div>
@@ -255,7 +304,7 @@ function SignInForm() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full px-4 py-3 pr-11 rounded-lg border border-border bg-background-surface-elevated text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/50 focus:border-green-primary/50 transition-all duration-200"
-                      disabled={loading}
+                      disabled={loading || googleLoading}
                       required
                       minLength={isSignUp ? 6 : undefined}
                     />
@@ -309,7 +358,7 @@ function SignInForm() {
                               ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20"
                               : "border-border focus:border-green-primary/50"
                           )}
-                          disabled={loading}
+                          disabled={loading || googleLoading}
                           required={isSignUp}
                           minLength={6}
                         />
@@ -342,7 +391,7 @@ function SignInForm() {
 
               <motion.button
                 type="submit"
-                disabled={loading}
+                disabled={loading || googleLoading}
                 whileTap={reduceMotion ? undefined : { scale: 0.99 }}
                 className="w-full py-3 rounded-button bg-green-primary text-white font-semibold hover:bg-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-button hover:shadow-button-hover hover:shadow-glow-button relative overflow-hidden group"
               >

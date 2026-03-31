@@ -55,7 +55,7 @@ function formatTime(iso: string): string {
 
 export function TranscriptPanel() {
   const { transcript, isRecording, micError, setMicError, setRecording, audioInputDeviceId, setAudioInputDeviceId, requestSuggestions } = useSession();
-  const { canUseAiCoach, openUpgradeModal } = useEntitlements();
+  const { canUseAiCoach, canStartLiveSession, usageLoading, openUpgradeModal } = useEntitlements();
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
   const [showNoSpeechHint, setShowNoSpeechHint] = useState(false);
@@ -89,6 +89,11 @@ export function TranscriptPanel() {
   }, [isRecording]);
 
   const handleRetryMic = () => {
+    if (usageLoading) return;
+    if (!canStartLiveSession) {
+      openUpgradeModal();
+      return;
+    }
     setMicError(null);
     setRequestStatus(null);
     setRecording(false);
@@ -106,6 +111,11 @@ export function TranscriptPanel() {
     const id = deviceId === "" ? null : deviceId;
     setAudioInputDeviceId(id);
     if (isRecording) {
+      if (usageLoading) return;
+      if (!canStartLiveSession) {
+        openUpgradeModal();
+        return;
+      }
       setRecording(false);
       setMicError(null);
       setTimeout(() => setRecording(true), 200);

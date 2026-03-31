@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSubscriptionPlanFromDb } from "@/lib/billing";
 import { getPlanForUser, type Plan } from "@/lib/entitlements";
 
 /**
@@ -35,6 +36,11 @@ export async function resolveEffectivePlan(
   const base = getPlanForUser(userId, email ?? undefined);
   if (base === "pro" || base === "team") {
     return { plan: base };
+  }
+
+  const stripePlan = await getSubscriptionPlanFromDb(supabase, userId);
+  if (stripePlan) {
+    return { plan: stripePlan };
   }
 
   const { data, error } = await supabase

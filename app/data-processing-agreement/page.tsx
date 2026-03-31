@@ -104,8 +104,8 @@ export default function DataProcessingAgreementPage() {
             </h2>
             <p className="leading-relaxed">
               For data protection and DPA-related questions, contact us at{" "}
-              <a href="mailto:privacy@persuaid.app" className="text-green-accent hover:underline">
-                privacy@persuaid.app
+              <a href="mailto:persuaidapp@gmail.com" className="text-green-accent hover:underline">
+                persuaidapp@gmail.com
               </a>.
             </p>
           </section>

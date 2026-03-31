@@ -4,25 +4,85 @@ import { useRouter } from "next/navigation";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { openMarketingPricing } from "@/lib/electron-client";
+import type { Plan } from "@/lib/entitlements";
 
 interface UpgradeModalProps {
   open: boolean;
   onClose: () => void;
-  title?: string;
-  message?: string;
+  /** Drives copy and styling when the user hit their monthly live-listening limit. */
+  plan: Plan;
 }
 
-export function UpgradeModal({
-  open,
-  onClose,
-  title = "Unlock your full potential",
-  message = "You're one upgrade away from AI that never leaves your side.",
-}: UpgradeModalProps) {
-  const router = useRouter();
+/** Shared green styling for all plan variants (copy differs per plan). */
+const GREEN_MODAL = {
+  shell:
+    "border-green-primary/35 shadow-green-primary/15 bg-gradient-to-b from-green-primary/[0.18] via-[color:var(--bg-near-black)] via-40% to-green-darker/[0.32]",
+  glow: "bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.22)_0%,transparent_68%)]",
+  topLine: "from-transparent via-green-primary/60 to-transparent",
+  badgeClass: "border-green-primary/35 bg-green-primary/15 text-green-accent",
+};
 
-  const handleViewPricing = () => {
-    onClose();
-    void openMarketingPricing(router);
+function copyForPlan(plan: Plan) {
+  switch (plan) {
+    case "pro":
+      return {
+        badge: "Pro limit reached",
+        title: "You’ve used this month’s Pro time",
+        message:
+          "Your Pro plan includes 20 hours of live listening per month. You’ve hit that cap—upgrade to Team for more airtime each month, or wait until your allowance resets.",
+        bullets: [
+          "50 hours of live listening per month on Team",
+          "Same AI coaching—built for heavy call volume",
+          "Change or cancel anytime",
+        ],
+        primaryLabel: "See Team pricing →",
+        footnote: "Team is for power users who need more monthly airtime.",
+        primaryOpensPricing: true,
+      };
+    case "team":
+      return {
+        badge: "Monthly limit reached",
+        title: "You’ve used this month’s Team time",
+        message:
+          "Your Team plan includes 50 hours of live listening per month. You’ve reached that cap for now—your allowance resets on the first day of next month.",
+        bullets: [
+          "Saved calls and history stay in your workspace",
+          "Same features resume automatically after reset",
+          "Questions? We’re happy to help",
+        ],
+        primaryLabel: "Got it",
+        footnote: "Need a higher limit? Email us and we’ll work with you.",
+        primaryOpensPricing: false,
+      };
+    default:
+      return {
+        badge: "Included time used",
+        title: "You’ve used your included time",
+        message:
+          "Your free monthly minutes are used up for now. Upgrade for more live call time each month, or wait until next month to use the free tier again.",
+        bullets: [
+          "Unlimited AI suggestions on every call",
+          "Real-time coaching & follow-up questions",
+          "Generate analysis on saved calls",
+        ],
+        primaryLabel: "See pricing & upgrade →",
+        footnote: "More live call time each month on Pro · Cancel anytime",
+        primaryOpensPricing: true,
+      };
+  }
+}
+
+export function UpgradeModal({ open, onClose, plan }: UpgradeModalProps) {
+  const router = useRouter();
+  const copy = copyForPlan(plan);
+
+  const handlePrimary = () => {
+    if (copy.primaryOpensPricing) {
+      onClose();
+      void openMarketingPricing(router);
+    } else {
+      onClose();
+    }
   };
 
   if (!open) return null;
@@ -35,60 +95,80 @@ export function UpgradeModal({
       aria-labelledby="upgrade-modal-title"
     >
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/75 to-green-darker/25 backdrop-blur-md"
         onClick={onClose}
         aria-hidden="true"
       />
       <div
         className={cn(
-          "relative w-full max-w-lg overflow-hidden rounded-3xl",
-          "bg-gradient-to-b from-[#0d1117] via-[#111827] to-[#0a0a0a]",
-          "border border-green-primary/30 shadow-2xl shadow-green-primary/10",
-          "animate-in fade-in zoom-in-95 duration-300"
+          "relative w-full max-w-lg overflow-hidden rounded-3xl border shadow-2xl",
+          "animate-in fade-in zoom-in-95 duration-300",
+          GREEN_MODAL.shell
         )}
       >
-        {/* Glow accent */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-green-primary/60 to-transparent" />
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 w-96 h-32 bg-green-primary/10 blur-3xl pointer-events-none" />
+        <div
+          className={cn(
+            "absolute inset-x-0 top-0 h-px bg-gradient-to-r to-transparent",
+            GREEN_MODAL.topLine
+          )}
+        />
+        <div
+          className={cn(
+            "pointer-events-none absolute left-1/2 top-0 h-40 w-[28rem] -translate-x-1/2 blur-2xl",
+            GREEN_MODAL.glow
+          )}
+        />
 
         <div className="relative p-8">
-          {/* Logo + lock badge */}
-          <div className="flex flex-col items-center mb-6">
-            <div className="flex items-end gap-0 mb-3">
+          <div className="mb-6 flex flex-col items-center">
+            <div className="mb-3 flex items-end gap-0">
               <img
                 src={PERSUAID_MARK_PNG}
                 alt="Persuaid"
-                className="w-12 h-12 flex-shrink-0 object-contain"
+                className="h-12 w-12 flex-shrink-0 object-contain"
               />
-              <span className="text-2xl font-bold text-text-primary tracking-tight -ml-1 translate-y-1">
+              <span className="-ml-1 translate-y-1 text-2xl font-bold tracking-tight text-text-primary">
                 ersuaid
               </span>
             </div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-semibold">
-              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold",
+                GREEN_MODAL.badgeClass
+              )}
+            >
+              <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                  clipRule="evenodd"
+                />
               </svg>
-              Pro feature
+              {copy.badge}
             </span>
           </div>
 
-          <h2 id="upgrade-modal-title" className="text-xl sm:text-2xl font-bold text-text-primary text-center mb-2 tracking-tight">
-            {title}
+          <h2
+            id="upgrade-modal-title"
+            className="mb-2 text-center text-xl font-bold tracking-tight text-text-primary sm:text-2xl"
+          >
+            {copy.title}
           </h2>
-          <p className="text-center text-text-muted text-sm sm:text-base mb-6 max-w-sm mx-auto">
-            {message}
+          <p className="mx-auto mb-6 max-w-sm text-center text-sm text-text-muted sm:text-base">
+            {copy.message}
           </p>
 
-          {/* Benefit bullets */}
-          <ul className="space-y-3 mb-8">
-            {[
-              "Unlimited AI suggestions on every call",
-              "Real-time coaching & follow-up questions",
-              "Generate analysis on saved calls",
-            ].map((benefit, i) => (
+          <ul className="mb-8 space-y-3">
+            {copy.bullets.map((benefit, i) => (
               <li key={i} className="flex items-center gap-3 text-sm text-text-secondary">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-primary/20 flex items-center justify-center">
-                  <svg className="w-3 h-3 text-green-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-green-primary/20">
+                  <svg
+                    className="h-3 w-3 text-green-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </span>
@@ -97,30 +177,30 @@ export function UpgradeModal({
             ))}
           </ul>
 
-          {/* Primary CTA */}
           <button
             type="button"
-            onClick={handleViewPricing}
+            onClick={handlePrimary}
             className={cn(
               "w-full rounded-2xl px-6 py-4 text-base font-semibold transition-all duration-200",
               "bg-gradient-to-r from-green-primary to-emerald-500 text-black",
-              "hover:from-green-accent hover:to-emerald-400 hover:shadow-lg hover:shadow-green-primary/25 hover:scale-[1.02] active:scale-[0.98]",
-              "border-0 focus:outline-none focus:ring-2 focus:ring-green-primary focus:ring-offset-2 focus:ring-offset-[#0d1117]"
+              "hover:from-green-accent hover:to-emerald-400 hover:shadow-lg hover:shadow-green-primary/25",
+              "hover:scale-[1.02] active:scale-[0.98]",
+              "border-0 focus:outline-none focus:ring-2 focus:ring-green-primary focus:ring-offset-2 focus:ring-offset-[color:var(--bg-near-black)]"
             )}
           >
-            See pricing & start free trial →
+            {copy.primaryLabel}
           </button>
-          <p className="text-center text-xs text-text-dim mt-3">
-            No card required for trial · Cancel anytime
-          </p>
+          <p className="mt-3 text-center text-xs text-text-dim">{copy.footnote}</p>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full mt-4 py-2 text-xs font-medium text-text-dim hover:text-text-muted transition-colors"
-          >
-            Maybe later
-          </button>
+          {copy.primaryOpensPricing && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-4 w-full py-2 text-xs font-medium text-text-dim transition-colors hover:text-text-muted"
+            >
+              Maybe later
+            </button>
+          )}
         </div>
       </div>
     </div>

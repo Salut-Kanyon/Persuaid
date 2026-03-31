@@ -7,6 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false, // Desktop app doesn't use OAuth redirect flow
+    // Web: parse OAuth / magic-link redirects. Electron ships a static app; OAuth runs on the marketing site in the browser.
+    detectSessionInUrl: typeof window !== "undefined",
   },
 });

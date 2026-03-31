@@ -2,6 +2,8 @@
   "name": "persuaid",
   "productName": "Persuaid",
   "version": "0.1.0",
+  "description": "Real-time AI sales copilot for live calls.",
+  "author": "Persuaid <persuaidapp@gmail.com>",
   "private": true,
   "main": "electron/main.js",
   "scripts": {

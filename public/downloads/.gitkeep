@@ -13,14 +13,15 @@ This directory contains the Persuaid.dmg file for production downloads.
    - Build the Electron app and create the DMG
    - Automatically copy the DMG to `public/downloads/Persuaid.dmg`
 
-2. **The DMG file will be available at:**
-   - Local: `http://localhost:3000/downloads/Persuaid.dmg`
-   - Production: `https://your-domain.com/downloads/Persuaid.dmg`
+2. **The DMG is served in two ways:**
+   - Static URL: `/downloads/Persuaid.dmg` (same file on disk)
+   - Download page uses `/api/download/mac`, which redirects to either:
+     - `MAC_DOWNLOAD_URL` or `NEXT_PUBLIC_MAC_DOWNLOAD_URL` (full https URL, e.g. GitHub Release), or
+     - `/downloads/Persuaid.dmg` if no URL env is set
 
 3. **For Vercel deployment:**
-   - The DMG file in `public/downloads/` will be deployed automatically
-   - Users can download it from the `/download` page
-   - Make sure to commit the DMG file to git (or use a CI/CD pipeline to build it)
+   - Either commit `Persuaid.dmg` here (it is not gitignored by name) or set `MAC_DOWNLOAD_URL` to a hosted file URL
+   - Users download from the `/download` page
 
 ## Note
 The DMG file is large (~50-100MB typically). Consider:

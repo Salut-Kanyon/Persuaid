@@ -13,7 +13,7 @@ npm run desktop:dev
 This runs **`next dev` in-process**, reads the **Local:** URL from its output for the real port (3000, 3001, …), then opens Electron to **`http://localhost:<port>/welcome`** with matching `NEXT_DEV_PORT` (same host as Next’s **Local:** line, so dev HMR / `/_next/*` are not treated as cross-origin).
 
 - Ensure **`.env.local`** includes `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (same as web).
-- In **Supabase → Authentication → Providers**, enable **Anonymous sign-ins** (the dashboard uses anonymous auth as a fallback; see `AuthGuard`).
+- The **dashboard** requires a normal signed-in user (`AuthGuard` redirects to `/sign-in` if there is no session). You do **not** need Anonymous sign-ins enabled.
 - If **email confirmation** is required for sign-up, either disable it for your dev project or confirm the email before expecting a full session in the app.
 
 **Terminal noise (normal):**
@@ -56,6 +56,21 @@ npm run desktop:build
 ```
 
 This runs `build:desktop` (static export into `out/`), then **electron-builder**. A **`.dmg`** appears under `dist/` and is also copied to `public/downloads/Persuaid.dmg` when that step succeeds.
+
+### Code signing and notarization (Gatekeeper “damaged”)
+
+If macOS says the app **is damaged and can’t be opened**, the build was almost certainly **not notarized** (or not signed with your **Developer ID Application** identity).
+
+1. **Signing** — Build on a Mac that has your **Apple Developer** certificate installed (**Keychain Access** → search for **Developer ID Application**). `electron-builder` picks it up automatically. Without it, you get an ad-hoc or invalid signature.
+
+2. **Notarization** — After `desktop:build`, watch the terminal. Unless all of these are set when `electron-builder` runs, notarization is **skipped** (you’ll see a **WARNING** from `[notarize-macos]`):
+   - `APPLE_ID` — your Apple ID email  
+   - `APPLE_APP_SPECIFIC_PASSWORD` — **not** your normal password; create at [appleid.apple.com](https://appleid.apple.com) under **Sign-In and Security → App-Specific Passwords**  
+   - `APPLE_TEAM_ID` — 10-character Team ID from [Apple Developer Membership](https://developer.apple.com/account)
+
+   Export them in the shell before building, or use a tool that injects env for the command (`.env.local` is **not** automatically passed to the notarize script unless your tooling loads it).
+
+3. **Partner / CI builds** — A DMG is only safe to ship if **that** build machine had the cert + the three `APPLE_*` variables and the log shows **notarization finished** without errors.
 
 **Environment at build time:** `NEXT_PUBLIC_*` variables are **baked into the client** during `next build`. Put them in **`.env.local`** before `desktop:build` so the packaged app talks to your Supabase project.
 

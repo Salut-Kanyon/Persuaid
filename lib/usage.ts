@@ -1,16 +1,19 @@
 import type { Plan } from "@/lib/entitlements";
 
+/** Monthly live-listening allowance for the Free plan (minutes). Keep /pricing copy in sync. */
+export const FREE_PLAN_MONTHLY_MINUTES = 10;
+
 /** Monthly transcription-style limits (minutes), aligned with /pricing copy. */
 export function transcriptionLimitMinutes(plan: Plan): number {
   switch (plan) {
     case "free":
-      return 30;
+      return FREE_PLAN_MONTHLY_MINUTES;
     case "pro":
       return 20 * 60;
     case "team":
       return 50 * 60;
     default:
-      return 30;
+      return FREE_PLAN_MONTHLY_MINUTES;
   }
 }
 
