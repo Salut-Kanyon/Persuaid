@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { LandingHeroVideo } from "@/components/landing/LandingHeroVideo";
 import { LandingBenefitStrip } from "@/components/landing/LandingBenefitStrip";
+import { MarketingHeroHeadlineDivider } from "@/components/ui/marketing-landing-art";
 
 const FADE_START = 0;
 const FADE_END = 950;
@@ -14,25 +15,6 @@ const HERO_TITLE_LINE1 = "Have the right information,";
 const HERO_TITLE_LINE2 = "when you need it.";
 const HERO_LINE1_WORDS = HERO_TITLE_LINE1.split(" ");
 const HERO_LINE2_WORDS = HERO_TITLE_LINE2.split(" ");
-
-/** Hairline between headline and subtitle — wide flat center so it reads on busy hero art. */
-function HeroHeadlineSubtitleDivider() {
-  return (
-    <div
-      className="mx-auto mt-5 w-[min(18rem,88%)] max-w-full px-2 sm:mt-6 sm:w-[min(20rem,82%)]"
-      aria-hidden
-    >
-      <div
-        className="h-px w-full rounded-full"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, transparent 10%, rgba(244, 241, 234, 0.2) 22%, rgba(244, 241, 234, 0.52) 42%, rgba(244, 241, 234, 0.52) 58%, rgba(244, 241, 234, 0.2) 78%, transparent 90%, transparent 100%)",
-          boxShadow: "0 0 12px rgba(244, 241, 234, 0.12)",
-        }}
-      />
-    </div>
-  );
-}
 
 function HeroTitleTwoLines() {
   const reduce = useReducedMotion();
@@ -174,7 +156,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
               <HeroTitleTwoLines />
             </h1>
 
-            <HeroHeadlineSubtitleDivider />
+            <MarketingHeroHeadlineDivider />
 
             <motion.p
               initial={{ opacity: 0, y: reduceMotion ? 0 : 6 }}

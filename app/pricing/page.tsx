@@ -8,7 +8,11 @@ import { Navbar } from "@/components/ui/Navbar";
 import { PricingCard, PricingFeatureCheck } from "@/components/ui/PricingCard";
 import { CTAButton } from "@/components/ui/CTAButton";
 import { Footer } from "@/components/ui/Footer";
-import { Section } from "@/components/ui/Section";
+import {
+  MarketingHeroHeadlineDivider,
+  marketingHeroSubtitleClassName,
+  marketingHeroTitleClassName,
+} from "@/components/ui/marketing-landing-art";
 import { cn } from "@/lib/utils";
 import { FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
 
@@ -122,23 +126,24 @@ export default function PricingPage() {
     <main className="min-h-screen overflow-x-hidden bg-black">
       <Navbar landingLogo />
 
-      <Section className="pt-20 pb-16 sm:pt-24 sm:pb-20 lg:pb-24">
-        {/* Hero — minimal; pricing visible immediately */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
-          className="mx-auto max-w-3xl text-center"
-        >
-          <h1 className="font-display text-4xl font-normal leading-[1.08] tracking-[-0.02em] text-text-primary sm:text-5xl lg:text-[3.25rem] xl:text-[3.5rem]">
-            Never freeze on a call again.
-          </h1>
-          <p className="font-subtitle mx-auto mt-4 max-w-2xl text-balance text-lg font-normal leading-relaxed text-text-muted sm:mt-5 sm:text-xl lg:text-2xl lg:leading-snug">
-            Real-time answers while you&apos;re still on the call.
-          </p>
-        </motion.div>
+      <div className="relative z-10">
+        {/* Hero — same inset, type scale, divider, and subtitle treatment as landing `Hero` */}
+        <section className="mx-auto w-full max-w-5xl px-5 sm:px-8 lg:px-10 pb-10 pt-24 sm:pb-12 sm:pt-28 lg:pt-28">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
+            className="mx-auto max-w-[42rem] text-center"
+          >
+            <h1 className={marketingHeroTitleClassName}>Never freeze on a call again.</h1>
+            <MarketingHeroHeadlineDivider />
+            <p className={cn(marketingHeroSubtitleClassName, "mb-8 text-white sm:mb-10")}>
+              Real-time answers while you&apos;re still on the call.
+            </p>
+          </motion.div>
+        </section>
 
-        <div className="mx-auto mt-8 flex max-w-6xl flex-col items-center sm:mt-10">
+        <div className="mx-auto flex max-w-6xl flex-col items-center px-4 sm:px-6 lg:px-8">
           <div className="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-background-surface/50 p-1.5">
             <button
               type="button"
@@ -175,7 +180,7 @@ export default function PricingPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.06 }}
-          className="mx-auto mt-10 grid max-w-6xl grid-cols-1 items-stretch gap-7 md:mt-12 md:grid-cols-3 md:gap-4 lg:gap-6"
+          className="mx-auto mt-10 grid max-w-6xl grid-cols-1 items-stretch gap-7 px-4 sm:px-6 md:mt-12 md:grid-cols-3 md:gap-4 lg:gap-6 lg:px-8"
         >
           {/* Free — quieter, smaller feel */}
           <div className="flex min-h-0 w-full flex-col">
@@ -190,7 +195,7 @@ export default function PricingPage() {
                 "opacity-[0.92]"
               )}
             >
-              <h3 className="text-lg font-bold tracking-tight text-text-primary sm:text-xl">Free</h3>
+              <h3 className="text-xl font-semibold tracking-tight text-text-primary sm:text-2xl">Free</h3>
               <div className="mt-5 flex items-baseline gap-1">
                 <span className="text-3xl font-bold tracking-tight text-text-primary sm:text-[2.25rem]">$0</span>
               </div>
@@ -275,11 +280,14 @@ export default function PricingPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.4 }}
-          className="mx-auto mt-16 max-w-6xl rounded-2xl border border-border/50 bg-background-surface/35 p-6 sm:flex sm:items-center sm:justify-between sm:gap-8 sm:p-8"
+          className="mx-auto mt-16 max-w-6xl rounded-2xl border border-border/50 bg-background-surface/35 p-6 px-4 sm:flex sm:items-center sm:justify-between sm:gap-8 sm:p-8 lg:px-8"
         >
           <div className="min-w-0">
-            <h2 className="text-lg font-bold tracking-tight text-text-primary sm:text-xl">Selling Persuaid to others?</h2>
-            <p className="mt-2 text-sm leading-relaxed text-text-muted sm:text-[15px]">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/85">Partners</p>
+            <h2 className="mt-3 font-display text-2xl font-normal tracking-[-0.02em] text-text-primary sm:text-3xl">
+              Selling Persuaid to others?
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-text-muted sm:text-[15px]">
               If you need a custom arrangement—partners, resellers, or an unusual volume ask—email us and we&apos;ll work
               it out person to person.
             </p>
@@ -300,13 +308,18 @@ export default function PricingPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.4 }}
-          className="mx-auto mt-16 max-w-3xl"
+          className="mx-auto mt-16 max-w-3xl px-4 sm:px-6 lg:px-8"
         >
-          <h2 className="text-center text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">Common questions</h2>
-          <p className="mx-auto mt-3 max-w-lg text-center text-sm text-text-muted">
-            Straight answers—no spreadsheet required.
-          </p>
-          <div className="mt-10 overflow-hidden rounded-2xl border border-border/50 bg-background-surface/25">
+          <header className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/85">FAQ</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl lg:text-[2.6rem]">
+              Common questions
+            </h2>
+            <p className="font-subtitle mx-auto mt-4 max-w-lg text-center text-base font-normal leading-relaxed text-white sm:text-lg">
+              Straight answers—no spreadsheet required.
+            </p>
+          </header>
+          <div className="mt-10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_22px_60px_-34px_rgba(0,0,0,0.85)]">
             {PRICING_FAQ_ITEMS.map((faq, index) => {
               const isOpen = openFaqIndex === index;
               return (
@@ -343,7 +356,7 @@ export default function PricingPage() {
             })}
           </div>
         </motion.div>
-      </Section>
+      </div>
 
       <Footer />
     </main>
