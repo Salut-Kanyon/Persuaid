@@ -68,6 +68,78 @@
     box-shadow: none !important;
   }
 
+  /*
+   * Dark-themed scrollbars site-wide (dashboard, notes, follow-up, settings, live call, etc.).
+   * Default OS/WebKit scrollbars read as bright white on dark glass — match app chrome instead.
+   */
+  html:not(.theme-light) {
+    color-scheme: dark;
+  }
+
+  html:not(.theme-light) * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.22) rgba(0, 0, 0, 0.35);
+  }
+
+  html:not(.theme-light) *::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+
+  html:not(.theme-light) *::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: 9999px;
+  }
+
+  html:not(.theme-light) *::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  html:not(.theme-light) *::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  html:not(.theme-light) *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  html.theme-light * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 23, 42, 0.4) rgba(15, 23, 42, 0.06);
+  }
+
+  html.theme-light *::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+
+  html.theme-light *::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.06);
+    border-radius: 9999px;
+  }
+
+  html.theme-light *::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.28);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  html.theme-light *::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 23, 42, 0.42);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  html.theme-light *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
   /* Dashboard: no viewport rubber-band / page scroll; inner panels scroll on their own. */
   html[data-dashboard-shell="1"] {
     overflow: hidden;

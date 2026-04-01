@@ -419,7 +419,7 @@ export function NotesPanel() {
 
       <aside
         className={cn(
-          "flex shrink-0 flex-col bg-white/[0.02] transition-[width,max-height] duration-300 ease-out",
+          "flex shrink-0 flex-col bg-background-near-black transition-[width,max-height] duration-300 ease-out",
           "border-b border-white/[0.06] sm:border-b-0 sm:border-r sm:border-white/[0.06]",
           savedSidebarOpen
             ? "max-h-[min(240px,38vh)] w-full sm:max-h-none sm:w-[min(19rem,30vw)] lg:w-80"

@@ -13,13 +13,11 @@ interface UpgradeModalProps {
   plan: Plan;
 }
 
-/** Shared green styling for all plan variants (copy differs per plan). */
-const GREEN_MODAL = {
-  shell:
-    "border-green-primary/35 shadow-green-primary/15 bg-gradient-to-b from-green-primary/[0.18] via-[color:var(--bg-near-black)] via-40% to-green-darker/[0.32]",
-  glow: "bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.22)_0%,transparent_68%)]",
-  topLine: "from-transparent via-green-primary/60 to-transparent",
-  badgeClass: "border-green-primary/35 bg-green-primary/15 text-green-accent",
+/** Dark shell — no green wash on the modal frame (CTA stays brand green). */
+const MODAL_SHELL = {
+  shell: "border border-white/[0.08] bg-[color:var(--bg-near-black)] shadow-2xl",
+  glow: "bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.04)_0%,transparent_65%)]",
+  topLine: "from-transparent via-white/15 to-transparent",
 };
 
 function copyForPlan(plan: Plan) {
@@ -56,7 +54,7 @@ function copyForPlan(plan: Plan) {
       };
     default:
       return {
-        badge: "Included time used",
+        badge: "",
         title: "You’ve used your included time",
         message:
           "Your free monthly minutes are used up for now. Upgrade for more live call time each month, or wait until next month to use the free tier again.",
@@ -95,33 +93,33 @@ export function UpgradeModal({ open, onClose, plan }: UpgradeModalProps) {
       aria-labelledby="upgrade-modal-title"
     >
       <div
-        className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/75 to-green-darker/25 backdrop-blur-md"
+        className="absolute inset-0 bg-black/70 backdrop-blur-md"
         onClick={onClose}
         aria-hidden="true"
       />
       <div
         className={cn(
-          "relative w-full max-w-lg overflow-hidden rounded-3xl border shadow-2xl",
+          "relative w-full max-w-lg overflow-hidden rounded-3xl",
           "animate-in fade-in zoom-in-95 duration-300",
-          GREEN_MODAL.shell
+          MODAL_SHELL.shell
         )}
       >
         <div
           className={cn(
             "absolute inset-x-0 top-0 h-px bg-gradient-to-r to-transparent",
-            GREEN_MODAL.topLine
+            MODAL_SHELL.topLine
           )}
         />
         <div
           className={cn(
             "pointer-events-none absolute left-1/2 top-0 h-40 w-[28rem] -translate-x-1/2 blur-2xl",
-            GREEN_MODAL.glow
+            MODAL_SHELL.glow
           )}
         />
 
         <div className="relative p-8">
           <div className="mb-6 flex flex-col items-center">
-            <div className="mb-3 flex items-end gap-0">
+            <div className="flex items-end gap-0">
               <img
                 src={PERSUAID_MARK_PNG}
                 alt="Persuaid"
@@ -131,21 +129,20 @@ export function UpgradeModal({ open, onClose, plan }: UpgradeModalProps) {
                 ersuaid
               </span>
             </div>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold",
-                GREEN_MODAL.badgeClass
-              )}
-            >
-              <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              {copy.badge}
-            </span>
+            {copy.badge ? (
+              <span
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-white/[0.04] px-3 py-1 text-xs font-semibold text-text-secondary"
+              >
+                <svg className="h-3.5 w-3.5 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                {copy.badge}
+              </span>
+            ) : null}
           </div>
 
           <h2

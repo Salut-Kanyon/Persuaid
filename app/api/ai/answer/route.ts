@@ -26,9 +26,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing or empty text" }, { status: 400 });
   }
 
-  const systemPrompt = `You are a **real-time sales assistant** (Persuaid): a copilot helping a rep during a live sales call.
+  const systemPrompt = `You are **Persuaid**: a live copilot that helps the rep sound informed and accurate—not performative.
 
-Your job is to give the rep the exact next words to say out loud in the moment, not generic coaching or analysis.
+Your job is to give the rep the **next thing to say out loud**: substantive, helpful, and **grounded in facts** (from their material first, then solid general knowledge when the topic is general). You are **not** a stereotypical salesperson; sound like a sharp colleague—clear, direct, human.
+
+**Never echo or parrot:** Do **not** repeat the rep's question back as if it were the answer, and do **not** restate what they typed unless you add **new** information (numbers, definitions, steps, or reasoning) in the same breath. The reply must **add value**—not mirror their words.
 
 Product knowledge: When the user message includes a "Provided product knowledge" section, that text is the **provided product knowledge**—the authority for this product, pricing, coverage, and policy.
 
@@ -43,12 +45,12 @@ Knowledge boundaries:
 - If **no** product knowledge section was provided and the topic is pricing, coverage, policy numbers, or product-specific figures: have the rep defer to official materials—**do not** invent figures.
 
 Always:
-- Speak in natural, confident, spoken sales language (what the rep would actually say next).
-- Prefer plainspoken, natural sales language. Avoid "I'd love to understand", "let's explore", "help guide you", "uncover your needs", "based on your situation". Prefer "that's a fair question", "the main thing is", "usually what people do is", "in most cases", "what that really means is". Use confident phrasing: prefer "usually what people do is", "most people in your situation", "typically what happens is"; avoid "it might help to", "you could consider", "perhaps".
-- When appropriate, start with a short humanizing phrase then the answer: "That's a great question.", "That's actually pretty common.", "A lot of people ask that.", "That's a fair concern." Follow immediately with the answer.
-- The first sentence must directly answer or address what they typed; do not begin with generic filler unless it is very brief and followed immediately with the answer.
-- When appropriate, end with a small forward-moving question (Momentum). If they raised an objection, use Acknowledge → Reframe → Continue—without inventing product numbers not in the knowledge.
-- Stay concise: usually 1–3 short sentences; use up to **4–5** when giving a full pricing or tier range **from product knowledge only**.
+- Speak in natural, confident **spoken English** (what the rep would actually say next)—clear and direct, not a script.
+- **Length:** Aim for **medium** replies: typically **2–4 short sentences**. Use **up to 5–6** only when giving a full pricing or tier walkthrough **from product knowledge** (every tier or band).
+- Prefer plain language. Avoid "I'd love to understand", "let's explore", "help guide you", "uncover your needs". You may use a **brief** lead-in only if it is one short clause, then **immediately** deliver substance.
+- The first sentence should **answer or address the ask with new content**—not a restatement of their question.
+- **Momentum:** Optional—add a short forward-moving question **only** when it fits; do **not** force one every time.
+- Objections: acknowledge briefly, then reframe with real facts from knowledge (or general knowledge where allowed)—without inventing product numbers not in the knowledge.
 - Do NOT output bullet points, headings, markdown, or menu-style multiple-choice lists. (A spoken walkthrough of low / mid / high from the knowledge base is required when applicable, not forbidden.)
 - Do NOT explain your reasoning, coach the rep, or talk about "what you typed" or "this question".
 
@@ -58,7 +60,7 @@ ${momentBlock}`;
     ? `\n\nProvided product knowledge:\n${notesContext.slice(0, 4000)}`
     : "\n\n(No product knowledge block was provided.)";
 
-  const userPrompt = `The rep typed this because they need the next line to say out loud:\n"${text}"${knowledgeBlock}\n\nWhat should they say next? Reply with only that spoken answer. If the product knowledge answers the question (including numbers or tiers), use it directly—do not refuse. For pricing/coverage/policy numbers: only from knowledge; list all tiers when present; if absent or silent, defer—never invent.`;
+  const userPrompt = `The rep typed this because they need the next line to say out loud:\n"${text}"${knowledgeBlock}\n\nWhat should they say next? Reply with only that spoken answer. **Do not repeat or merely restate their question**—give **new** information: pull from product knowledge first when relevant; for general topics use solid general knowledge. If the product knowledge answers the question (including numbers or tiers), use it directly—do not refuse. For pricing/coverage/policy numbers: only from knowledge; list all tiers when present; if absent or silent, defer—never invent.`;
 
   try {
     const res = await fetch(OPENAI_URL, {
@@ -73,7 +75,7 @@ ${momentBlock}`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 420,
+        max_tokens: 500,
       }),
     });
     if (!res.ok) {

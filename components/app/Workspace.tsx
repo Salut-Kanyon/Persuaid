@@ -278,7 +278,7 @@ export function Workspace({ panelVisibility, setPanelVisibility }: WorkspaceProp
         )}
       >
         <div className="mx-auto flex h-full min-h-0 w-full max-w-[min(88rem,calc(100vw-1.75rem))] flex-col gap-3 sm:gap-4">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-background-surface/12 backdrop-blur-3xl backdrop-saturate-150 sm:rounded-[1.25rem]">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-background-near-black sm:rounded-[1.25rem]">
             <div className="flex shrink-0 flex-col gap-0.5 px-4 py-2.5 sm:px-6 sm:py-3">
               <h2 className="text-sm font-medium tracking-tight text-text-primary">Add Your Knowledge</h2>
               <p className="text-xs leading-snug text-text-muted">

@@ -193,9 +193,7 @@ export function LandingTestimonialsSection() {
         className={cn(
           "flex gap-5 sm:gap-6 overflow-x-auto overflow-y-visible pb-10 sm:pb-12 pt-2 px-4 sm:px-8 lg:px-10",
           "snap-x snap-mandatory scroll-pl-4 sm:scroll-pl-8 lg:scroll-pl-10",
-          "overscroll-x-contain [-webkit-overflow-scrolling:touch]",
-          "[scrollbar-width:thin]",
-          "[scrollbar-color:rgba(255,255,255,0.18)_transparent]"
+          "overscroll-x-contain [-webkit-overflow-scrolling:touch]"
         )}
         role="list"
         aria-label="Customer testimonials"

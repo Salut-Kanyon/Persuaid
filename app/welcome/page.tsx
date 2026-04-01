@@ -51,26 +51,13 @@ export default function WelcomePage() {
     <>
       <MicMacOnboardingGate />
       <MicDebugPanel />
-    <main className="min-h-screen bg-background-near-black flex flex-col items-center justify-center px-6 relative overflow-hidden">
+    <main className="min-h-screen bg-background-near-black flex flex-col items-center justify-center px-4 sm:px-6 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-green-glow/8 via-green-glow/3 to-transparent pointer-events-none" />
       <div className="absolute top-1/4 right-1/4 w-[28rem] h-[28rem] bg-green-primary/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-green-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col items-center max-w-md mx-auto text-center">
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-primary/10 border border-green-primary/20 mb-6"
-        >
-          <span className="w-1.5 h-1.5 bg-green-primary rounded-full animate-pulse" />
-          <span className="text-[11px] font-medium text-green-accent tracking-wider uppercase">
-            AI-Powered Sales Intelligence
-          </span>
-        </motion.div>
-
+      <div className="relative z-10 flex w-full flex-col items-center max-w-4xl mx-auto text-center">
         {/* Logo + wordmark — primary brand */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -99,20 +86,37 @@ export default function WelcomePage() {
           <span className="text-green-primary">every call</span>
         </motion.h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 8 }}
+        {/* Tutorial video (same asset as /tutorial) */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="text-text-muted text-sm leading-relaxed mb-10 max-w-xs mx-auto"
+          transition={{ duration: 0.45, delay: 0.18 }}
+          className="w-full max-w-2xl mx-auto mt-8 mb-8"
         >
-          Real-time AI guidance for sales conversations. Your copilot in the room.
-        </motion.p>
+          <div
+            className="rounded-2xl sm:rounded-3xl overflow-hidden border border-white/[0.1] bg-[#040404] shadow-[0_24px_80px_-20px_rgba(0,0,0,0.85)] ring-1 ring-white/[0.06]"
+            style={{ WebkitMaskImage: "-webkit-radial-gradient(white, black)" }}
+          >
+            <div className="relative aspect-video bg-black">
+              <video
+                className="w-full h-full object-cover"
+                playsInline
+                preload="auto"
+                autoPlay
+                loop
+                muted
+              >
+                <source src="/go.mp4" type="video/mp4" />
+              </video>
+            </div>
+          </div>
+        </motion.div>
 
         {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.25 }}
+          transition={{ duration: 0.4, delay: 0.28 }}
           className="w-full max-w-xs mx-auto"
         >
           <Link
@@ -130,22 +134,11 @@ export default function WelcomePage() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.35 }}
+          transition={{ duration: 0.4, delay: 0.38 }}
           className="text-text-dim text-[11px] text-center mt-12 max-w-xs"
         >
           By continuing, you agree to our Terms of Service and Privacy Policy.
         </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
-          className="mt-6 pt-6 border-t border-border/40 flex items-center justify-center gap-6 text-text-dim/80 text-[11px] font-medium"
-        >
-          <span>Forbes</span>
-          <span>The New York Times</span>
-          <span>TechCrunch</span>
-        </motion.div>
       </div>
     </main>
     </>

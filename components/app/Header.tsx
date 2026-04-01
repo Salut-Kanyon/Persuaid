@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
@@ -8,7 +9,15 @@ import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import { isElectronApp } from "@/lib/electron-client";
 import { getPersuaidMicApi } from "@/lib/mic-onboarding";
 
+/** Live Session hub only (`/dashboard`). Hide mic + Start PersuAId on Notes, Calls, Analytics, Settings. */
+function isLiveSessionRoute(pathname: string | null): boolean {
+  if (!pathname) return false;
+  const normalized = pathname.replace(/\/$/, "") || "/";
+  return normalized === "/dashboard";
+}
+
 export function Header() {
+  const pathname = usePathname();
   const {
     isRecording,
     setRecording,
@@ -67,8 +76,17 @@ export function Header() {
     return null;
   }
 
+  if (!isLiveSessionRoute(pathname)) {
+    return (
+      <header
+        className="h-12 shrink-0 bg-background-near-black sm:h-[3.25rem]"
+        aria-hidden
+      />
+    );
+  }
+
   return (
-    <header className="grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 bg-white/[0.04] px-3 backdrop-blur-3xl backdrop-saturate-150 sm:h-[3.25rem] sm:gap-3 sm:px-5">
+    <header className="grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 bg-background-near-black px-3 sm:h-[3.25rem] sm:gap-3 sm:px-5">
       <div className="flex min-w-0 items-center gap-2 justify-self-start sm:gap-2.5">
         <label
           htmlFor="header-audio-input"
@@ -81,7 +99,7 @@ export function Header() {
           name="audioInputDevice"
           value={audioInputDeviceId ?? ""}
           onChange={(e) => handleAudioInputChange(e.target.value)}
-          className="min-w-0 max-w-[min(100%,200px)] rounded-lg border border-white/[0.08] bg-white/[0.06] py-1.5 pl-2 pr-1 text-[11px] font-normal text-text-primary backdrop-blur-xl focus:border-white/[0.12] focus:outline-none focus:ring-1 focus:ring-white/10 sm:max-w-[260px] sm:px-2.5 sm:text-xs"
+          className="min-w-0 max-w-[min(100%,200px)] rounded-lg border border-white/[0.08] !bg-background-near-black py-1.5 pl-2 pr-1 text-[11px] font-normal text-text-primary focus:border-white/[0.12] focus:outline-none focus:ring-1 focus:ring-white/10 sm:max-w-[260px] sm:px-2.5 sm:text-xs"
         >
           <option value="">Default</option>
           {audioInputs.map((d, i) => (
@@ -94,7 +112,12 @@ export function Header() {
 
       <div className="min-w-0 justify-self-center" aria-hidden />
 
-      <div className="flex shrink-0 justify-self-end">
+      <div className="flex shrink-0 items-center gap-2 justify-self-end sm:gap-3">
+        {!usageLoading && canStartLiveSession && (
+          <span className="shrink-0 whitespace-nowrap text-[10px] font-medium tracking-label text-text-dim/75 sm:text-[11px]">
+            Enter call <span aria-hidden className="text-text-muted">→</span>
+          </span>
+        )}
         <button
           type="button"
           disabled={usageLoading || micPriming}
@@ -134,13 +157,29 @@ export function Header() {
             })();
           }}
           className={cn(
-            "inline-flex shrink-0 items-center gap-2 rounded-full bg-green-primary px-4 py-2 text-[13px] font-semibold tracking-tight text-white",
-            "shadow-[0_1px_2px_rgba(0,0,0,0.2)]",
-            "transition-[transform,background-color,box-shadow] duration-300 ease-out",
-            "hover:bg-green-dark hover:shadow-[0_2px_6px_rgba(0,0,0,0.22)]",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-green-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background-near-black",
-            "active:scale-[0.99] sm:gap-2.5 sm:px-5 sm:py-2.5 sm:text-sm",
-            "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-green-primary disabled:hover:shadow-[0_1px_2px_rgba(0,0,0,0.2)]"
+            "relative inline-flex shrink-0 items-center overflow-hidden rounded-full px-5 py-2.5 text-sm font-medium text-white",
+
+            // Brand-aligned green gradient (depth without “neon UI kit”)
+            "bg-gradient-to-b from-[#2bbf96] via-[#1a9d78] to-[#136b55]",
+
+            // Soft top sheen — one layer only
+            "before:pointer-events-none before:absolute before:inset-0 before:rounded-full",
+            "before:bg-gradient-to-b before:from-white/20 before:to-transparent before:opacity-[0.55]",
+
+            "border border-white/15",
+
+            // Inset highlight + soft drop shadow (no colored glow)
+            "shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_2px_12px_rgba(0,0,0,0.35)]",
+
+            "transition-all duration-200 ease-out",
+
+            "hover:brightness-[1.05] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_4px_18px_rgba(0,0,0,0.42)]",
+
+            "active:scale-[0.98] active:brightness-[0.97]",
+
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-green-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background-near-black",
+
+            "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
           )}
           title={
             micPriming
@@ -150,14 +189,16 @@ export function Header() {
                 : limitTitle
           }
         >
-          <span>{limitButtonLabel}</span>
-          <img
-            src={PERSUAID_MARK_PNG}
-            alt=""
-            width={32}
-            height={32}
-            className="h-5 w-5 shrink-0 object-contain brightness-0 invert sm:h-[1.35rem] sm:w-[1.35rem]"
-          />
+          <span className="relative z-10 flex items-center gap-2 sm:gap-2.5">
+            <span>{limitButtonLabel}</span>
+            <img
+              src={PERSUAID_MARK_PNG}
+              alt=""
+              width={32}
+              height={32}
+              className="h-5 w-5 shrink-0 object-contain brightness-0 invert"
+            />
+          </span>
         </button>
       </div>
     </header>
