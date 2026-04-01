@@ -239,17 +239,13 @@ export default function DownloadPage() {
                         "group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl px-6 py-4 text-base font-semibold tracking-[-0.02em] sm:py-[1.125rem] sm:text-lg",
                         "border border-green-primary/45 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_10px_32px_-4px_rgba(26,157,120,0.45)]",
                         "transition-[border-color,box-shadow] duration-300 ease-out",
-                        "enabled:hover:border-white/12 enabled:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_28px_rgba(0,0,0,0.45)]",
+                        "enabled:hover:border-green-primary/70 enabled:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_14px_40px_-4px_rgba(26,157,120,0.55)]",
                         "disabled:cursor-not-allowed disabled:opacity-50"
                       )}
                     >
                       <span
                         aria-hidden
-                        className="absolute inset-0 bg-gradient-to-b from-[#2eb896] via-green-primary to-[#158f6c] opacity-100 transition-opacity duration-300 ease-out group-hover:opacity-0 group-disabled:opacity-55 group-disabled:group-hover:opacity-55"
-                      />
-                      <span
-                        aria-hidden
-                        className="absolute inset-0 bg-black/60 backdrop-blur-md opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 group-disabled:opacity-0 group-disabled:group-hover:opacity-0"
+                        className="absolute inset-0 bg-gradient-to-b from-[#2eb896] via-green-primary to-[#158f6c] opacity-100 transition-[filter,opacity] duration-300 ease-out group-hover:brightness-110 group-disabled:opacity-55 group-disabled:group-hover:brightness-100"
                       />
                       <span className="relative z-[1] flex items-center justify-center gap-3">
                         <AppleIcon className="h-6 w-6 shrink-0 text-white sm:h-7 sm:w-7" />
