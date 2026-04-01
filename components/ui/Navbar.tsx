@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,8 @@ type NavbarProps = {
 };
 
 export function Navbar({ liveDemo, landing = false, landingLogo = false }: NavbarProps) {
+  const pathname = usePathname();
+  const hideFloatingDownload = pathname === "/download";
   const [showCtaButton, setShowCtaButton] = useState(false);
 
   useEffect(() => {
@@ -60,7 +63,7 @@ export function Navbar({ liveDemo, landing = false, landingLogo = false }: Navba
   return (
     <>
       {/* Fixed CTA — Try Free (default) or Live demo (home) */}
-      {showCtaButton && (
+      {showCtaButton && !hideFloatingDownload && (
         <div
           className={cn(
             "fixed top-4 right-4 z-50 hidden w-[min(calc(100vw-2rem),320px)] flex-col items-stretch md:flex animate-in fade-in slide-in-from-top-2",
