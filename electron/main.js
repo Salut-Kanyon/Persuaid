@@ -163,7 +163,7 @@ console.log('Electron startup:', {
   OUT_DIR,
 });
 
-/** Desktop window icon (bundled `ElectrongPP.png`; dev prefers `public/PersuaidLogo.png` then `ElectrongPP.png`). */
+/** Desktop window icon (bundled `ElectrongPP.png`; dev prefers mac master PNG, then other marks). */
 function resolveAppLogoPath() {
   if (app.isPackaged) {
     const packaged = path.join(process.resourcesPath, 'ElectrongPP.png');
@@ -171,6 +171,7 @@ function resolveAppLogoPath() {
   }
   const root = path.join(__dirname, '..');
   const candidates = [
+    path.join(root, 'public', 'MacIconPersuaidLogo1024x1024.png'),
     path.join(root, 'public', 'PersuaidLogo.png'),
     path.join(root, 'public', 'ElectrongPP.png'),
   ];

@@ -9,10 +9,10 @@ AFTER CHANGING .env
   Open the app again from Applications (or double-click Persuaid.app below).
 
 WHERE TO FIND THE LATEST BUILD (same machine, after `npm run desktop:build`)
-  DMG (full copy): Persuaid/DesktopBuild/Persuaid.dmg        (same file the build also puts in public/downloads/)
+  DMG (full copy): Persuaid/DesktopBuild/Persuaid.dmg        (same file the build also copies to public/downloads/)
   DMG (symlink):   Persuaid/DesktopBuild/Persuaid-Latest.dmg  (→ dist/Persuaid-*-arm64.dmg — recreate if missing)
   Unpacked app:    Persuaid/DesktopBuild/Persuaid.app          (shortcut → dist/mac-arm64)
-  Copy for site:   Persuaid/public/downloads/Persuaid.dmg      (build script copies the DMG here too)
+  Copy for local site: public/downloads/Persuaid.dmg         (optional; large DMG is usually gitignored — for production use a GitHub Release URL and set MAC_DOWNLOAD_URL on Vercel)
 
 SOURCE PATHS (if shortcuts are missing, open these in Finder)
   dist/Persuaid-0.1.0-arm64.dmg

@@ -17,9 +17,11 @@ from PIL import Image, ImageChops, ImageDraw, ImageOps
 
 SIZE = 1024
 DEFAULT_RADIUS = 185
-DEFAULT_PADDING_FRAC = 0.25
-# After padding_frac, shrink the fit box again so the mark stays away from the rounded-mask edge.
-DEFAULT_INNER_SAFE_SCALE = 0.84
+# Balanced for full-height logos: enough inset so the squircle mask does not clip top/bottom.
+# Override with MAC_ICON_PADDING_FRAC / MAC_ICON_INNER_SAFE_SCALE if needed.
+DEFAULT_PADDING_FRAC = 0.20
+# After padding_frac, shrink so the mark clears the rounded-mask corners (lower = more inset).
+DEFAULT_INNER_SAFE_SCALE = 0.88
 # Pixels with max(R,G,B) <= this are treated as background when alpha is opaque (typ. black mat).
 DEFAULT_BG_RGB_MAX = 28
 
@@ -69,13 +71,13 @@ def main() -> int:
         "--padding-frac",
         type=float,
         default=DEFAULT_PADDING_FRAC,
-        help="Margin on each side as a fraction of width; inner side = 1 - 2*frac (default 0.25)",
+        help="Margin on each side as a fraction of width; inner side = 1 - 2*frac (default 0.20)",
     )
     parser.add_argument(
         "--inner-safe-scale",
         type=float,
         default=DEFAULT_INNER_SAFE_SCALE,
-        help="Fit the mark into (inner * this) so it clears the squircle corners (default 0.84)",
+        help="Fit the mark into (inner * this) so it clears the squircle corners (default 0.88)",
     )
     parser.add_argument(
         "--bg-rgb-max",

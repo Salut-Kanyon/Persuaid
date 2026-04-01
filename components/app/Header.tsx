@@ -5,6 +5,8 @@ import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
+import { isElectronApp } from "@/lib/electron-client";
+import { getPersuaidMicApi } from "@/lib/mic-onboarding";
 
 export function Header() {
   const {
@@ -15,6 +17,7 @@ export function Header() {
   } = useSession();
   const { canStartLiveSession, usageLoading, openUpgradeModal, plan } = useEntitlements();
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
+  const [micPriming, setMicPriming] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -41,6 +44,7 @@ export function Header() {
 
   const limitButtonLabel = (() => {
     if (usageLoading) return "Checking…";
+    if (micPriming) return "Microphone…";
     if (canStartLiveSession) return "Start PersuAId";
     if (plan === "pro") return "View Team upgrade";
     if (plan === "team") return "Limit reached";
@@ -93,16 +97,41 @@ export function Header() {
       <div className="flex shrink-0 justify-self-end">
         <button
           type="button"
-          disabled={usageLoading}
+          disabled={usageLoading || micPriming}
           onClick={() => {
-            if (usageLoading) return;
-            if (!canStartLiveSession) {
-              openUpgradeModal();
-              return;
-            }
-            // Default to the computer/system mic to avoid triggering phone/Bluetooth connection popups.
-            setAudioInputDeviceId(null);
-            setRecording(true);
+            void (async () => {
+              if (usageLoading || micPriming) return;
+              if (!canStartLiveSession) {
+                openUpgradeModal();
+                return;
+              }
+              /**
+               * macOS: run TCC on this click (same user gesture as starting the call).
+               * If we only relied on async getUserMedia, the system prompt often never appears.
+               */
+              if (isElectronApp()) {
+                const api = getPersuaidMicApi();
+                if (api?.platform === "darwin" && api.getMicStatus && api.requestMicAccess) {
+                  try {
+                    const { status } = await api.getMicStatus();
+                    if (status !== "granted" && status !== "denied" && status !== "restricted") {
+                      setMicPriming(true);
+                      try {
+                        const r = await api.requestMicAccess();
+                        if (!r.granted && r.status !== "granted") return;
+                      } finally {
+                        setMicPriming(false);
+                      }
+                    }
+                  } catch {
+                    setMicPriming(false);
+                  }
+                }
+              }
+              // Default to the computer/system mic to avoid triggering phone/Bluetooth connection popups.
+              setAudioInputDeviceId(null);
+              setRecording(true);
+            })();
           }}
           className={cn(
             "inline-flex shrink-0 items-center gap-2 rounded-full bg-green-primary px-4 py-2 text-[13px] font-semibold tracking-tight text-white",
@@ -114,7 +143,11 @@ export function Header() {
             "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-green-primary disabled:hover:shadow-[0_1px_2px_rgba(0,0,0,0.2)]"
           )}
           title={
-            usageLoading ? "Checking your plan allowance…" : limitTitle
+            micPriming
+              ? "Waiting for microphone permission…"
+              : usageLoading
+                ? "Checking your plan allowance…"
+                : limitTitle
           }
         >
           <span>{limitButtonLabel}</span>

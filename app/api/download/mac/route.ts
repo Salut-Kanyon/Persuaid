@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 
 /**
  * Single entry for macOS DMG downloads from the marketing site.
- * Set `MAC_DOWNLOAD_URL` (or `NEXT_PUBLIC_MAC_DOWNLOAD_URL`) to a full https URL
- * (e.g. GitHub Release asset, S3, CDN). If unset, redirects to the static file
- * at `/downloads/Persuaid.dmg` (from `public/downloads/` after `npm run desktop:build`).
+ *
+ * Production: set `MAC_DOWNLOAD_URL` (or `NEXT_PUBLIC_MAC_DOWNLOAD_URL`) to a full **https** URL
+ * (GitHub Release asset, S3, CDN). Vercel cannot read `DesktopBuild/` on your Mac; the DMG there is local only.
+ *
+ * Fallback when unset: redirect to `/downloads/Persuaid.dmg` — that file must exist under `public/downloads/`
+ * in the deployed build (often omitted because large DMGs are gitignored). Prefer hosting the asset externally.
  */
 function resolveRedirect(request: Request) {
   const explicit =

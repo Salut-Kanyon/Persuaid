@@ -39,7 +39,7 @@ function startElectron(port) {
   console.log("[desktop] Next dev URL uses port", port, "— launching Electron");
   if (process.platform === "darwin") {
     console.log(
-      "[desktop] Note: the Dock hover label shows “Electron” in dev — macOS names the running app bundle (the Electron binary from node_modules). Menu bar should say Persuaid. For “Persuaid” in the Dock, run the built app: open dist/mac-arm64/Persuaid.app (after npm run pack or desktop:build)."
+      "[desktop] Dock icon: run `npm run build:mac-icon` once so build/icon.icns is used (otherwise a PNG fallback). The Dock hover label still says “Electron” in dev — that’s the binary name from node_modules; the packaged Persuaid.app shows “Persuaid”."
     );
   }
   electronProc = spawn("npx", ["electron", "."], {

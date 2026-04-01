@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Writes build/icon.icns for electron-builder (package.json build.mac.icon).
 #
+# You only maintain ONE source PNG (default: public/MacIconPersuaidLogo1024x1024.png). macOS .icns
+# files must contain multiple resolutions (16…1024) for Dock/Finder/Retina; this script resamples
+# your single master with sips — you do not hand-edit a “list” of icons.
+#
 # Default: Pillow preprocess (scripts/preprocess-macos-app-icon.py) — padded logo on black, rounded
 # alpha at 1024, then sips → full iconset → iconutil.
 #
@@ -9,10 +13,10 @@
 #   SKIP_PILLOW_ICON=1        — use raw Assets.xcassets/AppIcon.appiconset PNGs (no Pillow).
 #   BAKE_MACOS_SQUIRCLE=1     — use Swift clip instead of Pillow (ignores Pillow path).
 #   MAC_ICON_CORNER_RADIUS=185 — Swift or Pillow rounded-rect radius @1024px.
-#   MAC_ICON_PADDING_FRAC=0.25 — Pillow only; per-side margin fraction (inner = 1 - 2*frac; higher = more padding).
-#   MAC_ICON_INNER_SAFE_SCALE=0.84 — shrink the fitted mark further so it clears the squircle corners.
+#   MAC_ICON_PADDING_FRAC=0.20 — Pillow only; per-side margin (higher = more breathing room vs squircle clip).
+#   MAC_ICON_INNER_SAFE_SCALE=0.88 — shrink the fitted mark so top/bottom clear the rounded mask.
 #   MAC_ICON_BG_RGB_MAX=28 — treat RGB <= this as background when cropping opaque-black AppIcon PNGs.
-#   MAC_ICON_INPUT=path — override source PNG (default: AppIcon.appiconset/1024.png).
+#   MAC_ICON_INPUT=path — override source PNG (default: public/MacIconPersuaidLogo1024x1024.png if present, else AppIcon 1024.png).
 #
 # Requires: Python 3 + Pillow (installed automatically via pip from scripts/requirements-icon.txt
 # on first run if import fails).
@@ -25,11 +29,18 @@ LOCAL_MASTER="$ROOT/Local/icon.icns"
 PILL_MASTER="$ROOT/build/.mac-icon-pillow-1024.png"
 MASTER1024="$ROOT/build/.squircle-1024.png"
 CORNER="${MAC_ICON_CORNER_RADIUS:-185}"
-PADDING_FRAC="${MAC_ICON_PADDING_FRAC:-0.25}"
-INNER_SAFE_SCALE="${MAC_ICON_INNER_SAFE_SCALE:-0.84}"
+PADDING_FRAC="${MAC_ICON_PADDING_FRAC:-0.20}"
+INNER_SAFE_SCALE="${MAC_ICON_INNER_SAFE_SCALE:-0.88}"
 BG_RGB_MAX="${MAC_ICON_BG_RGB_MAX:-28}"
 EDGE_PAD="${MAC_ICON_EDGE_PAD:-2}"
-ICON_INPUT="${MAC_ICON_INPUT:-$SRC/1024.png}"
+PUBLIC_MASTER="$ROOT/public/MacIconPersuaidLogo1024x1024.png"
+if [[ -n "${MAC_ICON_INPUT:-}" ]]; then
+  ICON_INPUT="$MAC_ICON_INPUT"
+elif [[ -f "$PUBLIC_MASTER" ]]; then
+  ICON_INPUT="$PUBLIC_MASTER"
+else
+  ICON_INPUT="$SRC/1024.png"
+fi
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "build-macos-app-icon: skipping (Swift/iconutil require macOS). electron-builder will use existing build/icon.icns if present."
@@ -53,13 +64,25 @@ for f in 16.png 32.png 64.png 128.png 256.png 512.png 1024.png; do
 done
 
 if [[ "$assets_ok" != true ]]; then
-  echo "build-macos-app-icon: missing PNGs under $SRC" >&2
-  if [[ -f "$LOCAL_MASTER" ]]; then
-    cp "$LOCAL_MASTER" "$ICNS"
-    echo "build-macos-app-icon: fallback copied Local/icon.icns -> $ICNS" >&2
-    exit 0
+  if [[ -n "${SKIP_PILLOW_ICON:-}" ]]; then
+    echo "build-macos-app-icon: SKIP_PILLOW_ICON requires all PNGs under $SRC" >&2
+    if [[ -f "$LOCAL_MASTER" ]]; then
+      cp "$LOCAL_MASTER" "$ICNS"
+      echo "build-macos-app-icon: fallback copied Local/icon.icns -> $ICNS" >&2
+      exit 0
+    fi
+    exit 1
   fi
-  exit 1
+  if [[ ! -f "$ICON_INPUT" ]]; then
+    echo "build-macos-app-icon: missing PNGs under $SRC and no master at: $ICON_INPUT" >&2
+    if [[ -f "$LOCAL_MASTER" ]]; then
+      cp "$LOCAL_MASTER" "$ICNS"
+      echo "build-macos-app-icon: fallback copied Local/icon.icns -> $ICNS" >&2
+      exit 0
+    fi
+    exit 1
+  fi
+  echo "build-macos-app-icon: single master (Pillow) -> $ICON_INPUT" >&2
 fi
 
 if ! command -v iconutil >/dev/null 2>&1; then
@@ -99,7 +122,11 @@ LABEL=""
 
 if [[ -n "${BAKE_MACOS_SQUIRCLE:-}" ]]; then
   GEN="$ROOT/build/.icon-gen-sizes"
-  swift "$ROOT/scripts/apply-macos-squircle.swift" "$SRC/1024.png" "$MASTER1024" "$CORNER"
+  if [[ ! -f "$ICON_INPUT" ]]; then
+    echo "build-macos-app-icon: BAKE_MACOS_SQUIRCLE needs ICON_INPUT: $ICON_INPUT" >&2
+    exit 1
+  fi
+  swift "$ROOT/scripts/apply-macos-squircle.swift" "$ICON_INPUT" "$MASTER1024" "$CORNER"
   echo "build-macos-app-icon: BAKE_MACOS_SQUIRCLE (radius @1024=${CORNER}) -> $MASTER1024"
   build_gen_from_master "$MASTER1024" "$GEN"
   FROM_DIR="$GEN"

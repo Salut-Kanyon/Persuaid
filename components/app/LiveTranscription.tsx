@@ -369,12 +369,6 @@ export function LiveTranscription() {
     intentionalStopRef.current = false;
     (async () => {
       try {
-        const conn = resolveSttConnection();
-        if (conn.kind === "none") {
-          setMicError(conn.message);
-          return;
-        }
-
         if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
           setMicError("Microphone not supported in this environment.");
           return;
@@ -396,6 +390,13 @@ export function LiveTranscription() {
           .getUserMedia({ audio: audioConstraints })
           .catch(() => navigator.mediaDevices.getUserMedia({ audio: true }));
         console.log("[STT] gotUserMedia ok, stream:", stream);
+
+        const conn = resolveSttConnection();
+        if (conn.kind === "none") {
+          stream.getTracks().forEach((t) => t.stop());
+          setMicError(conn.message);
+          return;
+        }
         console.log(
           "[STT] audio tracks:",
           stream.getAudioTracks().map((t) => ({
