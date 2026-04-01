@@ -31,7 +31,7 @@ interface PricingCardProps {
   name: string;
   price: string;
   period?: string;
-  description: string;
+  description?: string;
   features: string[];
   /** Small line above the CTA — conviction, not fine print. */
   footnote?: string;
@@ -84,15 +84,18 @@ export function PricingCard({
       <div className="mb-6 shrink-0">
         <h3
           className={cn(
-            "mb-1.5 font-bold tracking-tight text-text-primary",
-            tier === "default" ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
+            "font-bold tracking-tight text-text-primary",
+            tier === "default" ? "text-lg sm:text-xl" : "text-xl sm:text-2xl",
+            description ? "mb-1.5" : "mb-5"
           )}
         >
           {name}
         </h3>
-        <p className={cn("mb-5 leading-snug text-text-muted", tier === "default" ? "text-[13px]" : "text-sm")}>
-          {description}
-        </p>
+        {description ? (
+          <p className={cn("mb-5 leading-snug text-text-muted", tier === "default" ? "text-[13px]" : "text-sm")}>
+            {description}
+          </p>
+        ) : null}
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span
             className={cn(
@@ -106,9 +109,9 @@ export function PricingCard({
         </div>
       </div>
 
-      <ul className="shrink-0 space-y-2.5 text-sm font-medium leading-snug">
+      <ul className="shrink-0 space-y-2 text-[12px] font-medium leading-snug sm:text-[13px]">
         {features.map((feature, index) => (
-          <li key={index} className="flex gap-2.5">
+          <li key={index} className="flex gap-2">
             <PricingFeatureCheck className="mt-0.5" />
             <span className="min-w-0 bg-gradient-to-r from-white via-zinc-200 to-zinc-500 bg-clip-text text-transparent">
               {feature}

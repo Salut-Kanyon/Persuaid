@@ -16,13 +16,10 @@ import { FAQSection } from "@/components/ui/FAQSection";
 import { LandingPreFooterCta } from "@/components/landing/LandingPreFooterCta";
 
 function ProductKnowledgeShowcaseCard() {
-  const typedLines = [
+  const previewLines = [
     "Case: 42-year-old, married, 2 kids, income protection",
     "Goal: $500k–$1M coverage, 20-year term",
     "Risk factors: non-smoker, no major conditions — Positioning: protect income first, adjust coverage later—then",
-  ] as const;
-
-  const blurLines = [
     "Pricing bands (by preferred class): Starter / Standard / Plus",
     "Policy details: confirm term length vs monthly premium band",
     "Underwriting notes: age + health class drives estimate range",
@@ -30,50 +27,40 @@ function ProductKnowledgeShowcaseCard() {
     "Case specifics: timeline + decision-maker preference",
   ] as const;
 
-  const fullText = typedLines.join("\n");
-  const [typedChars, setTypedChars] = useState(0);
-
-  useEffect(() => {
-    const speedMs = 18;
-    const tick = setInterval(() => {
-      setTypedChars((n) => {
-        if (n >= fullText.length) return n;
-        return n + 1;
-      });
-    }, speedMs);
-    return () => {
-      clearInterval(tick);
-    };
-  }, [fullText.length]);
-
-  const shown = fullText.slice(0, typedChars);
-  const lineCount = shown.split("\n").length;
-
   return (
-    <article className="relative h-full min-h-[332px] overflow-hidden rounded-3xl border border-transparent bg-transparent p-4 sm:p-5 shadow-none">
-      <h3 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:mt-2 sm:text-[1.9rem]">
-        Input your product knowledge
-      </h3>
-      <p className="mt-2 text-sm text-text-muted sm:text-[0.95rem]">Policies, pricing notes, rates, and more</p>
-      <div className="mt-4 rounded-2xl border border-white/12 bg-black/40 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl backdrop-saturate-125 sm:mt-5 sm:p-3.5">
-        <pre className="h-[84px] overflow-hidden whitespace-pre-wrap break-words text-[13px] leading-relaxed text-text-secondary font-mono">
-          {shown}
-          <span className="inline-block w-[7px] h-[1em] align-[-2px] bg-emerald-200/35 animate-pulse ml-0.5" />
-        </pre>
-        <div className="mt-1 space-y-1">
-          {blurLines.map((l, i) => (
-            <div
-              key={l}
-              className="text-[12px] leading-relaxed text-text-secondary/75 font-mono"
-              style={{
-                filter: "blur(2px)",
-                opacity: 0.65 - i * 0.1,
-              }}
-            >
-              {l}
-            </div>
-          ))}
+    <article className="relative h-full min-h-[396px] overflow-hidden rounded-3xl border border-transparent bg-transparent p-4 sm:min-h-[420px] sm:p-5 shadow-none">
+      <h3 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:mt-2 sm:text-[1.9rem]">Add Your Knowledge</h3>
+      <p className="mt-2 text-sm text-text-muted sm:text-[0.95rem]">
+        Notes on policies, pricing notes, rates, and more
+      </p>
+      <div className="relative mt-4 overflow-hidden rounded-2xl border border-white/[0.14] bg-black/45 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl backdrop-saturate-150 sm:mt-5 sm:p-4">
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-black/30"
+          aria-hidden
+        />
+        <div className="relative space-y-2 sm:space-y-2.5">
+          {previewLines.map((line, i) => {
+            const blurPx = 1.15 + i * 0.17;
+            const opacity = Math.max(0.52, 0.94 - i * 0.055);
+            return (
+              <p
+                key={line}
+                className="select-none text-[11px] leading-relaxed text-text-secondary sm:text-[12px] font-mono antialiased"
+                style={{
+                  filter: `blur(${blurPx}px)`,
+                  opacity,
+                  textShadow: "0 0 24px rgba(255,255,255,0.06)",
+                }}
+              >
+                {line}
+              </p>
+            );
+          })}
         </div>
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0a0a0b]/90 via-[#0a0a0b]/35 to-transparent sm:h-20"
+          aria-hidden
+        />
       </div>
     </article>
   );
@@ -102,78 +89,105 @@ function EnterInstantAnswerShowcaseCard() {
   }, [phase, pass]);
 
   return (
-    <article className="relative h-full min-h-[430px] overflow-hidden rounded-3xl border border-transparent bg-transparent p-4 sm:min-h-[456px] sm:p-5">
-      <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/75">Listens Live</p>
-      <h3 className="mt-2.5 text-2xl font-semibold tracking-tight text-text-primary sm:mt-3 sm:text-[1.95rem]">Right answer at your fingertips</h3>
+    <article className="relative flex h-full min-h-[480px] flex-col overflow-hidden rounded-3xl border border-transparent bg-transparent p-4 sm:min-h-[508px] sm:p-5">
+      <h3 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:mt-2 sm:text-[1.9rem]">Right answer at your fingertips</h3>
 
-      <div className="mt-5 p-0 sm:mt-6">
-        <p className="text-[11px] uppercase tracking-[0.12em] text-white">Question</p>
-        <p className="mt-1.5 text-[14px] leading-relaxed text-text-secondary sm:text-[15px]">
-          What would this cost monthly for someone in their early 40s?
-        </p>
-
-        <div className="mt-4 flex items-center justify-start gap-2.5">
-          <span className="text-[12px] text-text-dim">Press</span>
-          <motion.span
-            animate={phase === "press" ? { scale: 0.92, y: 1 } : { scale: 1, y: 0 }}
-            transition={{ duration: 0.18, ease: "easeInOut" }}
-            className="inline-flex items-center justify-center rounded-full border border-[#4dc49a]/45 bg-gradient-to-b from-[#1fb388] via-green-primary to-[#127a5c] px-3 py-1 text-[12px] font-semibold text-white shadow-[0_0_0_1px_rgba(26,157,120,0.4),0_3px_12px_rgba(26,157,120,0.35)]"
-          >
-            Enter
-          </motion.span>
+      <div className="mt-5 flex min-h-0 flex-1 flex-col sm:mt-6">
+        <div className="border-l-2 border-emerald-400/50 pl-3 sm:pl-3.5">
+          <p className="text-[15px] font-medium leading-snug text-white sm:text-[16px]">
+            <span className="text-emerald-300/90">&ldquo;</span>
+            <span>What would this cost monthly for someone in their early 40s?</span>
+            <span className="text-emerald-300/90">&rdquo;</span>
+          </p>
         </div>
 
-        <div className="mt-5 h-[156px] overflow-hidden p-0 sm:mt-6 sm:h-[168px]">
-          <AnimatePresence mode="wait">
-            {phase === "thinking" ? (
-              <motion.div
-                key="think"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="inline-flex items-center gap-2 text-[13px] text-text-primary/85"
+        <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-xl border border-white/15 bg-white/[0.02] sm:mt-5">
+          <div className="flex min-h-[120px] flex-1 flex-col p-3 sm:min-h-[132px] sm:p-4">
+            <AnimatePresence mode="wait">
+              {phase === "thinking" ? (
+                <motion.div
+                  key="think"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="inline-flex items-center gap-2 text-[13px] text-text-primary/85"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300/90 animate-pulse" />
+                  Thinking...
+                </motion.div>
+              ) : phase === "answer" || phase === "done" ? (
+                <motion.div
+                  key="answer"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="space-y-2"
+                >
+                  {pass === 0 ? (
+                    <>
+                      <p className="text-[14px] leading-relaxed text-text-primary/95 sm:text-[14.5px]">
+                        For a healthy 42-year-old non-smoker, a $500k 20-year term policy typically fits in the mid-range monthly
+                        band. If underwriting comes back preferred, the monthly premium can drop meaningfully.
+                      </p>
+                      <p className="text-[13px] leading-relaxed text-text-secondary/90">
+                        <span className="text-emerald-200/90">Follow-up:</span> Should I quote conservative first, then show the
+                        preferred-class scenario once underwriting is confirmed?
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[14px] leading-relaxed text-text-primary/95 sm:text-[14.5px]">
+                        For a healthy 42-year-old non-smoker at $500k over twenty years, you are usually in the mid-range on monthly
+                        premium—and if underwriting comes back preferred, you can tighten that quote quite a bit.
+                      </p>
+                      <p className="text-[13px] leading-relaxed text-text-secondary/90">
+                        <span className="text-emerald-200/90">Follow-up question:</span>{" "}
+                        <span className="text-emerald-200/90">&ldquo;</span>
+                        <span className="text-white/95">
+                          Is there anything else I can help you with—coverage, riders, or how this monthly number fits your plan?
+                        </span>
+                        <span className="text-emerald-200/90">&rdquo;</span>
+                      </p>
+                      <p className="mt-2 text-[13px] text-text-dim/45" aria-hidden>
+                        ...
+                      </p>
+                    </>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="idle"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-1 flex-col items-center justify-center py-6 text-center sm:py-8"
+                >
+                  <p className="text-[13px] text-text-dim/70">Answer appears here after you send.</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="border-t border-white/10 p-3 pt-6 sm:p-4 sm:pt-7">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value=""
+                placeholder="Press Enter to get an answer"
+                aria-label="Press Enter to get an answer (demo)"
+                className="min-w-0 flex-1 cursor-default rounded-lg border border-white/10 bg-black/25 px-3 py-2.5 text-[13px] text-text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] placeholder:text-text-dim/55 outline-none focus-visible:ring-1 focus-visible:ring-emerald-400/35 sm:py-3"
+              />
+              <motion.span
+                animate={phase === "press" ? { scale: 0.92, y: 1 } : { scale: 1, y: 0 }}
+                transition={{ duration: 0.18, ease: "easeInOut" }}
+                className="inline-flex shrink-0 items-center justify-center rounded-full border border-[#4dc49a]/45 bg-gradient-to-b from-[#1fb388] via-green-primary to-[#127a5c] px-3 py-2 text-[12px] font-semibold text-white shadow-[0_0_0_1px_rgba(26,157,120,0.4),0_3px_12px_rgba(26,157,120,0.35)] sm:py-2.5"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300/90 animate-pulse" />
-                Thinking...
-              </motion.div>
-            ) : phase === "answer" || phase === "done" ? (
-              <motion.div
-                key="answer"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                className="space-y-2 rounded-xl border border-white/15 bg-white/[0.02] p-3"
-              >
-                {pass === 0 ? (
-                  <>
-                    <p className="text-[14px] leading-relaxed text-text-primary/95 sm:text-[14.5px]">
-                      For a healthy 42-year-old non-smoker, a $500k 20-year term policy typically fits in the mid-range monthly
-                      band. If underwriting comes back preferred, the monthly premium can drop meaningfully.
-                    </p>
-                    <p className="text-[13px] leading-relaxed text-emerald-200/90">
-                      Follow-up: Should I quote conservative first, then show the preferred-class scenario once underwriting is confirmed?
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[14px] leading-relaxed text-text-primary/95 sm:text-[14.5px]">
-                      Estimated outcome: mid-range monthly premium for a 42-year-old healthy non-smoker at $500k over 20 years,
-                      with potential downward adjustment in a preferred underwriting class.
-                    </p>
-                    <p className="text-[13px] leading-relaxed text-emerald-200/90">
-                      Next question: Want me to present both a standard quote and a preferred-class best-case quote side by side?
-                    </p>
-                  </>
-                )}
-              </motion.div>
-            ) : (
-              <motion.p key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[13px] text-text-dim/70">
-                Press Enter
-              </motion.p>
-            )}
-          </AnimatePresence>
+                Enter
+              </motion.span>
+            </div>
+          </div>
         </div>
-        <div className="h-2 sm:h-3" aria-hidden />
       </div>
     </article>
   );
@@ -181,22 +195,14 @@ function EnterInstantAnswerShowcaseCard() {
 
 function NotesRetrievalShowcaseCard() {
   const segments = [
-    "Customer profile: 42 years old, married, two kids, focused on income protection.",
-    "Health snapshot: non-smoker, no major conditions mentioned so far.",
-    "Coverage target: $500k for a 20-year term, open to adjusting later.",
-  ] as const;
-  const noteConnections = [
-    "AI extracts the customer's household and protection intent.",
-    "AI evaluates underwriting quality from health and tobacco signals.",
-    "AI anchors estimate to requested coverage and term length.",
-    "AI aligns messaging to protection-first positioning.",
-    "AI checks for preferred-class pricing upside.",
-    "AI combines everything into a single actionable insight.",
+    "42, married, 2 kids — income protection",
+    "Non-smoker, no flags yet",
+    "$500k · 20yr term (flexible)",
   ] as const;
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<"idle" | "thinking" | "done">("idle");
   const ranRef = useRef(false);
-  const rowHeight = 36;
+  const rowHeight = 32;
   const rowGap = 6;
   const rowStep = rowHeight + rowGap;
 
@@ -220,11 +226,18 @@ function NotesRetrievalShowcaseCard() {
   }, [phase, segments.length]);
 
   return (
-    <article className="relative h-full min-h-[348px] overflow-hidden rounded-3xl border border-transparent bg-transparent p-4 sm:min-h-[372px] sm:p-6 shadow-none">
-      <h3 className="mt-1 text-[1.35rem] font-semibold tracking-tight text-text-primary sm:mt-2 sm:text-[1.8rem]">Connect your notes with the AI</h3>
-      <div className="relative mt-5 h-[272px] overflow-hidden rounded-2xl border border-white/18 bg-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] backdrop-blur-xl backdrop-saturate-150 sm:mt-6 sm:h-[292px]">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }} className="flex h-full flex-col p-3">
-          <div className="relative h-[142px] overflow-hidden rounded-xl border border-white/15 bg-white/[0.06] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-xl backdrop-saturate-150 sm:h-[150px]">
+    <article className="relative h-full min-h-[396px] overflow-hidden rounded-3xl border border-transparent bg-transparent p-4 sm:min-h-[420px] sm:p-5 shadow-none">
+      <h3 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:mt-2 sm:text-[1.9rem]">Connect your notes with the AI</h3>
+      <p className="mt-2 text-sm text-text-muted sm:text-[0.95rem]">Notes turn into short, speak-ready lines for live calls.</p>
+      <div className="relative mt-4 h-[272px] overflow-hidden rounded-2xl border border-white/[0.14] bg-black/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl backdrop-saturate-150 sm:mt-5 sm:h-[292px]">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-black/30" aria-hidden />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+          className="relative flex h-full flex-col p-3 sm:p-4"
+        >
+          <div className="relative h-[128px] overflow-hidden rounded-xl border border-white/[0.12] bg-black/35 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl backdrop-saturate-150 sm:h-[136px]">
             <motion.div
               aria-hidden
               className="pointer-events-none absolute left-1.5 right-1.5 rounded-full border border-emerald-300/35 bg-emerald-300/12"
@@ -237,7 +250,7 @@ function NotesRetrievalShowcaseCard() {
                 <p
                   key={s}
                   className={cn(
-                    "h-9 truncate whitespace-nowrap px-2 text-[13px] leading-9 transition-all duration-300 sm:text-[13.5px]",
+                    "h-8 truncate whitespace-nowrap px-2 font-mono text-[11px] leading-8 antialiased transition-all duration-300 sm:text-[12px] sm:leading-8",
                     i === idx
                       ? "text-emerald-100"
                       : "text-text-secondary/80"
@@ -265,15 +278,29 @@ function NotesRetrievalShowcaseCard() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.22 }}
-                className="mt-2 min-h-[104px] rounded-lg border border-white/15 bg-white/[0.06] px-2.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-xl backdrop-saturate-150 sm:min-h-[112px]"
+                className="mt-2 flex min-h-0 flex-1 flex-col rounded-xl border border-emerald-400/40 bg-black/35 px-2.5 py-2.5 shadow-[inset_0_1px_0_rgba(52,211,153,0.08),0_0_24px_-8px_rgba(52,211,153,0.15)] backdrop-blur-xl backdrop-saturate-150"
               >
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-emerald-200/80">Insights</p>
-                  <div className="mt-1 h-px w-full bg-white/10" />
-                  <p className="mt-1 text-[12px] leading-relaxed text-text-primary sm:text-[12.5px]">
-                    Based on the highlighted note, AI recommends a protection-first quote for a healthy customer in their early
-                    40s: start with a mid-range monthly estimate for $500k over 20 years, then tighten the number after
-                    underwriting details are confirmed.
+                <div className="flex min-h-0 flex-1 flex-col font-mono">
+                  <p className="text-[11px] leading-relaxed text-emerald-100/95 sm:text-[12px]">
+                    $500k·20yr (flex) → mid mo, protect income first
+                  </p>
+                  <p
+                    className="mt-1.5 text-[11px] leading-relaxed text-text-secondary/60 sm:text-[12px]"
+                    style={{ filter: "blur(0.85px)", opacity: 0.68 }}
+                  >
+                    + earlier lines: clean health — lock $ after UW
+                  </p>
+                  <p
+                    className="mt-1.5 text-[10px] leading-relaxed text-text-dim/55 sm:text-[11px]"
+                    style={{ filter: "blur(1.2px)", opacity: 0.52 }}
+                  >
+                    → if UW comes back strong, flag preferred-class band
+                  </p>
+                  <p
+                    className="mt-1.5 text-[9.5px] leading-relaxed text-text-dim/45 sm:text-[10px]"
+                    style={{ filter: "blur(1.45px)", opacity: 0.4 }}
+                  >
+                    → next touch: confirm face + term w/ spouse timeline
                   </p>
                 </div>
               </motion.div>
@@ -288,27 +315,41 @@ function NotesRetrievalShowcaseCard() {
 function MeetingCaptureShowcaseCard() {
   return (
     <article className="relative overflow-hidden rounded-3xl border border-transparent bg-transparent p-4 sm:p-5">
-      <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/75">After the call</p>
-      <h3 className="mt-2.5 text-2xl font-semibold tracking-tight text-text-primary sm:mt-3 sm:text-[1.95rem]">Every meeting, captured clearly</h3>
+      <h3 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:mt-2 sm:text-[1.9rem]">Every meeting, captured clearly</h3>
 
       <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.02] px-3.5 py-3.5 backdrop-blur-xl sm:mt-6">
         <div className="px-1 py-1">
           <p className="text-[10px] uppercase tracking-[0.14em] text-text-dim/80">Transcript saved</p>
-          <div className="mt-2 space-y-1.5 font-mono text-[12px] leading-relaxed text-text-secondary/85">
-            <p>
-              <span className="text-blue-300/95">You:</span> "Looking at $500k over 20 years with a focus on protecting family income."
+          <div className="mt-2 space-y-1.5 font-mono text-[11.5px] leading-relaxed text-text-secondary/85 sm:text-[12px]">
+            <p style={{ filter: "blur(1px)", opacity: 0.82 }}>
+              <span className="text-blue-300/95">Client:</span> &ldquo;$500k, 20 years—mainly protecting household income.&rdquo;
             </p>
-            <p>
-              <span className="text-orange-300/95">Rep:</span> "Great, we can anchor protection first, then refine pricing by underwriting class."
+            <p style={{ filter: "blur(1.2px)", opacity: 0.74 }}>
+              <span className="text-orange-300/95">You:</span> &ldquo;Healthy 42, non-smoker, $500k/20yr—think mid monthly; preferred after UW, you can quote
+              meaningfully lower.&rdquo;
             </p>
-            <p>
-              <span className="text-text-dim/70">Transcript:</span> "Client asks monthly estimate, coverage flexibility, and follow-up timeline."
+            <p style={{ filter: "blur(1.45px)", opacity: 0.64 }}>
+              <span className="text-blue-300/95">Client:</span> &ldquo;If they&rsquo;re preferred, can we show a lower monthly too?&rdquo;
             </p>
-            <p style={{ filter: "blur(1.6px)", opacity: 0.7 }}>
-              <span className="text-blue-300/95">You:</span> "If preferred class applies, can we show a lower best-case monthly option too?"
+            <p style={{ filter: "blur(1.75px)", opacity: 0.52 }}>
+              <span className="text-orange-300/95">You:</span> &ldquo;Anything else I can help with—coverage, riders, or how this monthly fits your plan?&rdquo;
             </p>
-            <p style={{ filter: "blur(2px)", opacity: 0.58 }}>
-              <span className="text-orange-300/95">Rep:</span> "Yes - I will present standard and preferred scenarios side by side on follow-up."
+          </div>
+
+          <div className="mt-4 border-t border-white/10 px-1 pt-3">
+            <p className="flex flex-wrap items-baseline gap-0.5 font-mono text-[11px] leading-relaxed sm:text-[12px]">
+              <span className="text-white">Creating analysis of meeting</span>
+              <span className="inline-flex translate-y-[0.5px] pl-0.5 text-[1.05em] font-medium leading-none text-emerald-300">
+                {[0, 0.15, 0.3].map((delay, i) => (
+                  <motion.span
+                    key={i}
+                    animate={{ opacity: [0.2, 1, 0.2] }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay }}
+                  >
+                    .
+                  </motion.span>
+                ))}
+              </span>
             </p>
           </div>
         </div>
@@ -1186,7 +1227,7 @@ export default function Home() {
             transition={{ duration: 0.45 }}
             className="mb-8 md:mb-10"
           >
-            <h2 className="text-left text-3xl sm:text-4xl lg:text-[2.55rem] font-semibold tracking-tight text-text-primary">
+            <h2 className="text-left text-4xl sm:text-5xl lg:text-[3.15rem] xl:text-[3.45rem] font-semibold tracking-[-0.025em] leading-[1.06] text-text-primary">
               How Persuaid works
             </h2>
           </motion.div>

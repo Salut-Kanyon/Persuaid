@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase/client";
 import { Navbar } from "@/components/ui/Navbar";
 import { PricingCard, PricingFeatureCheck } from "@/components/ui/PricingCard";
@@ -15,6 +15,41 @@ import { FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
 type BillingInterval = "monthly" | "yearly";
 
 const YEARLY_DISCOUNT = 0.2;
+
+const PRICING_FAQ_ITEMS = [
+  {
+    q: "What am I actually paying for?",
+    a: "Listening time each month. While Persuaid is connected to a live call, you can ask for as many answers and rebuttals as you need—there’s no cap on how many times you tap for help.",
+  },
+  {
+    q: "Why is Pro Plus more expensive?",
+    a: "Same experience as Pro—just more monthly listening time for people who live on the phone. It’s not a “team” plan and it isn’t priced per seat.",
+  },
+  {
+    q: "What if I blank mid-call?",
+    a: "That’s the point. You stay in the conversation; Persuaid pulls from what you’ve taught it and suggests what to say next before the silence gets awkward.",
+  },
+  {
+    q: "Can I change plans?",
+    a: "Yes. When your workload shifts, move up or down—billing catches up on your next cycle where our checkout supports it.",
+  },
+] as const;
+
+function PricingFaqChevron({ open }: { open: boolean }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex size-5 shrink-0 items-center justify-center text-text-muted transition-transform duration-200 ease-out",
+        open && "rotate-180"
+      )}
+      aria-hidden
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </span>
+  );
+}
 
 function PlanBadge({ variant, children }: { variant: "popular" | "best"; children: React.ReactNode }) {
   return (
@@ -36,6 +71,7 @@ export default function PricingPage() {
   const router = useRouter();
   const [interval, setInterval] = useState<BillingInterval>("monthly");
   const [checkoutLoading, setCheckoutLoading] = useState<"pro" | "team" | null>(null);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const startCheckout = async (plan: "pro" | "team") => {
     setCheckoutLoading(plan);
@@ -83,7 +119,7 @@ export default function PricingPage() {
     "flex min-h-[3.75rem] shrink-0 flex-col items-center justify-end pb-3 pt-1 sm:min-h-[4rem]";
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-gradient-to-b from-green-primary/[0.16] via-[color:var(--bg-near-black)] via-45% to-green-darker/[0.28]">
+    <main className="min-h-screen overflow-x-hidden bg-black">
       <Navbar landingLogo />
 
       <Section className="pt-20 pb-16 sm:pt-24 sm:pb-20 lg:pb-24">
@@ -95,7 +131,7 @@ export default function PricingPage() {
           className="mx-auto max-w-3xl text-center"
         >
           <h1 className="font-display text-4xl font-normal leading-[1.08] tracking-[-0.02em] text-text-primary sm:text-5xl lg:text-[3.25rem] xl:text-[3.5rem]">
-            Never freeze on a sales call again.
+            Never freeze on a call again.
           </h1>
           <p className="font-subtitle mx-auto mt-4 max-w-2xl text-balance text-lg font-normal leading-relaxed text-text-muted sm:mt-5 sm:text-xl lg:text-2xl lg:leading-snug">
             Real-time answers while you&apos;re still on the call.
@@ -155,11 +191,10 @@ export default function PricingPage() {
               )}
             >
               <h3 className="text-lg font-bold tracking-tight text-text-primary sm:text-xl">Free</h3>
-              <p className="mt-1 text-[13px] text-text-muted">Try it on real calls — no pressure.</p>
               <div className="mt-5 flex items-baseline gap-1">
                 <span className="text-3xl font-bold tracking-tight text-text-primary sm:text-[2.25rem]">$0</span>
               </div>
-              <ul className="mt-6 space-y-2 text-[13px] font-medium leading-snug">
+              <ul className="mt-6 space-y-2 text-[12px] font-medium leading-snug sm:text-[13px]">
                 <li className="flex gap-2">
                   <PricingFeatureCheck className="!h-5 !w-5" />
                   <span className="text-text-primary/90">Live AI support during calls</span>
@@ -179,7 +214,6 @@ export default function PricingPage() {
                   </span>
                 </li>
               </ul>
-              <p className="mt-4 text-[11px] leading-relaxed text-text-dim">Perfect for testing real conversations</p>
               <div className="min-h-0 flex-1" aria-hidden />
               <div className="pt-6">
                 <CTAButton variant="secondary" className="w-full" href="/download">
@@ -198,14 +232,12 @@ export default function PricingPage() {
               name="Persuaid Pro"
               price={proPrice}
               period={`/month${periodSuffix}`}
-              description="For reps who want to sound sharp every time."
               features={[
                 "Generous monthly live call listening",
                 "Instant answers, rebuttals, and follow-ups while you’re talking",
                 "Uses your product knowledge, pricing, and notes in real time",
                 "Saved transcripts with coaching insights after every call",
               ]}
-              footnote="Your safety net on every call"
               cta="Subscribe"
               tier="featured"
               className="min-h-0 flex-1 md:scale-[1.03] md:shadow-xl lg:scale-[1.04]"
@@ -223,14 +255,12 @@ export default function PricingPage() {
               name="Persuaid Pro Plus"
               price={proPlusPrice}
               period={`/month${periodSuffix}`}
-              description="For people with heavy call volume who want more airtime every month."
               features={[
                 "Maximum monthly live call listening",
                 "Instant answers, rebuttals, and follow-ups while you’re talking",
                 "Uses your product knowledge, pricing, and notes in real time",
                 "Saved transcripts with coaching insights after every call",
               ]}
-              footnote="More airtime, same unlimited help"
               cta="Subscribe"
               tier="bestDeal"
               className="min-h-0 flex-1 md:scale-[1.03] md:shadow-xl lg:scale-[1.04]"
@@ -276,30 +306,41 @@ export default function PricingPage() {
           <p className="mx-auto mt-3 max-w-lg text-center text-sm text-text-muted">
             Straight answers—no spreadsheet required.
           </p>
-          <div className="mt-10 space-y-4">
-            {[
-              {
-                q: "What am I actually paying for?",
-                a: "Listening time each month. While Persuaid is connected to a live call, you can ask for as many answers and rebuttals as you need—there’s no cap on how many times you tap for help.",
-              },
-              {
-                q: "Why is Pro Plus more expensive?",
-                a: "Same experience as Pro—just more monthly listening time for people who live on the phone. It’s not a “team” plan and it isn’t priced per seat.",
-              },
-              {
-                q: "What if I blank mid-call?",
-                a: "That’s the point. You stay in the conversation; Persuaid pulls from what you’ve taught it and suggests what to say next before the silence gets awkward.",
-              },
-              {
-                q: "Can I change plans?",
-                a: "Yes. When your workload shifts, move up or down—billing catches up on your next cycle where our checkout supports it.",
-              },
-            ].map((faq) => (
-              <div key={faq.q} className="rounded-xl border border-border/50 bg-background-surface/40 p-5">
-                <h3 className="text-sm font-semibold text-text-primary">{faq.q}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-text-muted">{faq.a}</p>
-              </div>
-            ))}
+          <div className="mt-10 overflow-hidden rounded-2xl border border-border/50 bg-background-surface/25">
+            {PRICING_FAQ_ITEMS.map((faq, index) => {
+              const isOpen = openFaqIndex === index;
+              return (
+                <div key={faq.q} className="border-b border-border/35 last:border-b-0">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaqIndex(isOpen ? null : index)}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition-colors sm:px-5 sm:py-5",
+                      "hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-accent/40 focus-visible:ring-inset"
+                    )}
+                    aria-expanded={isOpen}
+                  >
+                    <span className="text-sm font-semibold text-text-primary sm:text-[15px]">{faq.q}</span>
+                    <PricingFaqChevron open={isOpen} />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22, ease: "easeOut" }}
+                        className="overflow-hidden"
+                      >
+                        <p className="px-4 pb-4 text-sm leading-relaxed text-text-muted sm:px-5 sm:pb-5 sm:text-[15px]">
+                          {faq.a}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </div>
         </motion.div>
       </Section>

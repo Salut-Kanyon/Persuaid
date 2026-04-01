@@ -19,11 +19,11 @@ export function LandingPreFooterCta() {
               id="pre-footer-cta-heading"
               className="text-[1.65rem] font-semibold leading-[1.15] tracking-tight text-white sm:text-3xl md:text-[2.15rem]"
             >
-              Sales AI that helps during the call—not after.
+              Accurate AI, anchored in your knowledge.
             </h2>
             <p className="mt-4 text-base leading-relaxed text-text-muted sm:text-[17px]">
-              Persuaid turns product knowledge into something reps can actually use in the moment. Try it on your next
-              call.
+              Persuaid draws on what you add—your facts, files, and notes—so answers stay specific and reliable instead of
+              generic.
             </p>
 
             <motion.a
