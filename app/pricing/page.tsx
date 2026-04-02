@@ -316,7 +316,7 @@ export default function PricingPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.4 }}
-          className="mx-auto mt-16 max-w-3xl px-4 sm:px-6 lg:px-8"
+          className="mx-auto mt-16 max-w-3xl px-4 pb-20 sm:px-6 sm:pb-24 lg:px-8 lg:pb-28"
         >
           <header className="text-center">
             <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/85">FAQ</p>
@@ -327,7 +327,7 @@ export default function PricingPage() {
               Straight answers—no spreadsheet required.
             </p>
           </header>
-          <div className="mt-10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_22px_60px_-34px_rgba(0,0,0,0.85)]">
+          <div className="mt-14 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_22px_60px_-34px_rgba(0,0,0,0.85)] sm:mt-16 lg:mt-[4.25rem]">
             {PRICING_FAQ_ITEMS.map((faq, index) => {
               const isOpen = openFaqIndex === index;
               return (

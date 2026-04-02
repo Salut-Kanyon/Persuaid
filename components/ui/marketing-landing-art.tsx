@@ -6,8 +6,22 @@ import { cn } from "@/lib/utils";
 export function PricingCluelyStyleHero() {
   return (
     <div className="mx-auto max-w-[46rem] px-1 text-center">
-      <h1 className="text-center font-sans text-[clamp(1.85rem,6vw,3.55rem)] font-semibold leading-[1.07] tracking-[-0.028em] text-balance text-emerald-300/95">
-        Start for free.
+      <h1
+        className={cn(
+          "flex flex-nowrap items-center justify-center gap-x-2 text-balance font-display font-normal tracking-[-0.02em] text-white",
+          "text-[clamp(2.55rem,8vw,4.35rem)] leading-[1.05] sm:gap-x-2.5 md:gap-x-3"
+        )}
+      >
+        <span className="whitespace-nowrap">Start</span>
+        {/* eslint-disable-next-line @next/next/no-img-element -- static asset, pricing hero mark */}
+        <img
+          src="/images/pricing-p-mark.png"
+          alt=""
+          width={128}
+          height={128}
+          className="h-[5rem] w-[5rem] shrink-0 object-contain sm:h-[6rem] sm:w-[6rem] md:h-[6.75rem] md:w-[6.75rem]"
+        />
+        <span className="whitespace-nowrap">for free.</span>
       </h1>
       <p className="font-subtitle mx-auto mt-8 max-w-xl px-2 text-center text-[16.5px] font-normal leading-[1.55] tracking-[-0.012em] text-text-secondary sm:mt-9 sm:max-w-2xl sm:text-[17.5px] sm:leading-[1.6]">
         Whether you&apos;re already solid and just want a little backup on calls, or someone newer trying to learn the
