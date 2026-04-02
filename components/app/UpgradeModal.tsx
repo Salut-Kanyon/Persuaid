@@ -13,13 +13,6 @@ interface UpgradeModalProps {
   plan: Plan;
 }
 
-/** Dark shell — no green wash on the modal frame (CTA stays brand green). */
-const MODAL_SHELL = {
-  shell: "border border-white/[0.08] bg-[color:var(--bg-near-black)] shadow-2xl",
-  glow: "bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.04)_0%,transparent_65%)]",
-  topLine: "from-transparent via-white/15 to-transparent",
-};
-
 function copyForPlan(plan: Plan) {
   switch (plan) {
     case "pro":
@@ -55,16 +48,16 @@ function copyForPlan(plan: Plan) {
     default:
       return {
         badge: "",
-        title: "You’ve used your included time",
+        title: "Unlock Pro",
         message:
-          "Your free monthly minutes are used up for now. Upgrade for more live call time each month, or wait until next month to use the free tier again.",
+          "Get full access to live guidance, call analysis, and the complete Persuaid experience.",
         bullets: [
-          "Unlimited AI suggestions on every call",
-          "Real-time coaching & follow-up questions",
-          "Generate analysis on saved calls",
+          "Live guidance during calls",
+          "Analysis for saved conversations",
+          "Full access to Pro features",
         ],
-        primaryLabel: "See pricing & upgrade →",
-        footnote: "More live call time each month on Pro · Cancel anytime",
+        primaryLabel: "Upgrade to Pro",
+        footnote: "Cancel anytime",
         primaryOpensPricing: true,
       };
   }
@@ -87,53 +80,51 @@ export function UpgradeModal({ open, onClose, plan }: UpgradeModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-5 sm:p-8"
       role="dialog"
       aria-modal="true"
       aria-labelledby="upgrade-modal-title"
     >
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-md"
+        className="absolute inset-0 bg-black/55 backdrop-blur-[14px] transition-opacity duration-300"
         onClick={onClose}
         aria-hidden="true"
       />
       <div
         className={cn(
-          "relative w-full max-w-lg overflow-hidden rounded-3xl",
-          "animate-in fade-in zoom-in-95 duration-300",
-          MODAL_SHELL.shell
+          "relative w-full max-w-[400px] overflow-hidden rounded-[20px]",
+          "border border-white/[0.07]",
+          "bg-[#0e0e0f]/95 shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset,0_32px_100px_-24px_rgba(0,0,0,0.85),0_0_1px_rgba(0,0,0,0.5)]",
+          "backdrop-blur-2xl",
+          "animate-in fade-in zoom-in-[0.985] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
         )}
       >
         <div
-          className={cn(
-            "absolute inset-x-0 top-0 h-px bg-gradient-to-r to-transparent",
-            MODAL_SHELL.topLine
-          )}
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.09] to-transparent"
+          aria-hidden
         />
         <div
-          className={cn(
-            "pointer-events-none absolute left-1/2 top-0 h-40 w-[28rem] -translate-x-1/2 blur-2xl",
-            MODAL_SHELL.glow
-          )}
+          className="pointer-events-none absolute -top-24 left-1/2 h-48 w-[min(100%,28rem)] -translate-x-1/2 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.045)_0%,transparent_72%)]"
+          aria-hidden
         />
 
-        <div className="relative p-8">
-          <div className="mb-6 flex flex-col items-center">
-            <div className="flex items-end gap-0">
+        <div className="relative px-8 pb-9 pt-11 sm:px-10 sm:pb-10 sm:pt-12">
+          <div className="mb-10 flex flex-col items-center">
+            <div className="flex items-end justify-center gap-0 opacity-[0.92]">
               <img
                 src={PERSUAID_MARK_PNG}
-                alt="Persuaid"
-                className="h-12 w-12 flex-shrink-0 object-contain"
+                alt=""
+                className="h-8 w-8 flex-shrink-0 object-contain translate-y-0.5"
+                width={32}
+                height={32}
               />
-              <span className="-ml-1 translate-y-1 text-2xl font-bold tracking-tight text-text-primary">
+              <span className="-ml-0.5 translate-y-1 text-[1.125rem] font-semibold tracking-[-0.02em] text-text-primary/90">
                 ersuaid
               </span>
             </div>
             {copy.badge ? (
-              <span
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-white/[0.04] px-3 py-1 text-xs font-semibold text-text-secondary"
-              >
-                <svg className="h-3.5 w-3.5 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+              <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium tracking-wide text-text-muted">
+                <svg className="h-3 w-3 text-text-dim/80" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
                   <path
                     fillRule="evenodd"
                     d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
@@ -147,29 +138,35 @@ export function UpgradeModal({ open, onClose, plan }: UpgradeModalProps) {
 
           <h2
             id="upgrade-modal-title"
-            className="mb-2 text-center text-xl font-bold tracking-tight text-text-primary sm:text-2xl"
+            className="text-center text-[1.375rem] font-semibold leading-[1.2] tracking-[-0.035em] text-text-primary sm:text-[1.5rem]"
           >
             {copy.title}
           </h2>
-          <p className="mx-auto mb-6 max-w-sm text-center text-sm text-text-muted sm:text-base">
+          <p className="mx-auto mt-3 max-w-[19rem] text-center text-[15px] leading-relaxed text-text-muted/95">
             {copy.message}
           </p>
 
-          <ul className="mb-8 space-y-3">
+          <ul className="mb-10 mt-9 space-y-2.5">
             {copy.bullets.map((benefit, i) => (
-              <li key={i} className="flex items-center gap-3 text-sm text-text-secondary">
-                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-green-primary/20">
+              <li
+                key={i}
+                className="flex items-start gap-3 text-[13px] leading-snug text-text-secondary/95"
+              >
+                <span
+                  className="mt-[3px] flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03]"
+                  aria-hidden
+                >
                   <svg
-                    className="h-3 w-3 text-green-primary"
+                    className="h-2.5 w-2.5 text-text-dim/90"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
-                    strokeWidth={3}
+                    strokeWidth={2.25}
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </span>
-                {benefit}
+                <span className="min-w-0 pt-px">{benefit}</span>
               </li>
             ))}
           </ul>
@@ -178,24 +175,28 @@ export function UpgradeModal({ open, onClose, plan }: UpgradeModalProps) {
             type="button"
             onClick={handlePrimary}
             className={cn(
-              "w-full rounded-2xl px-6 py-4 text-base font-semibold transition-all duration-200",
-              "bg-gradient-to-r from-green-primary to-emerald-500 text-black",
-              "hover:from-green-accent hover:to-emerald-400 hover:shadow-lg hover:shadow-green-primary/25",
-              "hover:scale-[1.02] active:scale-[0.98]",
-              "border-0 focus:outline-none focus:ring-2 focus:ring-green-primary focus:ring-offset-2 focus:ring-offset-[color:var(--bg-near-black)]"
+              "w-full rounded-[13px] px-5 py-3.5 text-[15px] font-semibold tracking-[-0.015em] text-white",
+              "bg-[#1a9d78] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]",
+              "transition-[background-color,box-shadow,filter] duration-200 ease-out",
+              "hover:brightness-[1.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_8px_28px_-12px_rgba(26,157,120,0.45)]",
+              "active:brightness-[0.96] active:scale-[0.995]",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0e0e0f]"
             )}
           >
             {copy.primaryLabel}
           </button>
-          <p className="mt-3 text-center text-xs text-text-dim">{copy.footnote}</p>
+
+          <p className="mt-5 text-center text-[11px] font-normal tracking-[0.02em] text-text-dim/55">
+            {copy.footnote}
+          </p>
 
           {copy.primaryOpensPricing && (
             <button
               type="button"
               onClick={onClose}
-              className="mt-4 w-full py-2 text-xs font-medium text-text-dim transition-colors hover:text-text-muted"
+              className="mt-6 w-full py-1.5 text-[13px] font-normal text-text-dim/65 transition-colors duration-200 hover:text-text-muted/90 focus:outline-none focus-visible:underline"
             >
-              Maybe later
+              Not now
             </button>
           )}
         </div>

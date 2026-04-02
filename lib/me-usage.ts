@@ -9,6 +9,32 @@ import {
 
 let sttUsageTableMissingCached = false;
 
+/** Row shape from `stt_usage_events` (duration aggregation). */
+export type SttUsageRow = {
+  started_at?: unknown;
+  ended_at?: unknown;
+  duration_seconds?: unknown;
+};
+
+/**
+ * Same minute math as monthly billing: sum seconds from rows, then ceil to whole minutes.
+ * Exported so Analytics can align with the Usage card.
+ */
+export function computeUsedMinutesFromSttRows(rows: SttUsageRow[] | null | undefined): number {
+  const nowMs = Date.now();
+  const usedSeconds = (rows ?? []).reduce((acc, r) => {
+    const stored = Number(r.duration_seconds) || 0;
+    if (stored > 0) return acc + stored;
+    const started = typeof r.started_at === "string" ? Date.parse(r.started_at) : NaN;
+    if (!Number.isFinite(started)) return acc;
+    const ended = typeof r.ended_at === "string" ? Date.parse(r.ended_at) : NaN;
+    const endMs = Number.isFinite(ended) ? ended : nowMs;
+    const sec = Math.max(0, Math.round((endMs - started) / 1000));
+    return acc + sec;
+  }, 0);
+  return Math.max(0, Math.ceil(usedSeconds / 60));
+}
+
 export type MeUsagePayload = {
   plan: Plan;
   limitMinutes: number;
@@ -53,21 +79,7 @@ export async function computeMeUsage(
   let usedMinutes = 0;
   if (!qErr) {
     sttUsageTableMissingCached = false;
-    const nowMs = Date.now();
-    const usedSeconds = (rows ?? []).reduce((acc, r) => {
-      const rr = r as { started_at?: unknown; ended_at?: unknown; duration_seconds?: unknown };
-      const stored = Number(rr.duration_seconds) || 0;
-      if (stored > 0) return acc + stored;
-      const started = typeof rr.started_at === "string" ? Date.parse(rr.started_at) : NaN;
-      if (!Number.isFinite(started)) return acc;
-      const ended = typeof rr.ended_at === "string" ? Date.parse(rr.ended_at) : NaN;
-      const endMs = Number.isFinite(ended) ? ended : nowMs;
-      const sec = Math.max(0, Math.round((endMs - started) / 1000));
-      return acc + sec;
-    }, 0);
-
-    // Bill/limit in minutes; count partial minutes as a full minute.
-    usedMinutes = Math.max(0, Math.ceil(usedSeconds / 60));
+    usedMinutes = computeUsedMinutesFromSttRows(rows as SttUsageRow[]);
   } else if (tableMissing) {
     sttUsageTableMissingCached = true;
     // Backward-compatible fallback until migration 009 is applied.

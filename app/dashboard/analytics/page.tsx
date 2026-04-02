@@ -53,6 +53,8 @@ export default function AnalyticsPage() {
     summary,
     callsOverTime,
     formatDuration,
+    usesLiveListeningAnalytics,
+    liveListening,
   } = useAnalytics();
   const [chartRange, setChartRange] = useState<ChartRange>(30);
   const [usage, setUsage] = useState<UsagePayload | null>(null);
@@ -141,8 +143,11 @@ export default function AnalyticsPage() {
   }
 
   const chartData = callsOverTime(chartRange);
-  const callsLast7Days = callsOverTime(7).reduce((acc, d) => acc + d.calls, 0);
-  const avgCallLength =
+  const callsLast7Days =
+    usesLiveListeningAnalytics && liveListening
+      ? liveListening.last7DaysEventCount
+      : callsOverTime(7).reduce((acc, d) => acc + d.calls, 0);
+  const avgCallLengthFromSessions =
     summary.totalCalls === 0 ? 0 : Math.round(summary.totalTalkTimeMinutes / summary.totalCalls);
   const usagePctExact =
     usage && usage.limitMinutes > 0 ? (usage.usedMinutes / usage.limitMinutes) * 100 : 0;
@@ -165,6 +170,11 @@ export default function AnalyticsPage() {
           <p className="text-sm text-text-muted mt-0.5">
             Call performance and AI coaching insights
           </p>
+          {usesLiveListeningAnalytics && (
+            <p className="text-xs text-text-dim/90 mt-2 max-w-xl">
+              Summary metrics use live listening for the current month (same source as Usage below).
+            </p>
+          )}
         </div>
       </header>
 
@@ -173,23 +183,31 @@ export default function AnalyticsPage() {
           {/* Top summary cards */}
           <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <AnalyticsCard
-              label="Total calls"
+              label={usesLiveListeningAnalytics ? "Live sessions (month)" : "Total calls"}
               value={summary.totalCalls}
               icon={ICON_CALL}
             />
             <AnalyticsCard
-              label="Total talk time"
+              label={usesLiveListeningAnalytics ? "Live time (month)" : "Total talk time"}
               value={formatDuration(summary.totalTalkTimeMinutes)}
               icon={ICON_CLOCK}
             />
             <AnalyticsCard
-              label="Calls (last 7 days)"
+              label={usesLiveListeningAnalytics ? "Sessions (last 7 days)" : "Calls (last 7 days)"}
               value={callsLast7Days}
               icon={ICON_TREND}
             />
             <AnalyticsCard
-              label="Avg call length"
-              value={avgCallLength ? `${avgCallLength} min` : "—"}
+              label={usesLiveListeningAnalytics ? "Avg session (month)" : "Avg call length"}
+              value={
+                usesLiveListeningAnalytics && liveListening
+                  ? liveListening.avgSessionLengthMinutes > 0
+                    ? `${liveListening.avgSessionLengthMinutes} min`
+                    : "—"
+                  : avgCallLengthFromSessions
+                    ? `${avgCallLengthFromSessions} min`
+                    : "—"
+              }
               icon={ICON_TAG}
             />
           </section>
