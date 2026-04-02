@@ -13,7 +13,7 @@ import { useSettings } from "@/components/app/settings/useSettings";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import type { ExportFormat } from "@/lib/settings";
 import { openMarketingPricing } from "@/lib/electron-client";
-import { computeMeUsage } from "@/lib/me-usage";
+import { loadMeUsageForClient } from "@/lib/me-usage";
 
 function getEmailInitial(email: string | undefined): string {
   if (!email) return "?";
@@ -95,7 +95,16 @@ export default function SettingsPage() {
           }
           return;
         }
-        const result = await computeMeUsage(supabase, user.id, user.email ?? undefined);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const result = await loadMeUsageForClient(
+          supabase,
+          session?.access_token,
+          user.id,
+          user.email ?? undefined,
+          plan ?? undefined
+        );
         if (cancelled) return;
         if (!result.ok) {
           setUsage(null);

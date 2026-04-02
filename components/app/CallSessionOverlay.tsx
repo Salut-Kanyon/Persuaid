@@ -43,14 +43,20 @@ export function CallSessionOverlay() {
       ? Date.parse(callStartedAtIso)
       : approxStartRef.current;
   const freeDesktopCountdown = isElectronApp() && plan === "free";
-  /** Seconds allowed this session: min(per-session cap, monthly minutes left × 60). */
+  /** Seconds allowed this session: free desktop caps per session; paid uses remaining monthly minutes. */
   const sessionCapSecRef = useRef<number | null>(null);
+  const lastCallStartedIsoRef = useRef<string | null>(null);
+  if (callStartedAtIso !== lastCallStartedIsoRef.current) {
+    lastCallStartedIsoRef.current = callStartedAtIso;
+    sessionCapSecRef.current = null;
+  }
   if (sessionCapSecRef.current === null) {
     const remMin = remainingLiveMinutes ?? FREE_PLAN_MONTHLY_MINUTES;
-    sessionCapSecRef.current = Math.min(
-      FREE_PLAN_ELECTRON_CALL_MAX_SECONDS,
-      Math.max(0, remMin) * 60
-    );
+    const remSec = Math.max(0, remMin) * 60;
+    sessionCapSecRef.current =
+      isElectronApp() && plan === "free"
+        ? Math.min(FREE_PLAN_ELECTRON_CALL_MAX_SECONDS, remSec)
+        : remSec;
   }
   const sessionCapSec = sessionCapSecRef.current;
   const [tick, setTick] = useState(0);

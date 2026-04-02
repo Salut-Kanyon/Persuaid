@@ -8,7 +8,8 @@ import { AnalyticsChart } from "@/components/app/analytics/AnalyticsChart";
 import { supabase } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { openMarketingPricing } from "@/lib/electron-client";
-import { computeMeUsage } from "@/lib/me-usage";
+import { loadMeUsageForClient } from "@/lib/me-usage";
+import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 
 type ChartRange = 7 | 30 | 90;
 
@@ -48,6 +49,7 @@ type UsagePayload = {
 
 export default function AnalyticsPage() {
   const router = useRouter();
+  const { plan } = useEntitlements();
   const {
     loading,
     summary,
@@ -78,7 +80,16 @@ export default function AnalyticsPage() {
           return;
         }
 
-        const result = await computeMeUsage(supabase, user.id, user.email ?? undefined);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const result = await loadMeUsageForClient(
+          supabase,
+          session?.access_token,
+          user.id,
+          user.email ?? undefined,
+          plan ?? undefined
+        );
         if (!mounted) return;
         if (!result.ok) {
           setUsage(null);
@@ -108,7 +119,7 @@ export default function AnalyticsPage() {
       window.removeEventListener("focus", onFocus);
       window.clearInterval(id);
     };
-  }, []);
+  }, [plan]);
 
   if (loading) {
     return (

@@ -12,7 +12,7 @@ import { supabase } from "@/lib/supabase/client";
 import { UpgradeModal } from "@/components/app/UpgradeModal";
 import type { Plan } from "@/lib/entitlements";
 import { resolveEffectivePlan } from "@/lib/agency";
-import { computeMeUsage } from "@/lib/me-usage";
+import { loadMeUsageForClient } from "@/lib/me-usage";
 
 interface EntitlementsContextValue {
   plan: Plan | null;
@@ -83,8 +83,13 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
       }
       setPlan(nextPlan);
 
-      // Direct Supabase (same as /api/me/usage) so Electron’s static build without Next API stays accurate.
-      const usageResult = await computeMeUsage(supabase, user.id, user.email ?? undefined);
+      const usageResult = await loadMeUsageForClient(
+        supabase,
+        session.access_token,
+        user.id,
+        user.email ?? undefined,
+        nextPlan
+      );
       if (usageResult.ok) {
         const remaining = usageResult.data.remainingMinutes;
         setRemainingLiveMinutes(remaining);

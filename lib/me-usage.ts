@@ -53,9 +53,17 @@ export type MeUsagePayload = {
 export async function computeMeUsage(
   supabase: SupabaseClient,
   userId: string,
-  email: string | null | undefined
+  email: string | null | undefined,
+  /**
+   * When set (e.g. client after /api/me/entitlements), skips `resolveEffectivePlan` so paywall bypass
+   * from server env still matches usage limits — `getPlanForUser` has no bypass env in the browser bundle.
+   */
+  options?: { effectivePlan?: Plan }
 ): Promise<{ ok: true; data: MeUsagePayload } | { ok: false; error: string }> {
-  const { plan } = await resolveEffectivePlan(supabase, userId, email ?? undefined);
+  const plan =
+    options?.effectivePlan !== undefined
+      ? options.effectivePlan
+      : (await resolveEffectivePlan(supabase, userId, email ?? undefined)).plan;
   const limitMinutes = transcriptionLimitMinutes(plan);
   const { startIso, endIso } = currentMonthBoundsUtc();
 
@@ -122,4 +130,32 @@ export async function computeMeUsage(
       limitLabel: formatUsageMinutes(limitMinutes),
     },
   };
+}
+
+/**
+ * Prefer GET /api/me/usage (server has paywall bypass env). Falls back to `computeMeUsage` with
+ * `effectivePlan` when the API is unreachable (e.g. offline Electron).
+ */
+export async function loadMeUsageForClient(
+  supabase: SupabaseClient,
+  accessToken: string | undefined,
+  userId: string,
+  email: string | null | undefined,
+  fallbackPlan?: Plan
+): Promise<{ ok: true; data: MeUsagePayload } | { ok: false; error: string }> {
+  if (accessToken) {
+    try {
+      const res = await fetch("/api/me/usage", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        return { ok: true, data: (await res.json()) as MeUsagePayload };
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return computeMeUsage(supabase, userId, email, {
+    effectivePlan: fallbackPlan,
+  });
 }
