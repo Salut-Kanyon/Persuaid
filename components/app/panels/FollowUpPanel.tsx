@@ -520,8 +520,8 @@ export function FollowUpPanel({ variant = "default" }: { variant?: FollowUpPanel
   const overlayLabel = "text-[9px] font-semibold uppercase tracking-[0.16em] text-white/38";
 
   const idleAnswerCopy = hasTranscript
-    ? "Waiting for a clearer moment — let the prospect ask a question or raise an objection, then press Assist."
-    : "When someone speaks, you’ll see lines here. Press Assist for what to say next, or type a specific question below.";
+    ? "Waiting for a clearer moment — let the prospect ask a question or raise an objection, then press Return or Enter."
+    : "When someone speaks, you’ll see lines here. Press Return or Enter for what to say next, or type a specific question in the box below.";
 
   /** Call overlay always shows My notes — never the AI-connected rewrite (`notesContext` is still sent to APIs). */
   const overlayNotesBody = useMemo(() => {
@@ -600,10 +600,6 @@ export function FollowUpPanel({ variant = "default" }: { variant?: FollowUpPanel
         )}
         style={{ ...overlayBlur, height: OVERLAY_CARD_H_PX }}
       >
-        <div className="flex h-11 shrink-0 items-center border-b border-white/[0.08] px-4">
-          <span className={overlayLabel}>Assist</span>
-        </div>
-
         <div
           ref={scrollContainerRef}
           className="h-[200px] shrink-0 overflow-y-auto overscroll-contain border-b border-white/[0.06] px-4 py-4"
@@ -647,7 +643,7 @@ export function FollowUpPanel({ variant = "default" }: { variant?: FollowUpPanel
             {overlayNotesBody.kind === "empty" ? (
               <p className="text-[12px] leading-relaxed text-white/38">
                 <span className="font-medium text-white/50">Nothing in My notes</span>. Add text in the Notes panel. If you use
-                Connect with AI, Assist still uses that for context — this view is always your wording only.
+                Connect with AI, we still use that for context — this view is always your wording only.
               </p>
             ) : overlayNotesBody.kind === "text" ? (
               overlayNotesBody.node
@@ -740,8 +736,8 @@ export function FollowUpPanel({ variant = "default" }: { variant?: FollowUpPanel
         ) : uiMode === "idle" ? (
           <div className="rounded-2xl border border-border/20 bg-background-elevated/40 p-4 text-sm text-text-dim/80">
             {hasTranscript
-              ? "Press Enter to generate what to say next."
-              : "Start the call, then press Enter for an answer."}
+              ? "Press Return or Enter to generate what to say next."
+              : "Start the call, then press Return or Enter for an answer."}
           </div>
         ) : (
           <>

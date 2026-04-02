@@ -174,8 +174,8 @@ function EnterInstantAnswerShowcaseCard() {
                 type="text"
                 readOnly
                 value=""
-                placeholder="Press Enter to get an answer"
-                aria-label="Press Enter to get an answer (demo)"
+                placeholder="Press Return or Enter to get an answer"
+                aria-label="Press Return or Enter to get an answer (demo)"
                 className="min-w-0 flex-1 cursor-default rounded-lg border border-white/10 bg-black/25 px-3 py-2.5 text-[13px] text-text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] placeholder:text-text-dim/55 outline-none focus-visible:ring-1 focus-visible:ring-emerald-400/35 sm:py-3"
               />
               <motion.span

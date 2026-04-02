@@ -52,7 +52,7 @@ export function AISuggestionsPanel() {
         {suggestions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-sm text-text-muted">
-              Press Enter or click Get suggestions to see AI tips for your conversation.
+              Press Return or Enter, or click Get suggestions, to see AI tips for your conversation.
             </p>
           </div>
         ) : (

@@ -6,6 +6,7 @@ import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
+import { LiveMicWaveform } from "@/components/app/LiveMicWaveform";
 import { FollowUpPanel } from "@/components/app/panels/FollowUpPanel";
 import { isElectronApp } from "@/lib/electron-client";
 import { FREE_PLAN_ELECTRON_CALL_MAX_SECONDS, FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
@@ -31,7 +32,7 @@ function getPersuaidApi(): PersuaidApi | undefined {
 }
 
 /**
- * Live-call HUD: inset from window edges. Hide removes the assist card and shortcut line — only the top pill stays;
+ * Live-call HUD: inset from window edges. Hide removes the follow-up card and shortcut line — only the top pill stays;
  * in the desktop app the native window height shrinks so the blurred/vibrant background matches.
  */
 export function CallSessionOverlay() {
@@ -144,6 +145,7 @@ export function CallSessionOverlay() {
                 height={20}
               />
             </div>
+            <LiveMicWaveform className="min-w-[52px]" />
             <p
               className={cn(
                 "truncate text-[11px] font-medium tabular-nums tracking-wide",
@@ -205,14 +207,7 @@ export function CallSessionOverlay() {
 
         {!mainHidden ? (
           <p className="pointer-events-none px-1 pt-1 text-center text-[10px] leading-relaxed text-white/32">
-            Ask about the conversation, or{" "}
-            <kbd className="mx-0.5 inline-flex h-[1.35rem] min-w-[1.35rem] items-center justify-center rounded-md border border-white/[0.22] bg-white/[0.10] px-1.5 text-[11px] font-medium text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-              ⌘
-            </kbd>
-            <kbd className="mx-0.5 inline-flex h-[1.35rem] min-w-[1.35rem] items-center justify-center rounded-md border border-white/[0.22] bg-white/[0.10] px-1.5 text-[11px] font-medium text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-              ↵
-            </kbd>{" "}
-            for Assist
+            Ask about the conversation, or press Return or Enter.
           </p>
         ) : null}
       </div>

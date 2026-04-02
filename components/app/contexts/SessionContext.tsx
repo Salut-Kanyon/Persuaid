@@ -140,6 +140,11 @@ interface SessionContextValue {
   /** Which diarized speaker is "me" (Rep). Null = unknown; default mapping used. */
   diarizationMeSpeakerId: number | null;
   setDiarizationMeSpeakerId: (id: number | null) => void;
+  /**
+   * Smoothed 0–1 mic input level while recording (Web Audio AnalyserNode).
+   * Updated in rAF by LiveTranscription; read from ref to avoid tree-wide re-renders.
+   */
+  inputAudioLevelRef: React.MutableRefObject<number>;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -208,6 +213,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [diarizationMeSpeakerId, setDiarizationMeSpeakerIdState] = useState<number | null>(null);
   const recentSpeechRef = useRef("");
   const clearBufferRef = useRef<(() => void) | null>(null);
+  const inputAudioLevelRef = useRef(0);
 
   useEffect(() => {
     const stored = getStoredAudioInputId();
@@ -543,6 +549,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     latestInterimSpeakerIdRef.current = null;
     setDiarizationSpeakerIds([]);
     clearRecentSpeech();
+    inputAudioLevelRef.current = 0;
   }, [clearRecentSpeech]);
 
   const value = useMemo<SessionContextValue>(
@@ -602,6 +609,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setDiarizationSpeakerIds,
       diarizationMeSpeakerId,
       setDiarizationMeSpeakerId,
+      inputAudioLevelRef,
     }),
     [
       transcript,

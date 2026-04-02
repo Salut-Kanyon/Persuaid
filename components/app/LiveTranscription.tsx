@@ -284,13 +284,15 @@ export function LiveTranscription() {
     latestInterimSpeakerIdRef,
     diarizationMeSpeakerId,
     setDiarizationSpeakerIds,
+    inputAudioLevelRef,
   } = useSession();
   const wsRef = useRef<WebSocket | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const pcmProcessorRef = useRef<AudioNode | null>(null);
   const keepaliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const rmsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const micAnalyserRef = useRef<AnalyserNode | null>(null);
+  const inputLevelRafRef = useRef(0);
   /** Buffer for the current in-progress utterance (interim transcript). */
   const phraseBufferRef = useRef<string>("");
   /** For display only: we never commit interim to transcript, only Deepgram finals. */
@@ -316,10 +318,25 @@ export function LiveTranscription() {
   }, [registerClearBuffer, recentSpeechRef, setInterimTranscript, setInterimSpeakerId]);
 
   useEffect(() => {
+    const stopInputLevelMeter = () => {
+      cancelAnimationFrame(inputLevelRafRef.current);
+      inputLevelRafRef.current = 0;
+      inputAudioLevelRef.current = 0;
+      if (micAnalyserRef.current) {
+        try {
+          micAnalyserRef.current.disconnect();
+        } catch {
+          // ignore
+        }
+        micAnalyserRef.current = null;
+      }
+    };
+
     // Debug: confirm effect runs and isRecording state
     console.log("[STT] LiveTranscription effect fired. isRecording =", isRecording);
     if (!isRecording) {
       intentionalStopRef.current = true;
+      stopInputLevelMeter();
       setMicError(null);
       if (wsRef.current) {
         try {
@@ -331,10 +348,6 @@ export function LiveTranscription() {
       if (keepaliveRef.current) {
         clearInterval(keepaliveRef.current);
         keepaliveRef.current = null;
-      }
-      if (rmsIntervalRef.current) {
-        clearInterval(rmsIntervalRef.current);
-        rmsIntervalRef.current = null;
       }
       if (pcmProcessorRef.current) {
         try {
@@ -538,6 +551,7 @@ export function LiveTranscription() {
         };
 
         const fullPipelineTeardown = () => {
+          stopInputLevelMeter();
           stopKeepalive();
           if (pcmProcessorRef.current) {
             try {
@@ -575,6 +589,24 @@ export function LiveTranscription() {
         // Capture raw PCM at context sample rate and send as linear16 (v1/listen returns real transcripts).
         // AudioWorklet is reliable in Electron/Chromium; ScriptProcessorNode often never fires onaudioprocess there.
         const pcmSrc = ctx.createMediaStreamSource(stream);
+
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.82;
+        pcmSrc.connect(analyser);
+        micAnalyserRef.current = analyser;
+        const freqBuf = new Uint8Array(analyser.frequencyBinCount);
+        const levelLoop = () => {
+          if (!mounted || !micAnalyserRef.current) return;
+          micAnalyserRef.current.getByteFrequencyData(freqBuf);
+          let sum = 0;
+          for (let i = 0; i < freqBuf.length; i++) sum += freqBuf[i];
+          const avg = sum / freqBuf.length / 255;
+          inputAudioLevelRef.current = Math.min(1, Math.pow(avg * 2.75, 0.72));
+          inputLevelRafRef.current = requestAnimationFrame(levelLoop);
+        };
+        inputLevelRafRef.current = requestAnimationFrame(levelLoop);
+
         let pcmSendCount = 0;
 
         const attachScriptProcessorFallback = () => {
@@ -838,6 +870,7 @@ export function LiveTranscription() {
         ws.onclose = handleClose;
       } catch (err) {
         if (!mounted) return;
+        stopInputLevelMeter();
         console.error("LiveTranscription error:", err);
         const name = err instanceof Error ? err.name : "";
         const message = (err instanceof Error ? err.message : String(err)).toLowerCase();
@@ -869,7 +902,18 @@ export function LiveTranscription() {
       intentionalStopRef.current = true;
       lastAppendedSpeakerRef.current = null;
     };
-  }, [isRecording, audioInputDeviceId, appendTranscript, setSessionId, setMicError, setInterimTranscript, setInterimSpeakerId, setDiarizationSpeakerIds, diarizationMeSpeakerId]);
+  }, [
+    isRecording,
+    audioInputDeviceId,
+    appendTranscript,
+    setSessionId,
+    setMicError,
+    setInterimTranscript,
+    setInterimSpeakerId,
+    setDiarizationSpeakerIds,
+    diarizationMeSpeakerId,
+    inputAudioLevelRef,
+  ]);
 
   return null;
 }
