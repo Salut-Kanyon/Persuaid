@@ -23,6 +23,18 @@ try {
   app.setName(APP_DISPLAY_NAME);
   process.title = APP_DISPLAY_NAME;
 } catch (_) {}
+
+// Before app ready: HTTP/2 can trigger net::ERR_FAILED (-2) loading OAuth HTTPS in a secondary
+// BrowserWindow on some macOS/Electron builds. Desktop dev enables disable-http2 by default; set
+// PERSUAID_OAUTH_DISABLE_HTTP2=0 to opt out, or =1 to force when not using desktop:dev.
+const _oauthHttp2Off =
+  process.env.PERSUAID_OAUTH_DISABLE_HTTP2 === '1' ||
+  (process.env.DESKTOP_DEV === '1' && process.env.PERSUAID_OAUTH_DISABLE_HTTP2 !== '0');
+if (_oauthHttp2Off) {
+  try {
+    app.commandLine.appendSwitch('disable-http2');
+  } catch (_) {}
+}
 if (process.platform === 'darwin') {
   app.on('will-finish-launching', () => {
     try {
@@ -32,6 +44,12 @@ if (process.platform === 'darwin') {
 }
 
 const path = require('path');
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+
 const fs = require('fs');
 const { execSync } = require('child_process');
 const http = require('http');
@@ -150,6 +168,8 @@ if (!isPackaged) {
 // Custom protocol so the app loads from the bundle (no localhost, no HTTP server).
 protocol.registerSchemesAsPrivileged([
   { scheme: APP_PROTOCOL, privileges: { standard: true, secure: true, supportFetchAPI: true } },
+  // OAuth `redirectTo`: `persuaid://auth/callback` — main window rewrites to http(s) app URL in will-navigate.
+  { scheme: 'persuaid', privileges: { standard: true, secure: true, corsEnabled: true, supportFetchAPI: true } },
 ]);
 
 const BUNDLE_SERVER_PORT = 2999;
@@ -192,6 +212,136 @@ function getWindowIcon() {
   }
 }
 
+/** Next dev server or bundled static server origin — must match where the renderer loads. */
+function getDesktopHttpAppOrigin() {
+  if (forceDevServer) {
+    const devPort = (process.env.NEXT_DEV_PORT || process.env.PORT || '3000').replace(/^:/, '').trim() || '3000';
+    return `http://localhost:${devPort}`;
+  }
+  return `http://127.0.0.1:${BUNDLE_SERVER_PORT}`;
+}
+
+/** PKCE uses ?code=; some flows return tokens in the hash (#access_token=… / #error=…). */
+function urlHasOAuthReturn(u) {
+  try {
+    if (u.searchParams.has('code') || u.searchParams.has('error')) return true;
+    if (u.hash && u.hash.length > 1) {
+      const hp = new URLSearchParams(u.hash.slice(1));
+      return (
+        hp.has('access_token') ||
+        hp.has('code') ||
+        hp.has('error') ||
+        hp.has('refresh_token')
+      );
+    }
+    return false;
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Map IdP / Supabase return URLs to our in-app HTTP `/auth/callback` (same session partition as main).
+ */
+function rewriteExternalOAuthToApp(urlString, httpAppOrigin) {
+  try {
+    const u = new URL(urlString);
+    if (u.protocol === 'persuaid:' && u.hostname === 'auth' && u.pathname === '/callback') {
+      return `${httpAppOrigin}/auth/callback${u.search}${u.hash}`;
+    }
+    const host = u.hostname.replace(/^www\./, '').toLowerCase();
+    if (host !== 'persuaid.app') return null;
+    const path = u.pathname === '' ? '/' : u.pathname;
+    const atRoot = path === '/' || path === '';
+    if (atRoot && urlHasOAuthReturn(u)) {
+      const t = new URL(`${httpAppOrigin}/auth/callback`);
+      u.searchParams.forEach((value, key) => {
+        t.searchParams.set(key, value);
+      });
+      if (u.hash) t.hash = u.hash;
+      return t.toString();
+    }
+    if (path === '/auth/callback' || path.startsWith('/auth/callback/')) {
+      return `${httpAppOrigin}${path}${u.search}${u.hash}`;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * If the URL is (or rewrites to) our app `/auth/callback` with OAuth query or hash params, return the http URL; else null.
+ */
+function getOAuthHttpCallbackTarget(urlString, httpAppOrigin) {
+  const mapped = rewriteExternalOAuthToApp(urlString, httpAppOrigin);
+  const candidate = mapped || urlString;
+  try {
+    const u = new URL(candidate);
+    const app = new URL(httpAppOrigin);
+    if (u.origin !== app.origin) return null;
+    const p = u.pathname === '' ? '/' : u.pathname;
+    if (p !== '/auth/callback' && !p.startsWith('/auth/callback/')) return null;
+    if (!urlHasOAuthReturn(u)) return null;
+    return u.toString();
+  } catch (_) {
+    return null;
+  }
+}
+
+function stripElectronFromUserAgent(webContents) {
+  try {
+    const ua = webContents.getUserAgent();
+    const chromeLike = ua.replace(/\s*Electron\/[^\s]+/gi, '').trim();
+    // Never set an empty UA — can cause net::ERR_FAILED on HTTPS loads.
+    if (chromeLike.length > 8) webContents.setUserAgent(chromeLike);
+  } catch (_) {}
+}
+
+function registerPersuaidAsDefaultProtocolClient() {
+  try {
+    if (!app.isPackaged && process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient('persuaid', process.execPath, [path.resolve(process.argv[1])]);
+    } else {
+      app.setAsDefaultProtocolClient('persuaid');
+    }
+  } catch (e) {
+    console.error('[desktop] setAsDefaultProtocolClient(persuaid):', e && e.message);
+  }
+}
+
+function handOffOAuthReturnToMainWindow(urlString) {
+  const httpAppOrigin = getDesktopHttpAppOrigin();
+  const target = getOAuthHttpCallbackTarget(urlString, httpAppOrigin);
+  if (!target) {
+    console.error('[desktop] OAuth return URL not applicable:', urlString);
+    return false;
+  }
+  if (!mainWindow || mainWindow.isDestroyed()) return false;
+  try {
+    mainWindow.focus();
+    mainWindow.show();
+    mainWindow.loadURL(target);
+    return true;
+  } catch (e) {
+    console.error('[desktop] handOffOAuthReturnToMainWindow:', e && e.message);
+    return false;
+  }
+}
+
+function enqueueOAuthDeepLink(url) {
+  if (!url || typeof url !== 'string') return;
+  pendingOAuthDeepLink = url;
+}
+
+function tryFlushPendingOAuthDeepLink() {
+  if (!pendingOAuthDeepLink) return;
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (handOffOAuthReturnToMainWindow(pendingOAuthDeepLink)) {
+    pendingOAuthDeepLink = null;
+  }
+}
+
 let mainWindow;
 /** Saved window bounds before shrinking to the compact call strip (macOS-style top pill). */
 let preCompactBounds = null;
@@ -201,6 +351,8 @@ let preCallHudMaximized = false;
 let callHudActive = false;
 /** Call HUD: panel “open” for legacy sync handler (bounds no longer change on hide). */
 let hudPanelVisible = true;
+/** OAuth return via persuaid:// when using the system browser (see registerPersuaidAsDefaultProtocolClient). */
+let pendingOAuthDeepLink = null;
 /** Fixed floating HUD size (renderer no longer syncs dynamic size). */
 const HUD_FIXED_WIDTH = 460;
 const HUD_FIXED_HEIGHT = 880;
@@ -242,6 +394,23 @@ ipcMain.handle('persuaid-open-external', async (_event, url) => {
   } catch (e) {
     console.error('[persuaid-open-external]', e && e.message);
     return { ok: false, error: 'invalid' };
+  }
+});
+
+/**
+ * Google blocks sign-in inside embedded WebViews ("This browser or app may not be secure").
+ * Open the system browser; return via `persuaid://auth/callback` → open-url / second-instance.
+ */
+ipcMain.handle('persuaid-oauth-window', async (_event, startUrl) => {
+  try {
+    if (!startUrl || typeof startUrl !== 'string') return { ok: false, error: 'invalid_url' };
+    if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, error: 'no_window' };
+    await shell.openExternal(startUrl);
+    return { ok: true, external: true };
+  } catch (e) {
+    const msg = e && e.message ? String(e.message) : 'oauth_external';
+    console.error('[persuaid-oauth-window]', msg);
+    return { ok: false, error: msg };
   }
 });
 
@@ -1554,10 +1723,43 @@ function createWindow() {
     } catch (_) {}
   }
 
+  // Google OAuth often treats Electron's default User-Agent as an embedded webview and skips or
+  // short-circuits the normal account/consent flow. Strip the Electron token so navigations look
+  // like a normal Chrome browser (renderer still detects the shell via preload `window.persuaid`).
+  try {
+    const ua = mainWindow.webContents.getUserAgent();
+    const chromeLike = ua.replace(/\s*Electron\/[^\s]+/gi, '').trim();
+    if (chromeLike.length > 0) {
+      mainWindow.webContents.setUserAgent(chromeLike);
+    }
+  } catch (_) {}
+
   // Start maximized (full screen) when entering the workspace / app
   mainWindow.maximize();
 
   setupInspectorSupport(mainWindow);
+
+  /**
+   * OAuth return URLs: Supabase may send the webview to `persuaid://auth/callback?...` (allow-listed)
+   * or to the live site if `redirect_to` fails. Rewrite both to the in-app HTTP origin so PKCE + session
+   * exchange run in the same partition (desktop:dev + packaged).
+   */
+  function attachDesktopOAuthReturnRewrites(httpAppOrigin) {
+    function rewireOAuthNavigation(event, url) {
+      const target = rewriteExternalOAuthToApp(url, httpAppOrigin);
+      if (!target) return;
+      event.preventDefault();
+      console.log('[desktop] OAuth return rewired to app:', target);
+      mainWindow.loadURL(target);
+    }
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+      rewireOAuthNavigation(event, url);
+    });
+    mainWindow.webContents.on('will-redirect', (event, url, _isInPlace, isMainFrame) => {
+      if (!isMainFrame) return;
+      rewireOAuthNavigation(event, url);
+    });
+  }
 
   function loadBundle() {
     const entryFile = path.join(OUT_DIR, DESKTOP_ENTRY_FILE);
@@ -1614,14 +1816,18 @@ function createWindow() {
     const devPort = (process.env.NEXT_DEV_PORT || process.env.PORT || '3000').replace(/^:/, '').trim() || '3000';
     // Use localhost (not 127.0.0.1): Next dev treats them as different origins; 127.0.0.1 triggers
     // "Cross origin request … to /_next/*" and can break HMR/chunks in a future Next major.
-    const devUrl = `http://localhost:${devPort}/welcome`;
+    const localOrigin = `http://localhost:${devPort}`;
+    const devUrl = `${localOrigin}/welcome`;
     console.log('Desktop dev: loading', devUrl, '(set NEXT_DEV_PORT if Next is not on this port)');
     mainWindow.loadURL(devUrl);
     mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
       if (errorCode !== -3) console.error('Failed to load:', validatedURL, errorCode, errorDescription);
     });
+    attachDesktopOAuthReturnRewrites(localOrigin);
     return;
   }
+
+  attachDesktopOAuthReturnRewrites(`http://127.0.0.1:${BUNDLE_SERVER_PORT}`);
 
   // Production / bundled: serve static export from out/
   loadBundle();
@@ -1635,6 +1841,29 @@ function createWindow() {
   });
 }
 
+if (gotSingleInstanceLock) {
+  if (process.platform === 'darwin') {
+    app.on('open-url', (event, url) => {
+      event.preventDefault();
+      enqueueOAuthDeepLink(url);
+      tryFlushPendingOAuthDeepLink();
+    });
+  }
+
+  app.on('second-instance', (_event, argv) => {
+    const url = argv.find((a) => typeof a === 'string' && a.startsWith('persuaid://'));
+    if (url) {
+      enqueueOAuthDeepLink(url);
+      tryFlushPendingOAuthDeepLink();
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
+if (gotSingleInstanceLock) {
 app.whenReady().then(async () => {
   if (!enforceApplicationsInstallOnMac()) {
     app.quit();
@@ -1657,6 +1886,7 @@ app.whenReady().then(async () => {
   } catch (_) {}
   logMicDiagnosticsAtStartup();
   registerAppProtocol();
+  registerPersuaidAsDefaultProtocolClient();
   const envPath = path.join(app.getPath('userData'), '.env');
   if (fs.existsSync(envPath)) {
     require('dotenv').config({ path: envPath, override: true });
@@ -1758,7 +1988,11 @@ app.whenReady().then(async () => {
     }
   }
   createWindow();
+  const argvOAuth = process.argv.find((a) => typeof a === 'string' && a.startsWith('persuaid://'));
+  if (argvOAuth) enqueueOAuthDeepLink(argvOAuth);
+  tryFlushPendingOAuthDeepLink();
 });
+}
 
 app.on('window-all-closed', () => {
   if (bundleHttpServer) bundleHttpServer.close();

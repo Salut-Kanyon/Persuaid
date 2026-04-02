@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase/client";
 
@@ -13,6 +13,33 @@ export interface Note {
   created_at: string;
   updated_at: string;
 }
+
+type DateBucket = "today" | "yesterday" | "thisWeek" | "older";
+
+const DAY_MS = 86_400_000;
+
+function startOfLocalDay(d: Date): number {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x.getTime();
+}
+
+function getDateBucket(iso: string): DateBucket {
+  const startToday = startOfLocalDay(new Date());
+  const startNote = startOfLocalDay(new Date(iso));
+  const diffDays = Math.round((startToday - startNote) / DAY_MS);
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "yesterday";
+  if (diffDays < 7) return "thisWeek";
+  return "older";
+}
+
+const BUCKET_LABELS: Record<DateBucket, string> = {
+  today: "Today",
+  yesterday: "Yesterday",
+  thisWeek: "This week",
+  older: "Earlier",
+};
 
 function formatRelativeTime(iso: string): string {
   const d = new Date(iso);
@@ -28,6 +55,16 @@ function formatRelativeTime(iso: string): string {
   return d.toLocaleDateString();
 }
 
+function formatNoteStamp(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +77,6 @@ export default function NotesPage() {
 
   const [formTitle, setFormTitle] = useState("");
   const [formContent, setFormContent] = useState("");
-  const [formCompleted, setFormCompleted] = useState(false);
 
   const fetchNotes = useCallback(async () => {
     const { data, error } = await supabase
@@ -68,7 +104,6 @@ export default function NotesPage() {
     setEditingNote(null);
     setFormTitle("");
     setFormContent("");
-    setFormCompleted(false);
     setModalOpen(true);
   };
 
@@ -76,7 +111,6 @@ export default function NotesPage() {
     setEditingNote(note);
     setFormTitle(note.title ?? "");
     setFormContent(note.content ?? "");
-    setFormCompleted(note.completed ?? false);
     setModalOpen(true);
   };
 
@@ -94,7 +128,7 @@ export default function NotesPage() {
     const payload = {
       title: formTitle.trim() || null,
       content: formContent.trim() || "",
-      completed: formCompleted,
+      completed: editingNote ? editingNote.completed : false,
       updated_at: new Date().toISOString(),
     };
     if (editingNote) {
@@ -116,14 +150,6 @@ export default function NotesPage() {
     closeModal();
   };
 
-  const handleToggleCompleted = async (note: Note) => {
-    const { error } = await supabase
-      .from("notes")
-      .update({ completed: !note.completed, updated_at: new Date().toISOString() })
-      .eq("id", note.id);
-    if (!error) await fetchNotes();
-  };
-
   const handleDelete = async () => {
     if (!noteToDelete) return;
     setDeleteConfirming(true);
@@ -140,6 +166,23 @@ export default function NotesPage() {
       (n.content || "").toLowerCase().includes(search.toLowerCase());
     return matchSearch;
   });
+
+  const groupedNotes = useMemo(() => {
+    const buckets: Record<DateBucket, Note[]> = {
+      today: [],
+      yesterday: [],
+      thisWeek: [],
+      older: [],
+    };
+    for (const n of filtered) {
+      buckets[getDateBucket(n.updated_at)].push(n);
+    }
+    return buckets;
+  }, [filtered]);
+
+  const sectionsToShow = (["today", "yesterday", "thisWeek", "older"] as const).filter(
+    (k) => groupedNotes[k].length > 0
+  );
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -163,7 +206,7 @@ export default function NotesPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="max-w-4xl flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="max-w-5xl flex flex-col sm:flex-row gap-4 mb-8">
           <div className="relative flex-1">
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-dim"
@@ -186,7 +229,7 @@ export default function NotesPage() {
           </div>
         </div>
 
-        <div className="max-w-4xl">
+        <div className="max-w-5xl">
           {loading ? (
             <div className="rounded-2xl bg-background-surface/40 border border-border/50 p-12 text-center">
               <p className="text-text-muted text-sm">Loading notes…</p>
@@ -217,67 +260,98 @@ export default function NotesPage() {
               )}
             </div>
           ) : (
-            <ul className="space-y-3">
-              {filtered.map((note) => (
-                <li key={note.id}>
-                  <div className="rounded-2xl bg-background-surface/40 border border-border/50 hover:border-green-primary/20 transition-all p-5 flex items-start gap-4 group">
-                    <button
-                      type="button"
-                      onClick={() => handleToggleCompleted(note)}
-                      className={cn(
-                        "mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors",
-                        note.completed
-                          ? "bg-green-primary/20 border-green-primary/50"
-                          : "bg-background-elevated/50 border-border hover:border-green-primary/30"
-                      )}
+            <div className="space-y-10">
+              {sectionsToShow.map((bucket) => (
+                <section key={bucket} aria-labelledby={`notes-section-${bucket}`}>
+                  <div className="mb-4 flex items-end gap-3 border-b border-border/40 pb-2">
+                    <h2
+                      id={`notes-section-${bucket}`}
+                      className="text-[11px] font-semibold uppercase tracking-[0.14em] text-text-dim"
                     >
-                      {note.completed && (
-                        <svg className="w-3 h-3 text-green-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      className="flex-1 text-left min-w-0"
-                      onClick={() => openEdit(note)}
-                    >
-                      {note.title && (
-                        <h3 className="text-sm font-semibold text-text-primary group-hover:text-green-accent/90 transition-colors">
-                          {note.title}
-                        </h3>
-                      )}
-                      <p className={cn("text-sm mt-0.5 line-clamp-2", note.completed ? "text-text-dim/70 line-through" : "text-text-secondary")}>
-                        {note.content || "No content"}
-                      </p>
-                      <p className="text-[10px] text-text-dim mt-2">{formatRelativeTime(note.updated_at)}</p>
-                    </button>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => openEdit(note)}
-                        className="p-2 rounded-lg text-text-dim hover:text-text-primary hover:bg-background-surface/50 transition-colors"
-                        title="Edit"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setNoteToDelete(note); }}
-                        className="p-2 rounded-lg text-text-dim hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                        title="Delete"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
+                      {BUCKET_LABELS[bucket]}
+                    </h2>
+                    <span className="text-[10px] text-text-dim/80 tabular-nums">
+                      {groupedNotes[bucket].length} note{groupedNotes[bucket].length === 1 ? "" : "s"}
+                    </span>
                   </div>
-                </li>
+                  <ul className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+                    {groupedNotes[bucket].map((note) => (
+                      <li key={note.id}>
+                        <article
+                          className={cn(
+                            "relative flex h-full flex-col rounded-2xl border border-border/50 bg-gradient-to-b from-background-surface/50 to-background-surface/25 p-5",
+                            "shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]",
+                            "transition-[border-color,box-shadow] hover:border-green-primary/25 hover:shadow-[0_0_0_1px_rgba(26,157,120,0.12)]"
+                          )}
+                        >
+                          <div
+                            className="pointer-events-none absolute left-0 top-4 bottom-4 w-0.5 rounded-full bg-gradient-to-b from-green-primary/50 to-green-primary/15"
+                            aria-hidden
+                          />
+                          <div className="flex items-start justify-between gap-3 pl-3">
+                            <div className="min-w-0 flex-1 space-y-2">
+                              <h3 className="text-[15px] font-semibold leading-snug tracking-tight text-text-primary">
+                                {note.title?.trim() ? note.title : (
+                                  <span className="font-medium text-text-dim">Untitled note</span>
+                                )}
+                              </h3>
+                              <p className="text-sm leading-relaxed text-text-secondary line-clamp-4">
+                                {note.content?.trim() ? note.content : (
+                                  <span className="text-text-dim/80 italic">No content yet</span>
+                                )}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-0.5">
+                              <button
+                                type="button"
+                                onClick={() => openEdit(note)}
+                                className="rounded-lg p-2 text-text-dim transition-colors hover:bg-background-surface/80 hover:text-green-accent"
+                                title="Edit note"
+                              >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  />
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setNoteToDelete(note)}
+                                className="rounded-lg p-2 text-text-dim transition-colors hover:bg-red-500/10 hover:text-red-400"
+                                title="Delete note"
+                              >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                          <div className="mt-4 border-t border-border/30 pt-3 pl-3 text-[11px] text-text-dim">
+                            <span
+                              className="inline-flex items-center gap-1.5 tabular-nums"
+                              title={formatNoteStamp(note.updated_at)}
+                            >
+                              <svg className="h-3.5 w-3.5 shrink-0 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Updated {formatRelativeTime(note.updated_at)}
+                            </span>
+                          </div>
+                        </article>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </div>
@@ -330,25 +404,6 @@ export default function NotesPage() {
                   rows={4}
                   className="w-full px-4 py-2.5 rounded-xl bg-background-surface/60 border border-border text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/40 text-sm resize-y min-h-[100px]"
                 />
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  role="checkbox"
-                  aria-checked={formCompleted}
-                  onClick={() => setFormCompleted((c) => !c)}
-                  className={cn(
-                    "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
-                    formCompleted ? "bg-green-primary/20 border-green-primary/50" : "border-border"
-                  )}
-                >
-                  {formCompleted && (
-                    <svg className="w-3 h-3 text-green-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-                <span className="text-sm text-text-muted">Mark as done</span>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button

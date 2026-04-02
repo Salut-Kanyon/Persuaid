@@ -5,9 +5,12 @@ import type { CSSProperties } from "react";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
+import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import { FollowUpPanel } from "@/components/app/panels/FollowUpPanel";
+import { isElectronApp } from "@/lib/electron-client";
+import { FREE_PLAN_ELECTRON_CALL_MAX_SECONDS, FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
 
-function formatElapsed(seconds: number) {
+function formatClock(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
@@ -32,18 +35,41 @@ function getPersuaidApi(): PersuaidApi | undefined {
  * in the desktop app the native window height shrinks so the blurred/vibrant background matches.
  */
 export function CallSessionOverlay() {
-  const { setRecording } = useSession();
-  const [startedAt] = useState(() => Date.now());
-  const [elapsedSec, setElapsedSec] = useState(0);
+  const { setRecording, callStartedAtIso } = useSession();
+  const { plan, remainingLiveMinutes } = useEntitlements();
+  const approxStartRef = useRef(Date.now());
+  const startMs =
+    typeof callStartedAtIso === "string" && callStartedAtIso
+      ? Date.parse(callStartedAtIso)
+      : approxStartRef.current;
+  const freeDesktopCountdown = isElectronApp() && plan === "free";
+  /** Seconds allowed this session: min(per-session cap, monthly minutes left × 60). */
+  const sessionCapSecRef = useRef<number | null>(null);
+  if (sessionCapSecRef.current === null) {
+    const remMin = remainingLiveMinutes ?? FREE_PLAN_MONTHLY_MINUTES;
+    sessionCapSecRef.current = Math.min(
+      FREE_PLAN_ELECTRON_CALL_MAX_SECONDS,
+      Math.max(0, remMin) * 60
+    );
+  }
+  const sessionCapSec = sessionCapSecRef.current;
+  const [tick, setTick] = useState(0);
   const [mainHidden, setMainHidden] = useState(false);
   const hudMeasureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const id = window.setInterval(() => {
-      setElapsedSec(Math.floor((Date.now() - startedAt) / 1000));
-    }, 1000);
+    const id = window.setInterval(() => setTick((n) => n + 1), 250);
     return () => window.clearInterval(id);
-  }, [startedAt]);
+  }, []);
+
+  const elapsedSec = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+  const remainingFreeSec = Math.max(0, sessionCapSec - elapsedSec);
+
+  useEffect(() => {
+    if (!freeDesktopCountdown) return;
+    if (remainingFreeSec > 0) return;
+    setRecording(false);
+  }, [freeDesktopCountdown, remainingFreeSec, setRecording]);
 
   useLayoutEffect(() => {
     const el = hudMeasureRef.current;
@@ -112,7 +138,23 @@ export function CallSessionOverlay() {
                 height={20}
               />
             </div>
-            <p className="truncate text-[11px] font-medium tabular-nums tracking-wide text-white/55">{formatElapsed(elapsedSec)}</p>
+            <p
+              className={cn(
+                "truncate text-[11px] font-medium tabular-nums tracking-wide",
+                freeDesktopCountdown
+                  ? remainingFreeSec <= 30
+                    ? "text-amber-300/95"
+                    : "text-white/80"
+                  : "text-white/55"
+              )}
+              title={
+                freeDesktopCountdown
+                  ? "Time remaining on Free plan (desktop)"
+                  : "Call duration"
+              }
+            >
+              {freeDesktopCountdown ? formatClock(remainingFreeSec) : formatClock(elapsedSec)}
+            </p>
           </div>
 
           <div className="flex shrink-0 items-center gap-1" style={noDrag}>

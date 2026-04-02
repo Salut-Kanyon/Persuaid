@@ -7,9 +7,10 @@ import { supabase } from "@/lib/supabase/client";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { GoogleGIcon } from "@/components/ui/GoogleGIcon";
-import { AppleMarkIcon } from "@/components/ui/AppleMarkIcon";
+import { AppleIcon } from "@/components/ui/AppleIcon";
+import { getOAuthCallbackRedirectUrl } from "@/lib/oauth-redirect";
 import { getSafeInternalPath } from "@/lib/safe-path";
-import { buildOAuthRedirectTo } from "@/lib/build-oauth-redirect";
+import { isElectronApp } from "@/lib/electron-client";
 
 /** Marketing CTAs use `/sign-in` → create account first. Auth redirects use `?signin=1` to open sign-in. */
 function SignInForm() {
@@ -26,8 +27,8 @@ function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [appleLoading, setAppleLoading] = useState(false);
+  const [oauthProvider, setOauthProvider] = useState<"google" | "apple" | null>(null);
+  const [oauthBrowserHint, setOauthBrowserHint] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSignUp, setIsSignUp] = useState(!openSignIn);
   const router = useRouter();
@@ -87,36 +88,55 @@ function SignInForm() {
     if (!next) setConfirmPassword("");
   }
 
-  async function handleGoogleSignIn() {
+  async function handleOAuthSignIn(provider: "google" | "apple") {
     setError(null);
-    setGoogleLoading(true);
-    const callback = buildOAuthRedirectTo(nextParam);
+    setOauthBrowserHint(false);
+    setOauthProvider(provider);
+    const redirectTo = getOAuthCallbackRedirectUrl(nextParam);
+
+    if (isElectronApp()) {
+      const api = (
+        window as Window & {
+          persuaid?: {
+            openOAuthWindow?: (url: string) => Promise<{ ok?: boolean; error?: string; external?: boolean }>;
+          };
+        }
+      ).persuaid;
+      if (api?.openOAuthWindow) {
+        const { data, error: oauthErr } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo, skipBrowserRedirect: true },
+        });
+        if (oauthErr) {
+          setOauthProvider(null);
+          setError(oauthErr.message);
+          return;
+        }
+        if (!data?.url) {
+          setOauthProvider(null);
+          setError("Could not start sign-in.");
+          return;
+        }
+        const res = await api.openOAuthWindow(data.url);
+        setOauthProvider(null);
+        if (!res || res.ok === false) {
+          setError(typeof res?.error === "string" ? res.error : "Could not open sign-in window.");
+        } else if (res.external) {
+          setOauthBrowserHint(true);
+        }
+        return;
+      }
+    }
+
     const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: callback },
+      provider,
+      options: { redirectTo },
     });
     if (err) {
-      setGoogleLoading(false);
-      setError(err.message);
-    }
-    // On success the browser navigates away; no need to clear loading.
-  }
-
-  async function handleAppleSignIn() {
-    setError(null);
-    setAppleLoading(true);
-    const callback = buildOAuthRedirectTo(nextParam);
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: "apple",
-      options: { redirectTo: callback },
-    });
-    if (err) {
-      setAppleLoading(false);
+      setOauthProvider(null);
       setError(err.message);
     }
   }
-
-  const oauthBusy = googleLoading || appleLoading;
   const spring = { type: "spring" as const, stiffness: 380, damping: 28 };
 
   return (
@@ -264,12 +284,12 @@ function SignInForm() {
               </p>
             </motion.div>
 
-            <div className="mb-6 space-y-4">
+            <div className="mb-6 space-y-3">
               <motion.button
                 type="button"
-                disabled={loading || oauthBusy}
+                disabled={loading || oauthProvider !== null}
                 whileTap={reduceMotion ? undefined : { scale: 0.99 }}
-                onClick={() => void handleGoogleSignIn()}
+                onClick={() => void handleOAuthSignIn("google")}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border font-semibold text-sm transition-colors",
                   "bg-white text-gray-900 border-gray-200/90 hover:bg-gray-50",
@@ -277,23 +297,23 @@ function SignInForm() {
                 )}
               >
                 <GoogleGIcon className="h-5 w-5 shrink-0" />
-                {googleLoading ? "Redirecting…" : "Continue with Google"}
+                {oauthProvider === "google" ? "Redirecting…" : "Continue with Google"}
               </motion.button>
               <motion.button
                 type="button"
-                disabled={loading || oauthBusy}
+                disabled={loading || oauthProvider !== null}
                 whileTap={reduceMotion ? undefined : { scale: 0.99 }}
-                onClick={() => void handleAppleSignIn()}
+                onClick={() => void handleOAuthSignIn("apple")}
                 className={cn(
                   "w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border font-semibold text-sm transition-colors",
-                  "bg-black text-white border-white/15 hover:bg-neutral-900",
+                  "bg-black text-white border-white/10 hover:bg-zinc-950",
                   "disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 )}
               >
-                <AppleMarkIcon className="h-5 w-5 shrink-0" />
-                {appleLoading ? "Redirecting…" : "Continue with Apple"}
+                <AppleIcon className="h-5 w-5 shrink-0 text-white" />
+                {oauthProvider === "apple" ? "Redirecting…" : "Continue with Apple"}
               </motion.button>
-              <div className="relative flex items-center gap-3">
+              <div className="relative flex items-center gap-3 pt-1">
                 <span className="h-px flex-1 bg-border" />
                 <span className="text-xs font-medium text-text-dim uppercase tracking-wide">or</span>
                 <span className="h-px flex-1 bg-border" />
@@ -315,7 +335,7 @@ function SignInForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border border-border bg-background-surface-elevated text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/50 focus:border-green-primary/50 transition-all duration-200"
-                    disabled={loading || oauthBusy}
+                    disabled={loading || oauthProvider !== null}
                     required
                   />
                 </div>
@@ -333,7 +353,7 @@ function SignInForm() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full px-4 py-3 pr-11 rounded-lg border border-border bg-background-surface-elevated text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/50 focus:border-green-primary/50 transition-all duration-200"
-                      disabled={loading || oauthBusy}
+                      disabled={loading || oauthProvider !== null}
                       required
                       minLength={isSignUp ? 6 : undefined}
                     />
@@ -387,7 +407,7 @@ function SignInForm() {
                               ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20"
                               : "border-border focus:border-green-primary/50"
                           )}
-                          disabled={loading || oauthBusy}
+                          disabled={loading || oauthProvider !== null}
                           required={isSignUp}
                           minLength={6}
                         />
@@ -420,7 +440,7 @@ function SignInForm() {
 
               <motion.button
                 type="submit"
-                disabled={loading || oauthBusy}
+                disabled={loading || oauthProvider !== null}
                 whileTap={reduceMotion ? undefined : { scale: 0.99 }}
                 className="w-full py-3 rounded-button bg-green-primary text-white font-semibold hover:bg-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-button hover:shadow-button-hover hover:shadow-glow-button relative overflow-hidden group"
               >
@@ -431,6 +451,11 @@ function SignInForm() {
               </motion.button>
             </form>
 
+            {oauthBrowserHint && (
+              <p className="mt-4 text-sm text-text-muted text-center max-w-sm mx-auto">
+                Sign-in opened in your default browser. When you finish, we’ll continue here automatically.
+              </p>
+            )}
             {error && <p className="mt-4 text-sm text-red-400 text-center">{error}</p>}
         </motion.div>
       </div>

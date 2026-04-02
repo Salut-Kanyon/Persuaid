@@ -29,6 +29,8 @@ interface EntitlementsContextValue {
    * Whether the user may start a new live call (mic/STT). False while usage loads, or when monthly minutes are exhausted for the current plan.
    */
   canStartLiveSession: boolean;
+  /** Monthly live-listening minutes left (Free / paid caps); null while usage not loaded. */
+  remainingLiveMinutes: number | null;
   isLoading: boolean;
   openUpgradeModal: () => void;
   /** Refetch usage (e.g. after tab focus) so free-tier limits stay accurate. */
@@ -51,6 +53,7 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
   const [usageLoading, setUsageLoading] = useState(true);
   /** When true, monthly live-listening allowance is used up (usage fetch succeeded; any plan). */
   const [liveMinutesExhausted, setLiveMinutesExhausted] = useState(false);
+  const [remainingLiveMinutes, setRemainingLiveMinutes] = useState<number | null>(null);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
   const loadPlanAndUsage = useCallback(async () => {
@@ -61,6 +64,7 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
       if (!session?.access_token) {
         setPlan("free");
         setLiveMinutesExhausted(false);
+        setRemainingLiveMinutes(null);
         return;
       }
 
@@ -83,13 +87,16 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
       const usageResult = await computeMeUsage(supabase, user.id, user.email ?? undefined);
       if (usageResult.ok) {
         const remaining = usageResult.data.remainingMinutes;
+        setRemainingLiveMinutes(remaining);
         setLiveMinutesExhausted(Number.isFinite(remaining) && remaining <= 0);
       } else {
+        setRemainingLiveMinutes(null);
         setLiveMinutesExhausted(false);
       }
     } catch {
       setPlan("free");
       setLiveMinutesExhausted(false);
+      setRemainingLiveMinutes(null);
     } finally {
       setIsLoading(false);
       setUsageLoading(false);
@@ -147,6 +154,7 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
     canUseAiCoach,
     usageLoading,
     canStartLiveSession,
+    remainingLiveMinutes,
     isLoading,
     openUpgradeModal,
     refetchUsage: loadPlanAndUsage,

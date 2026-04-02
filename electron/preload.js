@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('persuaid', {
   openMicSettings: () => ipcRenderer.invoke('mic:open-settings'),
   /** Open http(s)://persuaid.app/... in the default browser (e.g. pricing). */
   openExternal: (url) => ipcRenderer.invoke('persuaid-open-external', url),
+  /** Supabase OAuth: opens the system browser (Google blocks embedded WebViews); return via persuaid:// */
+  openOAuthWindow: (url) => ipcRenderer.invoke('persuaid-oauth-window', url),
   setCallCompactLayout: (compact) => ipcRenderer.invoke('call-compact-layout', compact),
   /** True when the native window has no title bar (macOS); use in-app traffic lights + drag regions. */
   frameless: isMac,

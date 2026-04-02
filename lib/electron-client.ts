@@ -11,13 +11,16 @@ export const MARKETING_SITE_ORIGIN =
     (process.env.NEXT_PUBLIC_MARKETING_ORIGIN || process.env.NEXT_PUBLIC_APP_URL)?.replace(/\/$/, "")) ||
   "https://persuaid.app";
 
+/** True in the Electron shell. Prefer `window.persuaid` (preload) so we can strip `Electron` from User-Agent for Google OAuth without breaking detection. */
 export function isElectronApp(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return /Electron/i.test(navigator.userAgent);
+  if (typeof window === "undefined") return false;
+  if (typeof (window as unknown as { persuaid?: unknown }).persuaid !== "undefined") return true;
+  return typeof navigator !== "undefined" && /Electron/i.test(navigator.userAgent);
 }
 
 type PersuaidPreload = {
   openExternal?: (url: string) => Promise<{ ok?: boolean; error?: string } | void>;
+  openOAuthWindow?: (url: string) => Promise<{ ok?: boolean; error?: string }>;
 };
 
 /**

@@ -1,7 +1,13 @@
 import type { Plan } from "@/lib/entitlements";
 
 /** Monthly live-listening allowance for the Free plan (minutes). Keep /pricing copy in sync. */
-export const FREE_PLAN_MONTHLY_MINUTES = 10;
+export const FREE_PLAN_MONTHLY_MINUTES = 3;
+
+/**
+ * Desktop (Electron) free tier: max duration per live session in seconds.
+ * Matches monthly allowance so one session can use the full free quota; enforced with a countdown.
+ */
+export const FREE_PLAN_ELECTRON_CALL_MAX_SECONDS = FREE_PLAN_MONTHLY_MINUTES * 60;
 
 /** Monthly transcription-style limits (minutes), aligned with /pricing copy. */
 export function transcriptionLimitMinutes(plan: Plan): number {

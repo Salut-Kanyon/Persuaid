@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
-
-const isElectron = typeof navigator !== "undefined" && /Electron/i.test(navigator.userAgent);
+import { isElectronApp } from "@/lib/electron-client";
 
 /** Only requests mic from the OS (no token/Deepgram). Use this to get the app to appear in System Settings → Microphone. */
 async function requestMicrophoneOnly(): Promise<{ ok: boolean; message: string }> {
@@ -65,7 +64,7 @@ export function TranscriptPanel() {
       setShowNoSpeechHint(false);
       return;
     }
-    if (!isElectron || !isRecording) {
+    if (!isElectronApp() || !isRecording) {
       setShowNoSpeechHint(false);
       return;
     }
@@ -167,7 +166,7 @@ export function TranscriptPanel() {
           <p className="text-sm font-medium text-amber-700 dark:text-amber-400">{micError}</p>
           {micError.toLowerCase().includes("microphone") && (
             <p className="text-xs text-text-muted">
-              {isElectron ? (
+              {isElectronApp() ? (
                 <>
                   <strong>Desktop app:</strong> When you run from a terminal (Cursor or Terminal.app), macOS asks the <strong>terminal</strong> for mic access, not this app. To have <strong>Persuaid</strong> ask: run <code className="text-[11px] bg-amber-500/10 px-1 rounded">npm run pack</code>, then open <strong>Persuaid.app</strong> from the <code className="text-[11px] bg-amber-500/10 px-1 rounded">dist</code> folder in Finder. Or use the app in your browser at <strong>localhost:3000</strong>.
                 </>
@@ -203,7 +202,7 @@ export function TranscriptPanel() {
             <p className="text-sm text-text-muted">
               {isRecording ? "Listening… Your speech will appear here." : "Start the call. Your speech will appear here."}
             </p>
-            {isElectron && isRecording && showNoSpeechHint && !micError && (
+            {isElectronApp() && isRecording && showNoSpeechHint && !micError && (
               <p className="mt-4 max-w-sm text-xs text-text-dim">
                 If nothing appears: add <strong>DEEPGRAM_API_KEY</strong> to a <strong>.env</strong> file in the app’s config folder (macOS: <strong>~/Library/Application Support/Persuaid/</strong>), then restart. Also choose your mic or call device in <strong>Listen from</strong> above.
               </p>

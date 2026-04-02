@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import { isElectronApp } from "@/lib/electron-client";
+import { FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
 import { getPersuaidMicApi } from "@/lib/mic-onboarding";
 
 /** Live Session hub only (`/dashboard`). Hide mic + Start PersuAId on Notes, Calls, Analytics, Settings. */
@@ -24,7 +25,7 @@ export function Header() {
     audioInputDeviceId,
     setAudioInputDeviceId,
   } = useSession();
-  const { canStartLiveSession, usageLoading, openUpgradeModal, plan } = useEntitlements();
+  const { canStartLiveSession, usageLoading, openUpgradeModal, plan, remainingLiveMinutes } = useEntitlements();
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
   const [micPriming, setMicPriming] = useState(false);
 
@@ -116,6 +117,23 @@ export function Header() {
         {!usageLoading && canStartLiveSession && (
           <span className="shrink-0 whitespace-nowrap text-[10px] font-medium tracking-label text-text-dim/75 sm:text-[11px]">
             Enter call <span aria-hidden className="text-text-muted">→</span>
+          </span>
+        )}
+        {isElectronApp() && plan === "free" && !usageLoading && (
+          <span
+            className="inline-flex shrink-0 items-center gap-1.5 tabular-nums text-[12px] font-medium text-text-primary/90"
+            title={
+              remainingLiveMinutes != null
+                ? `${remainingLiveMinutes} min of live listening left this month (desktop). Countdown runs during a call.`
+                : `Free plan: up to ${FREE_PLAN_MONTHLY_MINUTES} minutes of live listening per month on desktop.`
+            }
+            aria-hidden
+          >
+            <svg className="h-3.5 w-3.5 text-text-dim" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+              <circle cx="12" cy="12" r="9" />
+              <path strokeLinecap="round" d="M12 7v5l3 2" />
+            </svg>
+            {remainingLiveMinutes != null ? remainingLiveMinutes : FREE_PLAN_MONTHLY_MINUTES}:00
           </span>
         )}
         <button

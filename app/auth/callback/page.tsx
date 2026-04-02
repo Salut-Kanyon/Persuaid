@@ -13,8 +13,14 @@ function AuthCallbackInner() {
   useEffect(() => {
     const dest = getSafeInternalPath(searchParams.get("next"), "/dashboard");
 
-    const oauthError = searchParams.get("error");
-    const oauthDesc = searchParams.get("error_description");
+    const hashParams =
+      typeof window !== "undefined" && window.location.hash.length > 1
+        ? new URLSearchParams(window.location.hash.slice(1))
+        : null;
+
+    const oauthError = searchParams.get("error") ?? hashParams?.get("error") ?? null;
+    const oauthDesc =
+      searchParams.get("error_description") ?? hashParams?.get("error_description") ?? null;
     if (oauthError) {
       const detail = oauthDesc ? decodeURIComponent(oauthDesc.replace(/\+/g, " ")) : oauthError;
       router.replace(`/sign-in?signin=1&oauth_error=${encodeURIComponent(detail)}`);
@@ -41,6 +47,20 @@ function AuthCallbackInner() {
           setMessage("Couldn’t complete sign-in.");
           router.replace(`/sign-in?signin=1&oauth_error=${encodeURIComponent(error.message)}`);
           return;
+        }
+      }
+
+      // Implicit / hash fragment flow (#access_token=…): GoTrue parses via detectSessionInUrl; may lag one tick.
+      if (url.hash.includes("access_token")) {
+        for (let i = 0; i < 40; i++) {
+          const {
+            data: { session: s },
+          } = await supabase.auth.getSession();
+          if (s) {
+            router.replace(dest);
+            return;
+          }
+          await new Promise((r) => setTimeout(r, 50));
         }
       }
 
