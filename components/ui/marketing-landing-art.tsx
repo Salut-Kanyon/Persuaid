@@ -2,6 +2,21 @@
 
 import { cn } from "@/lib/utils";
 
+/** Headline + subcopy for /pricing (dark page, centered). */
+export function PricingCluelyStyleHero() {
+  return (
+    <div className="mx-auto max-w-[46rem] px-1 text-center">
+      <h1 className="text-center font-sans text-[clamp(1.85rem,6vw,3.55rem)] font-semibold leading-[1.07] tracking-[-0.028em] text-balance text-emerald-300/95">
+        Start for free.
+      </h1>
+      <p className="font-subtitle mx-auto mt-8 max-w-xl px-2 text-center text-[16.5px] font-normal leading-[1.55] tracking-[-0.012em] text-text-secondary sm:mt-9 sm:max-w-2xl sm:text-[17.5px] sm:leading-[1.6]">
+        Whether you&apos;re already solid and just want a little backup on calls, or someone newer trying to learn the
+        product and ramp up faster.
+      </p>
+    </div>
+  );
+}
+
 /** Full-bleed forest hero art — same asset and crop as `Hero` (landing). */
 export function MarketingLandingBackdrop() {
   return (
@@ -10,12 +25,12 @@ export function MarketingLandingBackdrop() {
         <div
           className="absolute bg-cover bg-no-repeat"
           style={{
-            backgroundImage: "url(/LandingPageBack.jpeg?v=3)",
+            backgroundImage: "url(/landing-forest-hero.png?v=1)",
             top: "-6%",
             left: "-10%",
             right: "-10%",
             bottom: "-4%",
-            backgroundPosition: "50% 8%",
+            backgroundPosition: "50% 0%",
           }}
         />
       </div>

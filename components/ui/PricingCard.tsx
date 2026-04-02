@@ -1,22 +1,18 @@
+"use client";
+
+import { motion } from "framer-motion";
 import { CTAButton } from "./CTAButton";
 import { cn } from "@/lib/utils";
 
-/** Landing-style checkmark for plan feature rows (reusable on pricing page free tier, etc.). */
+/** Simple green stroke check — no circle (pricing feature rows). */
 export function PricingFeatureCheck({ className }: { className?: string }) {
   return (
-    <span
-      className={cn(
-        "mt-0.5 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full",
-        "bg-[color:var(--landing-forest)]/90 border border-[color:var(--landing-sage)]/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
-        className
-      )}
-      aria-hidden
-    >
-      <svg viewBox="0 0 16 16" className="size-[11px] text-[color:var(--landing-accent-soft)]" fill="none">
+    <span className={cn("mt-[0.2rem] inline-flex shrink-0 text-green-primary", className)} aria-hidden>
+      <svg viewBox="0 0 16 16" className="size-[12px] sm:size-[13px]" fill="none">
         <path
-          d="M3.6 8.05 6.85 11.3 12.75 4.4"
+          d="M3.4 8.1 6.7 11.3 12.6 4.4"
           stroke="currentColor"
-          strokeWidth="2.15"
+          strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -42,6 +38,8 @@ interface PricingCardProps {
   /** When set, CTA runs this instead of navigating to href (e.g. Stripe checkout). */
   onCheckout?: () => void;
   checkoutLoading?: boolean;
+  /** Drives a short price transition when billing interval changes (e.g. monthly vs yearly). */
+  priceAnimationKey?: string;
 }
 
 export function PricingCard({
@@ -56,27 +54,26 @@ export function PricingCard({
   className,
   onCheckout,
   checkoutLoading = false,
+  priceAnimationKey = "",
 }: PricingCardProps) {
   const isPaid = tier === "featured" || tier === "bestDeal";
 
   return (
     <div
       className={cn(
-        "relative flex min-h-0 flex-col overflow-hidden rounded-3xl border p-8 transition-all duration-300 sm:p-9",
-        "bg-gradient-to-b from-white/[0.04] to-transparent backdrop-blur-sm",
+        "relative flex min-h-0 flex-col overflow-hidden rounded-2xl border p-6 transition-[border-color,box-shadow] duration-300 sm:p-7",
+        "bg-gradient-to-b from-white/[0.045] to-transparent backdrop-blur-sm",
         tier === "default" &&
-          "border-white/[0.08] hover:border-[color:var(--landing-sage)]/35 hover:shadow-[0_16px_40px_-20px_rgba(0,0,0,0.45)]",
+          "border-white/[0.1] hover:border-white/[0.14] hover:shadow-[0_12px_36px_-24px_rgba(0,0,0,0.55)]",
         tier === "featured" &&
           cn(
-            "z-[1] border-green-primary/55",
-            "shadow-[0_0_0_1px_rgba(26,157,120,0.4),0_24px_56px_-22px_rgba(26,157,120,0.42),0_0_80px_-36px_rgba(26,157,120,0.32)]",
-            "ring-1 ring-green-primary/35"
+            "z-[1] border-white/[0.16]",
+            "shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_48px_-28px_rgba(0,0,0,0.65)]"
           ),
         tier === "bestDeal" &&
           cn(
-            "z-[1] border-green-accent/45",
-            "shadow-[0_0_0_1px_rgba(61,184,146,0.45),0_28px_64px_-20px_rgba(26,157,120,0.48),0_0_100px_-32px_rgba(61,184,146,0.35)]",
-            "ring-2 ring-green-accent/30"
+            "z-[1] border-white/[0.18]",
+            "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_20px_52px_-26px_rgba(0,0,0,0.7)]"
           ),
         className
       )}
@@ -84,38 +81,34 @@ export function PricingCard({
       <div className="mb-6 shrink-0">
         <h3
           className={cn(
-            "font-bold tracking-tight text-text-primary",
-            tier === "default" ? "text-lg sm:text-xl" : "text-xl sm:text-2xl",
-            description ? "mb-1.5" : "mb-5"
+            "font-semibold tracking-tight text-text-primary text-[1.12rem] sm:text-xl",
+            description ? "mb-1.5" : "mb-4"
           )}
         >
           {name}
         </h3>
         {description ? (
-          <p className={cn("mb-5 leading-snug text-text-muted", tier === "default" ? "text-[13px]" : "text-sm")}>
-            {description}
-          </p>
+          <p className={cn("mb-4 leading-snug text-text-muted text-[12px] sm:text-[13px]")}>{description}</p>
         ) : null}
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span
-            className={cn(
-              "font-bold tracking-tight text-text-primary",
-              tier === "default" ? "text-3xl sm:text-4xl" : "text-4xl sm:text-5xl"
-            )}
-          >
-            {price}
-          </span>
-          {period && <span className="text-base font-medium text-text-dim">{period}</span>}
-        </div>
+        <motion.div
+          key={priceAnimationKey ? `${priceAnimationKey}-${price}` : price}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+          className="inline-flex max-w-full flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-xl border border-green-primary/40 bg-transparent px-3 py-2 sm:gap-x-2.5 sm:px-3.5 sm:py-2.5"
+        >
+          <span className="text-[1.95rem] font-bold tracking-tight text-text-primary sm:text-[2.25rem]">{price}</span>
+          {period && (
+            <span className="text-sm font-medium text-text-dim sm:text-[0.95rem]">{period}</span>
+          )}
+        </motion.div>
       </div>
 
-      <ul className="shrink-0 space-y-2 text-[12px] font-medium leading-snug sm:text-[13px]">
+      <ul className="shrink-0 space-y-2 text-[12px] font-medium leading-snug text-white/[0.88] sm:text-[13px]">
         {features.map((feature, index) => (
-          <li key={index} className="flex gap-2">
-            <PricingFeatureCheck className="mt-0.5" />
-            <span className="min-w-0 bg-gradient-to-r from-white via-zinc-200 to-zinc-500 bg-clip-text text-transparent">
-              {feature}
-            </span>
+          <li key={index} className="flex gap-2.5">
+            <PricingFeatureCheck />
+            <span className="min-w-0">{feature}</span>
           </li>
         ))}
       </ul>
@@ -128,7 +121,8 @@ export function PricingCard({
 
       <div className="w-full shrink-0 pt-6">
         <CTAButton
-          variant={isPaid ? "primary" : "secondary"}
+          variant={isPaid ? "workspace" : "secondary"}
+          size={isPaid ? "default" : "compact"}
           className="w-full"
           href={onCheckout ? undefined : "/dashboard"}
           onClick={onCheckout}

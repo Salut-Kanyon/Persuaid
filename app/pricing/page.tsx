@@ -8,14 +8,8 @@ import { Navbar } from "@/components/ui/Navbar";
 import { PricingCard, PricingFeatureCheck } from "@/components/ui/PricingCard";
 import { CTAButton } from "@/components/ui/CTAButton";
 import { Footer } from "@/components/ui/Footer";
-import {
-  MarketingHeroHeadlineDivider,
-  marketingHeroSubtitleClassName,
-  marketingHeroTitleClassName,
-} from "@/components/ui/marketing-landing-art";
+import { PricingCluelyStyleHero } from "@/components/ui/marketing-landing-art";
 import { cn } from "@/lib/utils";
-import { FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
-
 type BillingInterval = "monthly" | "yearly";
 
 const YEARLY_DISCOUNT = 0.2;
@@ -59,11 +53,11 @@ function PlanBadge({ variant, children }: { variant: "popular" | "best"; childre
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-full px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.12em]",
+        "inline-flex items-center justify-center rounded-full px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] sm:px-5 sm:py-2 sm:text-[11px]",
         variant === "popular" &&
-          "border border-green-primary/55 bg-green-primary/[0.22] text-green-accent shadow-[0_0_40px_-10px_rgba(26,157,120,0.65),inset_0_1px_0_rgba(255,255,255,0.14)]",
+          "border border-white/18 bg-white/[0.06] text-text-primary/95",
         variant === "best" &&
-          "border border-green-accent/50 bg-gradient-to-b from-green-primary/40 via-green-primary/25 to-green-darker/55 text-white shadow-[0_0_48px_-8px_rgba(61,184,146,0.55),0_12px_32px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)]"
+          "border border-white/[0.22] bg-white/[0.08] text-text-primary"
       )}
     >
       {children}
@@ -120,58 +114,66 @@ export default function PricingPage() {
   const periodSuffix = interval === "yearly" ? " (billed yearly)" : "";
 
   const badgeSlotClass =
-    "flex min-h-[3.75rem] shrink-0 flex-col items-center justify-end pb-3 pt-1 sm:min-h-[4rem]";
+    "flex min-h-[2.85rem] shrink-0 flex-col items-center justify-end pb-2 pt-1 sm:min-h-[3.1rem]";
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-black">
       <Navbar landingLogo />
 
       <div className="relative z-10">
-        {/* Hero — same inset, type scale, divider, and subtitle treatment as landing `Hero` */}
-        <section className="mx-auto w-full max-w-5xl px-5 sm:px-8 lg:px-10 pb-10 pt-24 sm:pb-12 sm:pt-28 lg:pt-28">
+        {/* Hero — split headline + mark; inherits page bg */}
+        <section className="relative w-full border-b border-white/[0.06] pb-10 pt-24 sm:pb-12 sm:pt-28 lg:pt-28">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
-            className="mx-auto max-w-[42rem] text-center"
+            className="mx-auto w-full max-w-5xl px-5 sm:px-8 lg:px-10"
           >
-            <h1 className={marketingHeroTitleClassName}>Never freeze on a call again.</h1>
-            <MarketingHeroHeadlineDivider />
-            <p className={cn(marketingHeroSubtitleClassName, "mb-8 text-white sm:mb-10")}>
-              Real-time answers while you&apos;re still on the call.
-            </p>
+            <PricingCluelyStyleHero />
           </motion.div>
         </section>
 
         <div className="mx-auto flex max-w-6xl flex-col items-center px-4 sm:px-6 lg:px-8">
-          <div className="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-background-surface/50 p-1.5">
-            <button
+          <div className="relative isolate inline-flex w-full max-w-[292px] rounded-lg border border-white/[0.1] bg-white/[0.04] p-1 sm:max-w-[304px]">
+            <motion.span
+              aria-hidden
+              className="pointer-events-none absolute bottom-1 top-1 z-0 w-[calc(50%-6px)] rounded-md border border-green-primary/35 bg-green-primary/[0.14] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]"
+              initial={false}
+              animate={{ left: interval === "monthly" ? 4 : "calc(50% + 2px)" }}
+              transition={{ type: "spring", stiffness: 420, damping: 34 }}
+            />
+            <motion.button
               type="button"
               onClick={() => setInterval("monthly")}
+              whileTap={{ scale: 0.98 }}
               className={cn(
-                "rounded-lg px-5 py-2 text-sm font-medium transition-colors",
-                interval === "monthly"
-                  ? "border border-green-primary/30 bg-green-primary/20 text-green-accent"
-                  : "text-text-muted hover:text-text-primary"
+                "relative z-10 flex-1 rounded-md px-4 py-2 text-[13px] font-medium transition-colors sm:py-2.5",
+                interval === "monthly" ? "text-text-primary" : "text-text-muted hover:text-text-primary"
               )}
             >
               Monthly
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               type="button"
               onClick={() => setInterval("yearly")}
+              whileTap={{ scale: 0.98 }}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-medium transition-colors",
-                interval === "yearly"
-                  ? "border border-green-primary/30 bg-green-primary/20 text-green-accent"
-                  : "text-text-muted hover:text-text-primary"
+                "relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors sm:py-2.5",
+                interval === "yearly" ? "text-text-primary" : "text-text-muted hover:text-text-primary"
               )}
             >
               Yearly
-              <span className="rounded bg-green-primary/30 px-1.5 py-0.5 text-[10px] font-semibold text-green-accent">
+              <span
+                className={cn(
+                  "rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide transition-colors",
+                  interval === "yearly"
+                    ? "border-green-primary/30 bg-green-primary/[0.12] text-emerald-200/90"
+                    : "border-white/[0.08] bg-white/[0.06] text-text-secondary"
+                )}
+              >
                 −20%
               </span>
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -180,95 +182,104 @@ export default function PricingPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.06 }}
-          className="mx-auto mt-10 grid max-w-6xl grid-cols-1 items-stretch gap-7 px-4 sm:px-6 md:mt-12 md:grid-cols-3 md:gap-4 lg:gap-6 lg:px-8"
+          className="mx-auto mt-8 grid max-w-6xl grid-cols-1 items-stretch gap-6 px-4 sm:px-6 md:mt-10 md:grid-cols-3 md:gap-5 lg:px-8"
         >
-          {/* Free — quieter, smaller feel */}
-          <div className="flex min-h-0 w-full flex-col">
+          {/* Free — readable surface (was easy to miss on dark bg) */}
+          <div className="flex h-full min-h-0 w-full flex-col">
             <div className={badgeSlotClass} aria-hidden>
-              <span className="invisible select-none rounded-full px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.12em]">
+              <span className="invisible select-none rounded-full px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.14em]">
                 Most popular
               </span>
             </div>
             <div
               className={cn(
-                "flex min-h-0 flex-1 flex-col rounded-3xl border border-white/[0.06] bg-background-surface/15 p-6 sm:p-7",
-                "opacity-[0.92]"
+                "flex min-h-0 flex-1 flex-col rounded-2xl border border-white/[0.14] bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] sm:p-7"
               )}
             >
-              <h3 className="text-xl font-semibold tracking-tight text-text-primary sm:text-2xl">Free</h3>
-              <div className="mt-5 flex items-baseline gap-1">
-                <span className="text-3xl font-bold tracking-tight text-text-primary sm:text-[2.25rem]">$0</span>
-              </div>
-              <ul className="mt-6 space-y-2 text-[12px] font-medium leading-snug sm:text-[13px]">
-                <li className="flex gap-2">
-                  <PricingFeatureCheck className="!h-5 !w-5" />
-                  <span className="text-text-primary/90">Live AI support during calls</span>
-                </li>
-                <li className="flex gap-2">
-                  <PricingFeatureCheck className="!h-5 !w-5" />
-                  <span className="text-text-primary/90">Unlimited responses while active</span>
-                </li>
-                <li className="flex gap-2">
-                  <PricingFeatureCheck className="!h-5 !w-5" />
-                  <span className="text-text-primary/90">Bring your own talk tracks & notes</span>
-                </li>
-                <li className="flex gap-2">
-                  <PricingFeatureCheck className="!h-5 !w-5" />
-                  <span className="text-text-primary/90">
-                    {FREE_PLAN_MONTHLY_MINUTES} minutes of live listening per month
+              <div className="mb-6 shrink-0">
+                <h3 className="mb-4 text-[1.12rem] font-semibold tracking-tight text-text-primary sm:text-xl">
+                  Trial
+                </h3>
+                <motion.div
+                  key={interval}
+                  initial={{ opacity: 0.88, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1] }}
+                  className="inline-flex max-w-full items-baseline rounded-xl border border-green-primary/40 bg-transparent px-3 py-2 sm:px-3.5 sm:py-2.5"
+                >
+                  <span className="text-[1.95rem] font-bold tracking-tight text-text-primary sm:text-[2.25rem]">
+                    Free
                   </span>
+                </motion.div>
+              </div>
+              <ul className="mt-0 space-y-2 text-[12px] font-medium leading-snug text-white/[0.88] sm:text-[13px]">
+                <li className="flex gap-2.5">
+                  <PricingFeatureCheck />
+                  <span className="min-w-0">Limited amount of time</span>
+                </li>
+                <li className="flex gap-2.5">
+                  <PricingFeatureCheck />
+                  <span className="min-w-0">Limited Amount of Responses</span>
+                </li>
+                <li className="flex gap-2.5">
+                  <PricingFeatureCheck />
+                  <span className="min-w-0">Starter Workspace</span>
+                </li>
+                <li className="flex gap-2.5">
+                  <PricingFeatureCheck />
+                  <span className="min-w-0">Free Trial</span>
                 </li>
               </ul>
               <div className="min-h-0 flex-1" aria-hidden />
               <div className="pt-6">
-                <CTAButton variant="secondary" className="w-full" href="/download">
-                  Download free app
+                <CTAButton variant="workspace" size="default" className="w-full" href="/download">
+                  Download Now
                 </CTAButton>
               </div>
             </div>
           </div>
 
-          {/* Pro — most popular */}
-          <div className="relative z-[2] flex min-h-0 w-full flex-col">
+          {/* Pro */}
+          <div className="relative z-[2] flex h-full min-h-0 w-full flex-col">
             <div className={badgeSlotClass}>
               <PlanBadge variant="popular">Most popular</PlanBadge>
             </div>
             <PricingCard
-              name="Persuaid Pro"
+              name="Pro"
               price={proPrice}
               period={`/month${periodSuffix}`}
+              priceAnimationKey={interval}
               features={[
-                "Generous monthly live call listening",
-                "Instant answers, rebuttals, and follow-ups while you’re talking",
-                "Uses your product knowledge, pricing, and notes in real time",
+                "Unlimited Amount of Responses",
+                "Uses your product knowledge",
                 "Saved transcripts with coaching insights after every call",
+                "20 hours of call time a month",
               ]}
               cta="Subscribe"
               tier="featured"
-              className="min-h-0 flex-1 md:scale-[1.03] md:shadow-xl lg:scale-[1.04]"
+              className="min-h-0 flex-1"
               onCheckout={() => startCheckout("pro")}
               checkoutLoading={checkoutLoading === "pro"}
             />
           </div>
 
-          {/* Pro Plus — best deal */}
-          <div className="relative z-[2] flex min-h-0 w-full flex-col">
+          {/* Pro Plus */}
+          <div className="relative z-[2] flex h-full min-h-0 w-full flex-col">
             <div className={badgeSlotClass}>
               <PlanBadge variant="best">Best deal</PlanBadge>
             </div>
             <PricingCard
-              name="Persuaid Pro Plus"
+              name="Pro Plus"
               price={proPlusPrice}
               period={`/month${periodSuffix}`}
+              priceAnimationKey={interval}
               features={[
-                "Maximum monthly live call listening",
-                "Instant answers, rebuttals, and follow-ups while you’re talking",
-                "Uses your product knowledge, pricing, and notes in real time",
-                "Saved transcripts with coaching insights after every call",
+                "Like All Pro features, plus additional features",
+                "50 hours a month of live calls",
               ]}
               cta="Subscribe"
               tier="bestDeal"
-              className="min-h-0 flex-1 md:scale-[1.03] md:shadow-xl lg:scale-[1.04]"
+              className="min-h-0 flex-1"
               onCheckout={() => startCheckout("team")}
               checkoutLoading={checkoutLoading === "team"}
             />
@@ -280,7 +291,7 @@ export default function PricingPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.4 }}
-          className="mx-auto mt-16 max-w-6xl rounded-2xl border border-border/50 bg-background-surface/35 p-6 px-4 sm:flex sm:items-center sm:justify-between sm:gap-8 sm:p-8 lg:px-8"
+          className="mx-auto mt-14 max-w-5xl rounded-2xl border border-border/50 bg-background-surface/35 p-5 px-4 sm:flex sm:items-center sm:justify-between sm:gap-8 sm:p-7 lg:px-7"
         >
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/85">Partners</p>
@@ -329,7 +340,7 @@ export default function PricingPage() {
                     onClick={() => setOpenFaqIndex(isOpen ? null : index)}
                     className={cn(
                       "flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition-colors sm:px-5 sm:py-5",
-                      "hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-accent/40 focus-visible:ring-inset"
+                      "hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-inset"
                     )}
                     aria-expanded={isOpen}
                   >

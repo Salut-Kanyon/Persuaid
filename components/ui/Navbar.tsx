@@ -25,7 +25,7 @@ type NavbarProps = {
 
 export function Navbar({ liveDemo, landing = false, landingLogo = false }: NavbarProps) {
   const pathname = usePathname();
-  const hideFloatingDownload = pathname === "/download";
+  const hideFloatingDownload = pathname === "/download" || pathname === "/pricing";
   const [showCtaButton, setShowCtaButton] = useState(false);
 
   useEffect(() => {

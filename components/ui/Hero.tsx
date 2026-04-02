@@ -113,13 +113,13 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
           <div
             className="absolute bg-no-repeat bg-cover"
             style={{
-              /* .jpeg is the asset on disk; .png path 404s if only jpeg is present */
-              backgroundImage: "url(/LandingPageBack.jpeg?v=3)",
+              backgroundImage: "url(/landing-forest-hero.png?v=1)",
               top: "-6%",
               left: "-10%",
               right: "-10%",
               bottom: "-4%",
-              backgroundPosition: "50% 8%",
+              /* Art has solid black top — anchor to top so headline sits on dark sky */
+              backgroundPosition: "50% 0%",
             }}
           />
         </div>
