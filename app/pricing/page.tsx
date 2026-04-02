@@ -182,7 +182,7 @@ export default function PricingPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.06 }}
-          className="mx-auto mt-8 grid max-w-6xl grid-cols-1 items-stretch gap-6 px-4 sm:px-6 md:mt-10 md:grid-cols-3 md:gap-5 lg:px-8"
+          className="mx-auto mt-8 grid max-w-6xl grid-cols-1 items-stretch gap-6 px-4 sm:px-6 md:mt-10 md:grid-cols-3 md:items-start md:gap-5 lg:px-8"
         >
           {/* Free — readable surface (was easy to miss on dark bg) */}
           <div className="flex h-full min-h-0 w-full flex-col">
@@ -200,17 +200,11 @@ export default function PricingPage() {
                 <h3 className="mb-4 text-[1.12rem] font-semibold tracking-tight text-text-primary sm:text-xl">
                   Trial
                 </h3>
-                <motion.div
-                  key={interval}
-                  initial={{ opacity: 0.88, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1] }}
-                  className="inline-flex max-w-full items-baseline rounded-xl border border-green-primary/40 bg-transparent px-3 py-2 sm:px-3.5 sm:py-2.5"
-                >
+                <div className="inline-flex max-w-full items-baseline px-0 py-0">
                   <span className="text-[1.95rem] font-bold tracking-tight text-text-primary sm:text-[2.25rem]">
                     Free
                   </span>
-                </motion.div>
+                </div>
               </div>
               <ul className="mt-0 space-y-2 text-[12px] font-medium leading-snug text-white/[0.88] sm:text-[13px]">
                 <li className="flex gap-2.5">

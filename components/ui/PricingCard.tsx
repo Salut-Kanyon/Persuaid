@@ -95,7 +95,7 @@ export function PricingCard({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-          className="inline-flex max-w-full flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-xl border border-green-primary/40 bg-transparent px-3 py-2 sm:gap-x-2.5 sm:px-3.5 sm:py-2.5"
+          className="inline-flex max-w-full flex-wrap items-baseline gap-x-2 gap-y-0.5 px-0 py-0 sm:gap-x-2.5"
         >
           <span className="text-[1.95rem] font-bold tracking-tight text-text-primary sm:text-[2.25rem]">{price}</span>
           {period && (

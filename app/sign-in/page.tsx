@@ -7,7 +7,9 @@ import { supabase } from "@/lib/supabase/client";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { GoogleGIcon } from "@/components/ui/GoogleGIcon";
+import { AppleMarkIcon } from "@/components/ui/AppleMarkIcon";
 import { getSafeInternalPath } from "@/lib/safe-path";
+import { buildOAuthRedirectTo } from "@/lib/build-oauth-redirect";
 
 /** Marketing CTAs use `/sign-in` → create account first. Auth redirects use `?signin=1` to open sign-in. */
 function SignInForm() {
@@ -25,6 +27,7 @@ function SignInForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSignUp, setIsSignUp] = useState(!openSignIn);
   const router = useRouter();
@@ -87,10 +90,7 @@ function SignInForm() {
   async function handleGoogleSignIn() {
     setError(null);
     setGoogleLoading(true);
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const callback = nextParam
-      ? `${origin}/auth/callback?next=${encodeURIComponent(getSafeInternalPath(nextParam, "/dashboard"))}`
-      : `${origin}/auth/callback`;
+    const callback = buildOAuthRedirectTo(nextParam);
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: callback },
@@ -102,6 +102,21 @@ function SignInForm() {
     // On success the browser navigates away; no need to clear loading.
   }
 
+  async function handleAppleSignIn() {
+    setError(null);
+    setAppleLoading(true);
+    const callback = buildOAuthRedirectTo(nextParam);
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: "apple",
+      options: { redirectTo: callback },
+    });
+    if (err) {
+      setAppleLoading(false);
+      setError(err.message);
+    }
+  }
+
+  const oauthBusy = googleLoading || appleLoading;
   const spring = { type: "spring" as const, stiffness: 380, damping: 28 };
 
   return (
@@ -186,14 +201,14 @@ function SignInForm() {
               </>
             )}
 
-            {/* Mode toggle */}
+            {/* Mode toggle — compact for in-app / workspace auth */}
             <div
-              className="relative mb-8 rounded-2xl bg-background-surface-elevated/80 p-1 border border-border/80"
+              className="relative mb-5 rounded-xl bg-background-surface-elevated/80 p-1 border border-border/80"
               role="tablist"
               aria-label="Account access"
             >
               <motion.div
-                className="pointer-events-none absolute left-1 top-1 bottom-1 w-[calc(50%-6px)] rounded-xl bg-green-primary shadow-[0_2px_12px_rgba(16,185,129,0.35)]"
+                className="pointer-events-none absolute left-1 top-1 bottom-1 w-[calc(50%-6px)] rounded-lg bg-green-primary shadow-[0_2px_10px_rgba(16,185,129,0.28)]"
                 initial={false}
                 animate={{ x: isSignUp ? 0 : "calc(100% + 8px)" }}
                 transition={{ type: "spring", stiffness: 420, damping: 32 }}
@@ -206,12 +221,12 @@ function SignInForm() {
                   id="tab-signup"
                   onClick={() => switchMode(true)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-0.5 rounded-xl py-3 px-2 sm:px-3 text-center transition-colors z-10",
+                    "flex flex-col items-center justify-center gap-px rounded-[10px] py-2 px-1.5 sm:px-2 text-center transition-colors z-10",
                     isSignUp ? "text-black" : "text-text-muted hover:text-text-secondary"
                   )}
                 >
-                  <span className="text-sm font-semibold tracking-tight">New here</span>
-                  <span className={cn("text-[11px] font-medium", isSignUp ? "text-black/75" : "text-text-dim")}>
+                  <span className="text-[11px] font-semibold tracking-tight sm:text-xs">New here</span>
+                  <span className={cn("text-[10px] font-medium leading-tight", isSignUp ? "text-black/75" : "text-text-dim")}>
                     Create account
                   </span>
                 </button>
@@ -222,12 +237,12 @@ function SignInForm() {
                   id="tab-signin"
                   onClick={() => switchMode(false)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-0.5 rounded-xl py-3 px-2 sm:px-3 text-center transition-colors z-10",
+                    "flex flex-col items-center justify-center gap-px rounded-[10px] py-2 px-1.5 sm:px-2 text-center transition-colors z-10",
                     !isSignUp ? "text-black" : "text-text-muted hover:text-text-secondary"
                   )}
                 >
-                  <span className="text-sm font-semibold tracking-tight">Sign in</span>
-                  <span className={cn("text-[11px] font-medium", !isSignUp ? "text-black/75" : "text-text-dim")}>
+                  <span className="text-[11px] font-semibold tracking-tight sm:text-xs">Sign in</span>
+                  <span className={cn("text-[10px] font-medium leading-tight", !isSignUp ? "text-black/75" : "text-text-dim")}>
                     I have an account
                   </span>
                 </button>
@@ -252,7 +267,7 @@ function SignInForm() {
             <div className="mb-6 space-y-4">
               <motion.button
                 type="button"
-                disabled={loading || googleLoading}
+                disabled={loading || oauthBusy}
                 whileTap={reduceMotion ? undefined : { scale: 0.99 }}
                 onClick={() => void handleGoogleSignIn()}
                 className={cn(
@@ -263,6 +278,20 @@ function SignInForm() {
               >
                 <GoogleGIcon className="h-5 w-5 shrink-0" />
                 {googleLoading ? "Redirecting…" : "Continue with Google"}
+              </motion.button>
+              <motion.button
+                type="button"
+                disabled={loading || oauthBusy}
+                whileTap={reduceMotion ? undefined : { scale: 0.99 }}
+                onClick={() => void handleAppleSignIn()}
+                className={cn(
+                  "w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border font-semibold text-sm transition-colors",
+                  "bg-black text-white border-white/15 hover:bg-neutral-900",
+                  "disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                )}
+              >
+                <AppleMarkIcon className="h-5 w-5 shrink-0" />
+                {appleLoading ? "Redirecting…" : "Continue with Apple"}
               </motion.button>
               <div className="relative flex items-center gap-3">
                 <span className="h-px flex-1 bg-border" />
@@ -286,7 +315,7 @@ function SignInForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border border-border bg-background-surface-elevated text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/50 focus:border-green-primary/50 transition-all duration-200"
-                    disabled={loading || googleLoading}
+                    disabled={loading || oauthBusy}
                     required
                   />
                 </div>
@@ -304,7 +333,7 @@ function SignInForm() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full px-4 py-3 pr-11 rounded-lg border border-border bg-background-surface-elevated text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/50 focus:border-green-primary/50 transition-all duration-200"
-                      disabled={loading || googleLoading}
+                      disabled={loading || oauthBusy}
                       required
                       minLength={isSignUp ? 6 : undefined}
                     />
@@ -358,7 +387,7 @@ function SignInForm() {
                               ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20"
                               : "border-border focus:border-green-primary/50"
                           )}
-                          disabled={loading || googleLoading}
+                          disabled={loading || oauthBusy}
                           required={isSignUp}
                           minLength={6}
                         />
@@ -391,7 +420,7 @@ function SignInForm() {
 
               <motion.button
                 type="submit"
-                disabled={loading || googleLoading}
+                disabled={loading || oauthBusy}
                 whileTap={reduceMotion ? undefined : { scale: 0.99 }}
                 className="w-full py-3 rounded-button bg-green-primary text-white font-semibold hover:bg-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-button hover:shadow-button-hover hover:shadow-glow-button relative overflow-hidden group"
               >
