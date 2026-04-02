@@ -122,7 +122,7 @@ export default function PricingPage() {
 
       <div className="relative z-10">
         {/* Hero — split headline + mark; inherits page bg */}
-        <section className="relative w-full border-b border-white/[0.06] pb-10 pt-24 sm:pb-12 sm:pt-28 lg:pt-28">
+        <section className="relative w-full pb-8 pt-24 sm:pb-10 sm:pt-28 lg:pt-28">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -235,6 +235,9 @@ export default function PricingPage() {
                 <CTAButton variant="workspace" size="default" className="w-full" href="/download">
                   Download Now
                 </CTAButton>
+                <p className="mt-2 text-center text-xs leading-relaxed text-text-dim">
+                  Setup in 30 Seconds
+                </p>
               </div>
             </div>
           </div>

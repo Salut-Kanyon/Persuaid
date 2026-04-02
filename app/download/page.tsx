@@ -92,74 +92,72 @@ export default function DownloadPage() {
   };
 
   return (
-    <main className="relative overflow-x-hidden bg-[#050506] text-text-primary">
-      <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0c0b] via-[#060708] to-[#030304]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)]" />
-      </div>
+    <main className="relative overflow-x-hidden bg-black text-text-primary">
+      <div className="pointer-events-none fixed inset-0 z-0 bg-black" aria-hidden />
 
       <Navbar />
 
       <div className="relative z-10">
-        {/* Full-bleed top hero: MacBook fills width; copy + toggle + CTA sit on top */}
-        <section className="relative w-full overflow-hidden pb-8 pt-10 sm:pb-10 sm:pt-14">
-          {/* Fixed viewport height so hero photos + overlays do not rescale when content below grows */}
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 h-[min(88vh,900px)] overflow-hidden sm:h-[min(90vh,960px)]"
-            aria-hidden
-          >
-            <div className="absolute inset-0">
-              {/* eslint-disable-next-line @next/next/no-img-element -- static export + hero assets */}
-              <motion.img
-                src="/images/download-hero-macbook.png"
-                alt=""
-                fetchPriority="high"
-                decoding="async"
-                className="absolute inset-0 h-full w-full scale-[1.03] object-cover object-[center_58%] sm:object-[center_55%]"
-                initial={false}
-                animate={{ opacity: platform === "mac" ? 0.55 : 0 }}
-                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        {/* Hero = fixed min-height + full visible image; install steps live below so only that block grows */}
+        <section className="relative w-full overflow-x-hidden pb-8 pt-10 sm:pb-10 sm:pt-14">
+          <div className="relative min-h-[min(88vh,900px)] w-full sm:min-h-[min(90vh,960px)]">
+            {/* Background: object-contain = full artwork visible; height is this slab only — not tied to accordion */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+              <div className="absolute inset-0 bg-black" />
+              <div className="absolute inset-0 flex items-center justify-center px-3 py-6 sm:px-6 sm:py-10">
+                <div className="relative h-full w-full max-w-[min(100%,1280px)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- static export + hero assets */}
+                  <motion.img
+                    src="/images/download-hero-macbook.png"
+                    alt=""
+                    fetchPriority="high"
+                    decoding="async"
+                    className="absolute left-1/2 top-1/2 max-h-full max-w-full -translate-x-1/2 -translate-y-1/2 object-contain object-center"
+                    initial={false}
+                    animate={{ opacity: platform === "mac" ? 0.55 : 0 }}
+                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                  {/* eslint-disable-next-line @next/next/no-img-element -- static export + hero assets */}
+                  <motion.img
+                    src="/images/download-hero-windows.png"
+                    alt=""
+                    decoding="async"
+                    loading="eager"
+                    className="absolute left-1/2 top-1/2 max-h-full max-w-full -translate-x-1/2 -translate-y-1/2 object-contain object-center"
+                    initial={false}
+                    animate={{ opacity: platform === "windows" ? 0.55 : 0 }}
+                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                </div>
+              </div>
+              <div
+                className="pointer-events-none absolute inset-0 bg-black/45 sm:bg-black/40"
+                aria-hidden
               />
-              {/* eslint-disable-next-line @next/next/no-img-element -- static export + hero assets */}
-              <motion.img
-                src="/images/download-hero-windows.png"
-                alt=""
-                decoding="async"
-                loading="eager"
-                className="absolute inset-0 h-full w-full scale-[1.03] object-cover object-[center_58%] sm:object-[center_55%]"
+              <div
+                className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/78 via-black/55 to-black/92"
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_100%_80%_at_50%_35%,rgba(0,0,0,0.28),transparent_55%)]"
+                aria-hidden
+              />
+              <motion.div
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_100%,rgba(26,157,120,0.08),transparent_55%)]"
+                aria-hidden
                 initial={false}
-                animate={{ opacity: platform === "windows" ? 0.55 : 0 }}
-                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                animate={{ opacity: platform === "mac" ? 1 : 0 }}
+                transition={{ duration: 0.45 }}
               />
             </div>
-            <div
-              className="pointer-events-none absolute inset-0 bg-black/45 sm:bg-black/40"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/78 via-black/55 to-black/92"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_100%_80%_at_50%_35%,rgba(0,0,0,0.28),transparent_55%)]"
-              aria-hidden
-            />
-            <motion.div
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_100%,rgba(26,157,120,0.08),transparent_55%)]"
-              aria-hidden
-              initial={false}
-              animate={{ opacity: platform === "mac" ? 1 : 0 }}
-              transition={{ duration: 0.45 }}
-            />
-          </div>
 
-          <div className="relative z-[1] mx-auto flex max-w-3xl flex-col px-5 sm:px-8 lg:max-w-4xl lg:px-10">
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="text-center"
-            >
+            <div className="relative z-[1] mx-auto flex max-w-3xl flex-col px-5 sm:px-8 lg:max-w-4xl lg:px-10">
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="text-center"
+              >
               {checkoutSuccess && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
@@ -221,56 +219,55 @@ export default function DownloadPage() {
                   ))}
                 </div>
               </div>
-            </motion.div>
 
-            <div className="mt-5 flex flex-col justify-start pb-10 pt-3 sm:mt-6 sm:pb-12 sm:pt-4">
-              {/* Fixed-height block so toggling macOS/Windows does not shift the install steps */}
-              <div className="mx-auto w-full max-w-md text-center">
-                <div className="mt-14 sm:mt-16">
-                  {platform === "mac" ? (
-                    <motion.button
-                      type="button"
-                      onClick={() => void startDownload("mac", macUrl, "Persuaid.dmg")}
-                      disabled={downloadingTarget !== null}
-                      whileHover={{ scale: downloadingTarget !== null ? 1 : 1.015 }}
-                      whileTap={{ scale: downloadingTarget !== null ? 1 : 0.99 }}
-                      transition={{ type: "spring", stiffness: 450, damping: 28 }}
-                      className={cn(
-                        "group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl px-6 py-4 text-base font-semibold tracking-[-0.02em] sm:py-[1.125rem] sm:text-lg",
-                        "border border-green-primary/45 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_10px_32px_-4px_rgba(26,157,120,0.45)]",
-                        "transition-[border-color,box-shadow] duration-300 ease-out",
-                        "enabled:hover:border-green-primary/70 enabled:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_14px_40px_-4px_rgba(26,157,120,0.55)]",
-                        "disabled:cursor-not-allowed disabled:opacity-50"
-                      )}
-                    >
-                      <span
-                        aria-hidden
-                        className="absolute inset-0 bg-gradient-to-b from-[#2eb896] via-green-primary to-[#158f6c] opacity-100 transition-[filter,opacity] duration-300 ease-out group-hover:brightness-110 group-disabled:opacity-55 group-disabled:group-hover:brightness-100"
-                      />
-                      <span className="relative z-[1] flex items-center justify-center gap-3">
-                        <AppleIcon className="h-6 w-6 shrink-0 text-white sm:h-7 sm:w-7" />
-                        <span>
-                          {downloadingTarget === "mac" ? "Starting download..." : "Download for Mac"}
-                        </span>
+              <div className="mx-auto mt-6 w-full max-w-md sm:mt-7">
+                {platform === "mac" ? (
+                  <motion.button
+                    type="button"
+                    onClick={() => void startDownload("mac", macUrl, "Persuaid.dmg")}
+                    disabled={downloadingTarget !== null}
+                    whileHover={{ scale: downloadingTarget !== null ? 1 : 1.015 }}
+                    whileTap={{ scale: downloadingTarget !== null ? 1 : 0.99 }}
+                    transition={{ type: "spring", stiffness: 450, damping: 28 }}
+                    className={cn(
+                      "group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl px-6 py-4 text-base font-semibold tracking-[-0.02em] sm:py-[1.125rem] sm:text-lg",
+                      "border border-green-primary/45 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_10px_32px_-4px_rgba(26,157,120,0.45)]",
+                      "transition-[border-color,box-shadow] duration-300 ease-out",
+                      "enabled:hover:border-green-primary/70 enabled:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_14px_40px_-4px_rgba(26,157,120,0.55)]",
+                      "disabled:cursor-not-allowed disabled:opacity-50"
+                    )}
+                  >
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 bg-gradient-to-b from-[#2eb896] via-green-primary to-[#158f6c] opacity-100 transition-[filter,opacity] duration-300 ease-out group-hover:brightness-110 group-disabled:opacity-55 group-disabled:group-hover:brightness-100"
+                    />
+                    <span className="relative z-[1] flex items-center justify-center gap-3">
+                      <AppleIcon className="h-6 w-6 shrink-0 text-white sm:h-7 sm:w-7" />
+                      <span>
+                        {downloadingTarget === "mac" ? "Starting download..." : "Download for Mac"}
                       </span>
-                    </motion.button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      className={cn(
-                        "inline-flex w-full cursor-not-allowed items-center justify-center gap-3 rounded-2xl px-6 py-4 text-base font-medium tracking-[-0.02em] sm:py-[1.125rem] sm:text-lg",
-                        "border border-white/15 bg-black/40 text-white/50",
-                        "shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md"
-                      )}
-                    >
-                      <WindowsIcon className="h-6 w-6 shrink-0 text-white/45 sm:h-7 sm:w-7" />
-                      <span>Windows beta soon</span>
-                    </button>
-                  )}
-                </div>
+                    </span>
+                  </motion.button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className={cn(
+                      "inline-flex w-full cursor-not-allowed items-center justify-center gap-3 rounded-2xl px-6 py-4 text-base font-medium tracking-[-0.02em] sm:py-[1.125rem] sm:text-lg",
+                      "border border-white/15 bg-black/40 text-white/50",
+                      "shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md"
+                    )}
+                  >
+                    <WindowsIcon className="h-6 w-6 shrink-0 text-white/45 sm:h-7 sm:w-7" />
+                    <span>Windows beta soon</span>
+                  </button>
+                )}
+              </div>
+              </motion.div>
 
-                <div className="mt-6 flex h-[2.25rem] items-center justify-center sm:h-[2.375rem]">
+              {/* Directly under CTA; accordion growth stays in this column */}
+              <div className="mx-auto mt-5 w-full max-w-md pb-10 text-center sm:mt-6 sm:pb-12">
+                <div className="flex min-h-[2.25rem] items-center justify-center sm:min-h-[2.375rem]">
                   {platform === "windows" ? (
                     <a
                       href={supportMailto}
@@ -288,8 +285,7 @@ export default function DownloadPage() {
                   )}
                 </div>
 
-                {/* Below download + waitlist row; flow layout only — no mt-auto on hero */}
-                <div className="mt-6 w-full px-1 sm:mt-6">
+                <div className="mt-3 w-full px-1 sm:mt-4">
                   <InstallStepFlow platform={platform} />
                 </div>
               </div>
@@ -298,7 +294,7 @@ export default function DownloadPage() {
                 <motion.div
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-8 rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-center text-sm text-red-200/95 backdrop-blur-md"
+                  className="mx-auto mt-8 w-full max-w-md rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-center text-sm text-red-200/95 backdrop-blur-md"
                 >
                   {downloadError}
                 </motion.div>

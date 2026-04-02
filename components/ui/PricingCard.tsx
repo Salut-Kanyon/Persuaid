@@ -130,6 +130,12 @@ export function PricingCard({
         >
           {checkoutLoading ? "Redirecting…" : cta}
         </CTAButton>
+
+        {cta === "Subscribe" ? (
+          <p className="mt-2 text-center text-xs leading-relaxed text-text-dim">
+            Cancel at anytime
+          </p>
+        ) : null}
       </div>
     </div>
   );
