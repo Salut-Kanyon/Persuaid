@@ -1,0 +1,8 @@
+# When this folder is the Railway service root, use Docker so install only runs here
+# (avoids monorepo root `npm ci` / eslint lockfile mismatches).
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "ON_FAILURE"
