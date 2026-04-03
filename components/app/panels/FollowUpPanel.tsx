@@ -294,9 +294,15 @@ export function FollowUpPanel({ variant = "default" }: { variant?: FollowUpPanel
     if (next === prevSanitizedAnswerRef.current) return;
     prevSanitizedAnswerRef.current = next;
     requestAnimationFrame(() => {
-      answerSectionRef.current?.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+      if (overlay) {
+        // Live-call card: never use scrollIntoView here — it scrolls the inner panel to align the
+        // Answer block with the scrollport top and strips away py-4 padding (looks “cut off” on some Macs).
+        scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+      } else {
+        answerSectionRef.current?.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+      }
     });
-  }, [lockedAnswer]);
+  }, [lockedAnswer, overlay]);
 
   // New answer request: snap scroll to top so the full-panel thinking state is fully visible.
   useEffect(() => {
@@ -603,7 +609,7 @@ export function FollowUpPanel({ variant = "default" }: { variant?: FollowUpPanel
       >
         <div
           ref={scrollContainerRef}
-          className="h-[200px] shrink-0 overflow-y-auto overscroll-contain border-b border-white/[0.06] px-4 py-4"
+          className="h-[200px] shrink-0 overflow-y-auto overscroll-contain scroll-pt-4 border-b border-white/[0.06] px-4 py-4"
         >
           {isGeneratingNewAnswer ? (
             <CallOverlayAnswerLoading labelCls={overlayLabel} anchorRef={answerSectionRef} />

@@ -681,7 +681,8 @@ ipcMain.handle('persuaid-call-hud-sync-size', (_event, size) => {
     const { workArea } = screen.getPrimaryDisplay();
     const b = mainWindow.getBounds();
     const maxH = Math.max(160, workArea.height - 24);
-    const nextH = Math.round(Math.min(Math.max(h, 72), maxH));
+    /* +4px avoids subpixel / font-metrics mismatch clipping the HUD on some displays. */
+    const nextH = Math.round(Math.min(Math.max(h + 4, 72), maxH));
     /* Top edge fixed so the pill stays put; blur/vibrancy window matches content height. */
     mainWindow.setBounds({ x: b.x, y: b.y, width: b.width, height: nextH });
   } catch (e) {

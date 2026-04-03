@@ -127,7 +127,7 @@ export function CallSessionOverlay() {
       <div
         id="call-hud-measure-root"
         ref={hudMeasureRef}
-        className="pointer-events-none flex w-full max-w-[min(420px,calc(100vw-1.5rem))] flex-col items-stretch gap-2 px-3 pt-[max(0.625rem,env(safe-area-inset-top,0px))] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:px-4"
+        className="pointer-events-none flex w-full max-w-[min(420px,calc(100vw-1.5rem))] flex-col items-stretch gap-2 px-3 pt-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.5rem))] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:px-4"
       >
         <div
           className={cn(
