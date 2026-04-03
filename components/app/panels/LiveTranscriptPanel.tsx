@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
+import { RequestMicAccessButton } from "@/components/app/RequestMicAccessButton";
 import { loadSettings } from "@/lib/settings";
 import { supabase } from "@/lib/supabase/client";
 
@@ -108,15 +109,18 @@ export function LiveTranscriptPanel() {
             ))}
           </select>
         ) : null}
-        <button
-          type="button"
-          onClick={clearTranscript}
-          disabled={transcript.length === 0 && !interimTranscript}
-          className="text-[11px] font-medium text-text-dim hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
-          title="Clear transcript"
-        >
-          Clear
-        </button>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <RequestMicAccessButton variant="panel" label="Request mic" />
+          <button
+            type="button"
+            onClick={clearTranscript}
+            disabled={transcript.length === 0 && !interimTranscript}
+            className="text-[11px] font-medium text-text-dim hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Clear transcript"
+          >
+            Clear
+          </button>
+        </div>
       </div>
       <div
         ref={scrollRef}

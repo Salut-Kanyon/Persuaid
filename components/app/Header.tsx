@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import { isElectronApp } from "@/lib/electron-client";
+import { RequestMicAccessButton } from "@/components/app/RequestMicAccessButton";
 import { FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
 
 /** Live Session hub only (`/dashboard`). Hide mic + Start PersuAId on Notes, Calls, Analytics, Settings. */
@@ -27,19 +28,17 @@ export function Header() {
   const { canStartLiveSession, usageLoading, openUpgradeModal, plan, remainingLiveMinutes } = useEntitlements();
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
 
+  const refreshAudioInputs = useCallback(async () => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      setAudioInputs(devices.filter((d) => d.kind === "audioinput"));
+    } catch (_) {}
+  }, []);
+
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        if (mounted) setAudioInputs(devices.filter((d) => d.kind === "audioinput"));
-      } catch (_) {}
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [isRecording]);
+    void refreshAudioInputs();
+  }, [isRecording, refreshAudioInputs]);
 
   const limitTitle =
     usageLoading || canStartLiveSession
@@ -106,6 +105,7 @@ export function Header() {
             </option>
           ))}
         </select>
+        <RequestMicAccessButton variant="header" onAfterRequest={refreshAudioInputs} />
       </div>
 
       <div className="min-w-0 justify-self-center" aria-hidden />

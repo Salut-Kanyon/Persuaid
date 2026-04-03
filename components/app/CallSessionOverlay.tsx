@@ -9,6 +9,7 @@ import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import { LiveMicWaveform } from "@/components/app/LiveMicWaveform";
 import { FollowUpPanel } from "@/components/app/panels/FollowUpPanel";
 import { isElectronApp } from "@/lib/electron-client";
+import { RequestMicAccessButton } from "@/components/app/RequestMicAccessButton";
 import { FREE_PLAN_ELECTRON_CALL_MAX_SECONDS, FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
 
 function formatClock(seconds: number) {
@@ -166,6 +167,7 @@ export function CallSessionOverlay() {
           </div>
 
           <div className="flex shrink-0 items-center gap-1" style={noDrag}>
+            <RequestMicAccessButton variant="hud" label="Mic access" className="max-w-[7.5rem] truncate" />
             <button
               type="button"
               onClick={() => setMainHidden((h) => !h)}

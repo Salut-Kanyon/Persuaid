@@ -14,6 +14,7 @@ import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import type { ExportFormat } from "@/lib/settings";
 import { openMarketingPricing } from "@/lib/electron-client";
 import { loadMeUsageForClient } from "@/lib/me-usage";
+import { formatDuration } from "@/lib/analytics";
 import { fetchApi } from "@/lib/api-fetch";
 
 function getEmailInitial(email: string | undefined): string {
@@ -148,7 +149,7 @@ export default function SettingsPage() {
       document.removeEventListener("visibilitychange", onVis);
       window.clearInterval(id);
     };
-  }, []);
+  }, [plan]);
 
   useEffect(() => {
     let cancelled = false;
@@ -457,8 +458,8 @@ export default function SettingsPage() {
               label="Live session time"
               description={
                 usage
-                  ? `${usage.usedLabel} used of ${usage.limitLabel} this month (${usage.periodLabel}, UTC). Totals use duration saved on your Analytics sessions.`
-                  : "Monthly allowance for live AI sessions. Totals use duration saved on your Analytics sessions."
+                  ? `${formatDuration(usage.usedMinutes)} used of ${formatDuration(usage.limitMinutes)} this month (${usage.periodLabel}, UTC). Same numbers as Analytics (Live time / Usage); formatting matches Analytics.`
+                  : "Monthly allowance for live AI sessions (UTC calendar month)."
               }
               control={
                 usageLoading ? (
@@ -468,10 +469,10 @@ export default function SettingsPage() {
                 ) : usage ? (
                   <div className="text-right">
                     <p className="text-sm font-semibold text-green-accent tabular-nums">
-                      {usage.remainingLabel} left
+                      {formatDuration(usage.remainingMinutes)} left
                     </p>
                     <p className="text-[11px] text-text-muted mt-0.5">
-                      of {usage.limitLabel} included
+                      of {formatDuration(usage.limitMinutes)} included
                     </p>
                   </div>
                 ) : (

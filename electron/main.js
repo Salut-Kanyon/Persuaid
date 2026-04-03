@@ -1166,6 +1166,27 @@ app.whenReady().then(async () => {
   }
   // macOS: never blindly callback(true) for "media". That skips TCC — Persuaid never appears under
   // System Settings → Microphone and getUserMedia can fail or see silence. Route through askForMediaAccess.
+  /**
+   * Chromium usually sends permission "media" for getUserMedia. On some macOS builds the bundled
+   * app loads from http://127.0.0.1 — we then see permission "unknown" with audio in details, or
+   * unknown with a localhost URL and empty types. If we only accept "media", we callback(false)
+   * and TCC never runs (no prompt, app never listed under Microphone).
+   */
+  function isGetUserMediaStyleRequest(perm, det) {
+    if (perm === 'media') return true;
+    if (perm !== 'unknown') return false;
+    const mt = det && Array.isArray(det.mediaTypes) ? det.mediaTypes : [];
+    const rt = det && Array.isArray(det.requestedMediaTypes) ? det.requestedMediaTypes : [];
+    if (mt.includes('audio') || mt.includes('video') || rt.includes('audio') || rt.includes('video')) {
+      return true;
+    }
+    const url = String((det && (det.requestingUrl || det.securityOrigin)) || '');
+    if (url.includes('127.0.0.1') || url.includes('localhost')) {
+      return true;
+    }
+    return false;
+  }
+
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
     const reqTypes = details && details.requestedMediaTypes;
     const mediaTypes = details && details.mediaTypes;
@@ -1190,17 +1211,18 @@ app.whenReady().then(async () => {
       debugLog('[MIC_DEBUG] setPermissionRequestHandler details (stringify failed):', e && e.message);
     }
 
-    if (permission === 'unknown') {
+    if (!isGetUserMediaStyleRequest(permission, details)) {
       debugLog(
-        '[MIC_DEBUG] WARNING permission=unknown — Electron will not run media TCC path; callback(false). Check Chromium/Electron version if this appears with getUserMedia.'
-      );
-    }
-    if (permission !== 'media') {
-      debugLog(
-        '[MIC_DEBUG] non-media permission → callback(false). If getUserMedia never runs with permission "media", askForMediaAccess may never run via this path.'
+        '[MIC_DEBUG] not a getUserMedia-style request → callback(false). permission=',
+        permission
       );
       callback(false);
       return;
+    }
+    if (permission === 'unknown') {
+      debugLog(
+        '[MIC_DEBUG] permission=unknown but treating as media capture (localhost / audio) — running macOS TCC path'
+      );
     }
     if (process.platform !== 'darwin') {
       debugLog('[MIC_DEBUG] media permission non-darwin → callback(true)');

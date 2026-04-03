@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
+import { RequestMicAccessButton } from "@/components/app/RequestMicAccessButton";
 import { isElectronApp, openElectronMicrophonePrivacySettings } from "@/lib/electron-client";
+import { requestMicrophoneAccessFull } from "@/lib/mic-onboarding";
 
 function isMacElectronMicPermissionHelpful(micError: string | null): boolean {
   if (!micError || typeof window === "undefined") return false;
@@ -17,28 +19,6 @@ function isMacElectronMicPermissionHelpful(micError: string | null): boolean {
     m.includes("blocked") ||
     m.includes("not allowed")
   );
-}
-
-/** Only requests mic from the OS (no token/Deepgram). Use this to get the app to appear in System Settings → Microphone. */
-async function requestMicrophoneOnly(): Promise<{ ok: boolean; message: string }> {
-  if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-    return { ok: false, message: "Microphone not supported here." };
-  }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach((t) => t.stop());
-    return { ok: true, message: "Microphone access granted. You can start recording now." };
-  } catch (e) {
-    const name = e instanceof Error ? e.name : "";
-    const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
-    if (name === "NotAllowedError" || name === "PermissionDeniedError" || msg.includes("permission") || msg.includes("denied")) {
-      return { ok: false, message: "Access denied. After you allow the app in System Settings → Microphone, click Request access again." };
-    }
-    if (name === "NotFoundError" || msg.includes("not found")) {
-      return { ok: false, message: "No microphone found." };
-    }
-    return { ok: false, message: e instanceof Error ? e.message : String(e) };
-  }
 }
 
 function getInitials(name: string | undefined, speaker: string): string {
@@ -86,9 +66,17 @@ export function TranscriptPanel() {
     return () => clearTimeout(t);
   }, [isRecording, transcript.length]);
 
+  const refreshAudioInputs = async () => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      setAudioInputs(devices.filter((d) => d.kind === "audioinput"));
+    } catch (_) {}
+  };
+
   useEffect(() => {
     let mounted = true;
-    (async () => {
+    void (async () => {
       if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -115,9 +103,12 @@ export function TranscriptPanel() {
 
   const handleRequestAccess = async () => {
     setRequestStatus("Requesting…");
-    const result = await requestMicrophoneOnly();
-    setRequestStatus(result.message);
-    if (result.ok) setMicError(null);
+    const result = await requestMicrophoneAccessFull();
+    setRequestStatus(result.ok ? "Microphone access granted." : result.message);
+    if (result.ok) {
+      setMicError(null);
+      await refreshAudioInputs();
+    }
   };
 
   const handleAudioInputChange = (deviceId: string) => {
@@ -171,6 +162,7 @@ export function TranscriptPanel() {
             </option>
           ))}
         </select>
+        <RequestMicAccessButton variant="panel" onAfterRequest={refreshAudioInputs} />
         <span className="text-[10px] text-text-dim/70">
           Choose the input that receives your phone call (e.g. Phone or Bluetooth).
         </span>

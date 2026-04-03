@@ -246,7 +246,7 @@ export default function AnalyticsPage() {
                   <div className="text-right">
                     <p className="text-xs text-text-dim">Used</p>
                     <p className="text-sm font-semibold text-text-primary tabular-nums">
-                      {usage.usedLabel} / {usage.limitLabel}
+                      {formatDuration(usage.usedMinutes)} / {formatDuration(usage.limitMinutes)}
                     </p>
                   </div>
                 )}
@@ -284,7 +284,10 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-xs text-text-dim">
-                    Remaining: <span className="text-text-secondary tabular-nums">{usage.remainingLabel}</span>
+                    Remaining:{" "}
+                    <span className="text-text-secondary tabular-nums">
+                      {formatDuration(usage.remainingMinutes)}
+                    </span>
                   </p>
                   <span
                     className={cn(
