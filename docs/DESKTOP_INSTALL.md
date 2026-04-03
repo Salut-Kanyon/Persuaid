@@ -30,7 +30,7 @@ This runs **`next dev` in-process**, reads the **Local:** URL from its output fo
 
 1. **macOS System Settings → Privacy & Security → Microphone** — **Persuaid** (or “Electron” during dev) must be allowed.
 2. **`DEEPGRAM_API_KEY`** — Electron starts the STT relay on **`ws://127.0.0.1:2998`** when the key is loaded from **`.env.local`** (dev, project root) or **`~/Library/Application Support/Persuaid/.env`** (installed app). Terminal should show **`[STT] Proxy listening on ws://127.0.0.1:2998`**. If you only see “DEEPGRAM_API_KEY loaded: no”, Start Call cannot transcribe.
-3. **`NEXT_PUBLIC_STT_PROXY_URL`** — In the browser, this chooses the relay. In **Electron**, the preload **`window.persuaid.sttProxyUrl`** is used first so a wrong web relay URL in `.env.local` does not override the in-app proxy.
+3. **`NEXT_PUBLIC_STT_PROXY_URL`** — Chooses the relay in the browser and in **packaged Electron** when set to a **non-loopback** URL (hosted `wss://…` or a LAN IP). The preload **`window.persuaid.sttProxyUrl`** (`ws://127.0.0.1:2998`) is used when the env URL is empty or loopback-only, or when Electron’s local proxy should win (e.g. `desktop:dev` with `DEEPGRAM_API_KEY`).
 4. **Console** — After **Start Call**, you should see **`[STT] websocket open`**, then **`[STT] PCM capture via AudioWorklet`** and **`[STT] sending PCM bytes (AudioWorklet): …`** once you speak. (Older **ScriptProcessorNode** paths often never logged **`onaudioprocess`** in Electron; the app now prefers **`/stt-pcm-processor.js`**.) If **`Could not connect to the STT relay`**, port **2998** is blocked or the proxy did not start (see 2).
 
 **During a call (dashboard):** **Start Call** hides the workspace behind a **frosted full-screen layer** and shows a **minimal glass pill** at the **top** (logo + end control). In **Electron**, the window also **shrinks** to a thin strip along the **top edge** and stays **on top** until you end the call.
@@ -72,7 +72,7 @@ If macOS says the app **is damaged and can’t be opened**, the build was almost
 
 3. **Partner / CI builds** — A DMG is only safe to ship if **that** build machine had the cert + the three `APPLE_*` variables and the log shows **notarization finished** without errors.
 
-**Environment at build time:** `NEXT_PUBLIC_*` variables are **baked into the client** during `next build`. Put them in **`.env.local`** before `desktop:build` so the packaged app talks to your Supabase project.
+**Environment at build time:** `NEXT_PUBLIC_*` variables are **baked into the client** during `next build`. Put them in **`.env.local`** (or your CI env) before `desktop:build` so the packaged app talks to your Supabase project and, for **production live transcription without per-user Deepgram keys**, set **`NEXT_PUBLIC_STT_PROXY_URL=wss://…`** to your hosted STT relay (same strategy as web — see `docs/STT.md`).
 
 **After install — optional keys in the app support directory**
 

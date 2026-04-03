@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { getClientIanaTimeZone } from "@/lib/client-timezone";
+import { fetchApi } from "@/lib/api-fetch";
 
 /** Send enough of the transcript so the AI sees long questions and full context (paragraph-style). */
 const MAX_MESSAGES = 150;
@@ -105,7 +106,7 @@ export function FollowUpFetcher() {
           console.debug("[Persuaid][FollowUpFetcher] answer payload tail=", effectiveTranscript.slice(-2));
         }
 
-        const res = await fetch("/api/ai/follow-up", {
+        const res = await fetchApi("/api/ai/follow-up", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -222,7 +223,7 @@ export function FollowUpFetcher() {
 
     (async () => {
       try {
-        const res = await fetch("/api/ai/follow-up", {
+        const res = await fetchApi("/api/ai/follow-up", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

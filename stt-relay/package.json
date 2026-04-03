@@ -1,0 +1,16 @@
+{
+  "name": "persuaid-stt-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Railway-deployable WebSocket relay to Deepgram (DEEPGRAM_API_KEY server-side only).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

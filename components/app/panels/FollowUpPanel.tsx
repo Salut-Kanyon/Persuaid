@@ -6,6 +6,7 @@ import { useSession } from "@/components/app/contexts/SessionContext";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import { cn } from "@/lib/utils";
 import { getClientIanaTimeZone } from "@/lib/client-timezone";
+import { fetchApi } from "@/lib/api-fetch";
 
 const DEBUG = process.env.NODE_ENV !== "production";
 
@@ -359,7 +360,7 @@ export function FollowUpPanel({ variant = "default" }: { variant?: FollowUpPanel
     setAnswerText("…");
     setAnswerSource("");
     try {
-      const res = await fetch("/api/ai/answer", {
+      const res = await fetchApi("/api/ai/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

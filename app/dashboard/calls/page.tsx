@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase/client";
+import { fetchApi } from "@/lib/api-fetch";
 
 type SessionRow = {
   id: string;
@@ -299,7 +300,7 @@ export default function CallsPage() {
         return;
       }
 
-      const res = await fetch("/api/ai/analyze-call", {
+      const res = await fetchApi("/api/ai/analyze-call", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

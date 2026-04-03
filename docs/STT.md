@@ -51,7 +51,13 @@ The relay binds to **127.0.0.1** by default (not reachable from your phone).
 
 ## Production
 
+**Product strategy:** use **Option A** — run the relay (`scripts/stt-ws-proxy.js` or the Docker/Fly layout) on infrastructure you control, keep **`DEEPGRAM_API_KEY` only on the server**, and set **`NEXT_PUBLIC_STT_PROXY_URL`** to the public **`wss://…`** endpoint when building the web app and the **desktop static export** (`build:desktop` / DMG). Strangers installing the DMG then get live transcription **without** putting Deepgram in `~/Library/Application Support/Persuaid/.env`. **Option B** (shipping or embedding API keys in the installer) is **not** the primary path for consumer installs.
+
 **Do not point the STT hostname at Vercel.** Serverless/edge hosts are the wrong fit for a long‑lived browser → relay → Deepgram WebSocket. Use a small always-on VM/container (this repo ships a **Fly.io** layout).
+
+### Railway (this repo)
+
+Deploy the **`stt-relay/`** service (see `stt-relay/README.md`): Node process listens on `PORT`, `GET /health`, WebSocket on `/v1/listen?...`. Set `DEEPGRAM_API_KEY` and optional matching `RELAY_CLIENT_TOKEN` / client `NEXT_PUBLIC_STT_RELAY_TOKEN`.
 
 ### Fly.io (recommended)
 

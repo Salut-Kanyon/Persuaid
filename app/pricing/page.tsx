@@ -10,6 +10,7 @@ import { CTAButton } from "@/components/ui/CTAButton";
 import { Footer } from "@/components/ui/Footer";
 import { PricingCluelyStyleHero } from "@/components/ui/marketing-landing-art";
 import { cn } from "@/lib/utils";
+import { fetchApi } from "@/lib/api-fetch";
 type BillingInterval = "monthly" | "yearly";
 
 const YEARLY_DISCOUNT = 0.2;
@@ -82,7 +83,7 @@ export default function PricingPage() {
         return;
       }
 
-      const res = await fetch("/api/stripe/create-checkout-session", {
+      const res = await fetchApi("/api/stripe/create-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

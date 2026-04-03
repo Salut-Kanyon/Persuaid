@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchApi } from "@/lib/api-fetch";
 import { resolveEffectivePlan } from "@/lib/agency";
 import type { Plan } from "@/lib/entitlements";
 import {
@@ -145,7 +146,7 @@ export async function loadMeUsageForClient(
 ): Promise<{ ok: true; data: MeUsagePayload } | { ok: false; error: string }> {
   if (accessToken) {
     try {
-      const res = await fetch("/api/me/usage", {
+      const res = await fetchApi("/api/me/usage", {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {

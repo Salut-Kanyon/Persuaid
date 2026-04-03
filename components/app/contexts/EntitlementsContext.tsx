@@ -13,6 +13,7 @@ import { UpgradeModal } from "@/components/app/UpgradeModal";
 import type { Plan } from "@/lib/entitlements";
 import { resolveEffectivePlan } from "@/lib/agency";
 import { loadMeUsageForClient } from "@/lib/me-usage";
+import { fetchApi } from "@/lib/api-fetch";
 
 interface EntitlementsContextValue {
   plan: Plan | null;
@@ -71,7 +72,7 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
       const user = session.user;
 
       let nextPlan: Plan = "free";
-      const entRes = await fetch("/api/me/entitlements", {
+      const entRes = await fetchApi("/api/me/entitlements", {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (entRes.ok) {

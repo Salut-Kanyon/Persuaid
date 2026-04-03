@@ -1,48 +1,32 @@
 /**
- * Production-style STT relay: browser → this server → Deepgram (API key never in browser).
+ * Railway / Fly / any Node host: browser/Electron → this relay → Deepgram.
  *
- * Run: npm run stt:proxy
- * Dev with Next: npm run dev:stt
+ * Env:
+ *   PORT                    — Railway sets automatically
+ *   DEEPGRAM_API_KEY        — required
+ *   STT_PROXY_BIND=0.0.0.0  — default below
+ *   RELAY_CLIENT_TOKEN      — optional; if set, client must send ?relay_token= same value
  *
- * Env (.env.local):
- *   DEEPGRAM_API_KEY=...
- *   STT_PROXY_PORT=2998          (default)
- *   STT_PROXY_BIND=0.0.0.0         (optional; use for phone on LAN — point NEXT_PUBLIC_STT_PROXY_URL at ws://YOUR_LAN_IP:2998)
- *
- * Client:
- *   NEXT_PUBLIC_STT_PROXY_URL=ws://127.0.0.1:2998
- *   Legacy direct browser→Deepgram (not recommended): NEXT_PUBLIC_STT_ALLOW_BROWSER_DEEPGRAM=true
+ * Health: GET /health
+ * WebSocket: /v1/listen?... (same query shape as Deepgram; relay_token stripped before upstream)
  */
 
 const http = require("http");
 const crypto = require("crypto");
 const { WebSocketServer } = require("ws");
 
-const PORT = Number(process.env.PORT || process.env.STT_PROXY_PORT) || 2998;
-const BIND = (process.env.STT_PROXY_BIND || "127.0.0.1").trim();
+const PORT = Number(process.env.PORT || process.env.STT_PROXY_PORT) || 8080;
+const BIND = (process.env.STT_PROXY_BIND || "0.0.0.0").trim();
 const DEEPGRAM_ORIGIN = "wss://api.deepgram.com";
 
-function loadEnvLocal() {
-  const path = require("path");
-  const fs = require("fs");
-  const envPath = path.resolve(__dirname, "..", ".env.local");
-  if (!fs.existsSync(envPath)) return;
-  const content = fs.readFileSync(envPath, "utf8");
-  content.split("\n").forEach((line) => {
-    const m = line.match(/^([^#=]+)=(.*)$/);
-    if (m) process.env[m[1].trim()] = m[2].trim().replace(/^["']|["']$/g, "");
-  });
-}
-
-loadEnvLocal();
 const apiKey = process.env.DEEPGRAM_API_KEY;
 const RELAY_CLIENT_TOKEN = (process.env.RELAY_CLIENT_TOKEN || "").trim();
+
 if (!apiKey) {
-  console.error("[STT relay] Missing DEEPGRAM_API_KEY in .env.local");
+  console.error("[stt-relay] Missing DEEPGRAM_API_KEY");
   process.exit(1);
 }
 
-/** Strip `relay_token` before upstream; optional RELAY_CLIENT_TOKEN must match when set. */
 function validateAndStripRelayQuery(rawUrl) {
   const pathPart = (rawUrl || "/v1/listen").split("?")[0] || "/v1/listen";
   const full = rawUrl || "/v1/listen";
@@ -62,7 +46,12 @@ function validateAndStripRelayQuery(rawUrl) {
 
 const server = http.createServer((req, res) => {
   if (req.url === "/health" || req.url?.startsWith("/health?")) {
-    const body = JSON.stringify({ ok: true, service: "persuaid-stt-relay", port: PORT });
+    const body = JSON.stringify({
+      ok: true,
+      service: "persuaid-stt-relay",
+      port: PORT,
+      relayAuth: RELAY_CLIENT_TOKEN ? "required" : "off",
+    });
     if (req.method === "HEAD") {
       res.writeHead(200, {
         "Content-Type": "application/json",
@@ -84,7 +73,11 @@ const server = http.createServer((req, res) => {
   res.end();
 });
 
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({
+  server,
+  perMessageDeflate: false,
+  clientTracking: true,
+});
 
 function newSessionId() {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
@@ -167,7 +160,7 @@ wss.on("connection", (clientWs, req) => {
     } catch (_) {}
   });
 
-  upstream.on("unexpected-response", (req, res) => {
+  upstream.on("unexpected-response", (request, res) => {
     let body = "";
     res.on("data", (chunk) => {
       body += chunk && chunk.toString ? chunk.toString() : String(chunk);
@@ -214,9 +207,7 @@ wss.on("connection", (clientWs, req) => {
         if (j && (j.type === "Results" || j.channel || j.results)) {
           transcriptEvents += 1;
         }
-      } catch (_) {
-        // ignore non-JSON
-      }
+      } catch (_) {}
       try {
         clientWs.send(text);
       } catch (_) {}
@@ -255,21 +246,11 @@ wss.on("connection", (clientWs, req) => {
 });
 
 server.listen(PORT, BIND, () => {
-  console.log(
-    `[STT relay] WebSocket: ws://${BIND === "0.0.0.0" ? "127.0.0.1" : BIND}:${PORT}/v1/listen?...`,
-  );
-  if (BIND === "0.0.0.0") {
-    console.log("[STT relay] Bound on 0.0.0.0 — use your LAN IP in NEXT_PUBLIC_STT_PROXY_URL for phone testing.");
-  }
-  console.log(`[STT relay] Health: http://${BIND === "0.0.0.0" ? "127.0.0.1" : BIND}:${PORT}/health`);
-  console.log("[STT relay] DEEPGRAM_API_KEY loaded; browser must not connect to Deepgram directly in production.");
+  console.log(`[stt-relay] Listening ${BIND}:${PORT} health=GET /health`);
+  console.log("[stt-relay] DEEPGRAM_API_KEY loaded; relay_token auth:", RELAY_CLIENT_TOKEN ? "on" : "off");
 });
 
 server.on("error", (err) => {
-  if (err.code === "EADDRINUSE") {
-    console.error(`[STT relay] Port ${PORT} in use. Set STT_PROXY_PORT or stop the other process.`);
-  } else {
-    console.error("[STT relay] Server error:", err.message);
-  }
+  console.error("[stt-relay] Server error:", err.message);
   process.exit(1);
 });

@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase/client";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { cn } from "@/lib/utils";
 import { loadSettings } from "@/lib/settings";
+import { fetchApi } from "@/lib/api-fetch";
 
 const STORAGE_MY = "persuaid_notes_draft_v1";
 const STORAGE_AI = "persuaid_notes_ai_connected_v1";
@@ -150,7 +151,7 @@ export function NotesPanel() {
     setConnectError(null);
     setConnecting(true);
     try {
-      const res = await fetch("/api/ai/rewrite-notes", {
+      const res = await fetchApi("/api/ai/rewrite-notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),

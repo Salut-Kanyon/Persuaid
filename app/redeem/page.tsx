@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { fetchApi } from "@/lib/api-fetch";
 
 function RedeemInviteInner() {
   const router = useRouter();
@@ -32,7 +33,7 @@ function RedeemInviteInner() {
         return;
       }
 
-      const res = await fetch("/api/agency/redeem", {
+      const res = await fetchApi("/api/agency/redeem", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

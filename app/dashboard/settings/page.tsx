@@ -14,6 +14,7 @@ import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import type { ExportFormat } from "@/lib/settings";
 import { openMarketingPricing } from "@/lib/electron-client";
 import { loadMeUsageForClient } from "@/lib/me-usage";
+import { fetchApi } from "@/lib/api-fetch";
 
 function getEmailInitial(email: string | undefined): string {
   if (!email) return "?";
@@ -162,7 +163,7 @@ export default function SettingsPage() {
           if (!cancelled) setAgencyMe(null);
           return;
         }
-        const res = await fetch("/api/agency/me", {
+        const res = await fetchApi("/api/agency/me", {
           cache: "no-store",
           headers: { Authorization: `Bearer ${tok}` },
         });
@@ -256,7 +257,7 @@ export default function SettingsPage() {
         setInviteBusy(false);
         return;
       }
-      const res = await fetch("/api/agency/invites", {
+      const res = await fetchApi("/api/agency/invites", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -277,7 +278,7 @@ export default function SettingsPage() {
         } catch {
           // ignore
         }
-        const me = await fetch("/api/agency/me", {
+        const me = await fetchApi("/api/agency/me", {
           cache: "no-store",
           headers: { Authorization: `Bearer ${tok}` },
         });
@@ -301,7 +302,7 @@ export default function SettingsPage() {
         setDeleteBusy(false);
         return;
       }
-      const res = await fetch("/api/account/delete", {
+      const res = await fetchApi("/api/account/delete", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });

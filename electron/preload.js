@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 const isMac = process.platform === 'darwin';
 
 contextBridge.exposeInMainWorld('persuaid', {
+  /** Dev-only local STT (port 2998). Production uses NEXT_PUBLIC_STT_PROXY_URL baked in the static bundle (wss://…). */
   sttProxyUrl: 'ws://127.0.0.1:2998',
   /** `process.platform` from main — use `darwin` to gate macOS mic onboarding. */
   platform: process.platform,

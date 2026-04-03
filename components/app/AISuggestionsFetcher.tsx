@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
+import { fetchApi } from "@/lib/api-fetch";
 
 const MAX_MESSAGES = 25;
 
@@ -85,7 +86,7 @@ export function AISuggestionsFetcher() {
           console.debug("[Persuaid][AISuggestionsFetcher] payloadLast2=", last2);
         }
 
-        const res = await fetch("/api/ai/suggestions", {
+        const res = await fetchApi("/api/ai/suggestions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

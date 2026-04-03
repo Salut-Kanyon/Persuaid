@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
+import { fetchApi } from "@/lib/api-fetch";
+import { getApiBaseUrl } from "@/lib/api-base";
 // v1/listen with raw PCM so we get real transcripts (WebM from MediaRecorder often returns empty on v1).
 const PCM_SAMPLE_RATE = 16000;
 /** Skip appending when the segment is only filler/noise. */
@@ -36,25 +38,49 @@ type SttConnectionPlan =
   | { kind: "token" }
   | { kind: "none"; message: string };
 
+function parseWsHttpUrl(base: string): URL | null {
+  try {
+    return new URL(base.replace(/^ws/i, "http"));
+  } catch {
+    return null;
+  }
+}
+
+/** True for hosts that match Electron’s bundled local proxy (127.0.0.1 / localhost / ::1). */
+function isLoopbackRelayHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  return h === "localhost" || h === "127.0.0.1" || h === "::1";
+}
+
 /**
  * Production path: browser → STT relay only (scripts/stt-ws-proxy.js or your deployed relay).
  * Direct browser → Deepgram is opt-in: NEXT_PUBLIC_STT_ALLOW_BROWSER_DEEPGRAM=true (not recommended).
  *
- * Electron: `electron/preload.js` exposes `window.persuaid.sttProxyUrl` → in-app proxy on 2998.
- * That wins before `NEXT_PUBLIC_STT_PROXY_URL`, so a web-only relay URL in .env cannot break desktop.
+ * Electron: preload exposes `window.persuaid.sttProxyUrl` (local in-app proxy on 2998). If
+ * `NEXT_PUBLIC_STT_PROXY_URL` is baked to a non-loopback URL (hosted `wss://` or LAN IP), that
+ * wins so production DMGs use Option A without per-user Deepgram keys. Loopback env matches preload.
  */
 function resolveSttConnection(): SttConnectionPlan {
-  if (typeof window !== "undefined") {
-    const fromPreload = (window as Window & { persuaid?: { sttProxyUrl?: string } }).persuaid?.sttProxyUrl;
-    const electronRelay = typeof fromPreload === "string" ? fromPreload.trim().replace(/\/$/, "") : "";
-    if (electronRelay) {
-      return { kind: "relay", baseUrl: electronRelay };
-    }
-  }
   const envProxy =
     typeof process !== "undefined"
       ? (process.env.NEXT_PUBLIC_STT_PROXY_URL ?? "").trim().replace(/\/$/, "")
       : "";
+  let electronRelay = "";
+  if (typeof window !== "undefined") {
+    const fromPreload = (window as Window & { persuaid?: { sttProxyUrl?: string } }).persuaid?.sttProxyUrl;
+    electronRelay = typeof fromPreload === "string" ? fromPreload.trim().replace(/\/$/, "") : "";
+  }
+
+  const envUrl = envProxy ? parseWsHttpUrl(envProxy) : null;
+  const preferEnvOverElectron =
+    Boolean(envProxy && electronRelay && envUrl && !isLoopbackRelayHost(envUrl.hostname));
+
+  if (preferEnvOverElectron) {
+    return { kind: "relay", baseUrl: envProxy };
+  }
+  if (electronRelay) {
+    return { kind: "relay", baseUrl: electronRelay };
+  }
   if (envProxy) {
     return { kind: "relay", baseUrl: envProxy };
   }
@@ -318,6 +344,13 @@ export function LiveTranscription() {
   }, [registerClearBuffer, recentSpeechRef, setInterimTranscript, setInterimSpeakerId]);
 
   useEffect(() => {
+    const api = getApiBaseUrl() || "(same-origin)";
+    const stt = (process.env.NEXT_PUBLIC_STT_PROXY_URL ?? "").trim() || "(loopback / dev defaults)";
+    // eslint-disable-next-line no-console
+    console.log("[Persuaid] client config | API base:", api, "| STT relay env:", stt);
+  }, []);
+
+  useEffect(() => {
     const stopInputLevelMeter = () => {
       cancelAnimationFrame(inputLevelRafRef.current);
       inputLevelRafRef.current = 0;
@@ -458,10 +491,12 @@ export function LiveTranscription() {
         if (!mounted) return;
         const actualSampleRate = ctx.sampleRate;
         const query = buildDeepgramParams(actualSampleRate).toString();
+        const relayTok = (process.env.NEXT_PUBLIC_STT_RELAY_TOKEN ?? "").trim();
+        const queryForRelay = relayTok ? `${query}&relay_token=${encodeURIComponent(relayTok)}` : query;
 
         const useRelay = conn.kind === "relay";
         const wsUrl = useRelay
-          ? `${conn.baseUrl}/v1/listen?${query}`
+          ? `${conn.baseUrl}/v1/listen?${queryForRelay}`
           : `wss://api.deepgram.com/v1/listen?${query}`;
         const isDev = typeof window !== "undefined" && (window.location?.hostname === "localhost" || window.location?.hostname === "127.0.0.1");
         console.log(
@@ -480,15 +515,15 @@ export function LiveTranscription() {
             if (!mounted) return;
             stream.getTracks().forEach((t) => t.stop());
             streamRef.current = null;
-            setMicError(
-              "Could not connect to the STT relay. Start it with: npm run stt:proxy (DEEPGRAM_API_KEY in .env.local). Or set NEXT_PUBLIC_STT_PROXY_URL to your relay. For Electron, ensure DEEPGRAM_API_KEY is configured."
+              setMicError(
+              "Could not connect to the STT relay. For dev: run `npm run stt:proxy` with a server-side Deepgram key. For production: set NEXT_PUBLIC_STT_PROXY_URL to your hosted relay (wss://…). Packaged builds use the relay URL baked at build time."
             );
             return;
           }
         } else {
           // Browser (or desktop:dev on localhost:3000): use token from Next.js API
           const connectWithToken = async (): Promise<WebSocket> => {
-            const tokenRes = await fetch("/api/stt/token", { cache: "no-store" });
+            const tokenRes = await fetchApi("/api/stt/token", { cache: "no-store" });
             if (!mounted) throw new Error("unmounted");
             if (isDev) {
               console.log("[STT] Token fetch:", tokenRes.ok ? "OK" : "FAILED", "status:", tokenRes.status);

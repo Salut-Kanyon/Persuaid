@@ -11,6 +11,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getClientIanaTimeZone } from "@/lib/client-timezone";
 import { Section } from "@/components/ui/Section";
+import { fetchApi } from "@/lib/api-fetch";
 
 const MAX_NOTES = 1200;
 const LISTEN_SECONDS = 60;
@@ -240,7 +241,7 @@ export function TryWorkspaceDemo({ open: openProp, onOpenChange, variant = "defa
     setAiLoading(true);
     setAiError(null);
     try {
-      const res = await fetch("/api/demo/follow-up", {
+      const res = await fetchApi("/api/demo/follow-up", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

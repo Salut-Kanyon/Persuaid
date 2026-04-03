@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
+import { fetchApi } from "@/lib/api-fetch";
 import type { DealContext } from "@/components/app/contexts/SessionContext";
 
 const DEBOUNCE_MS = 10000;
@@ -33,7 +34,7 @@ export function DealContextFetcher() {
         text: m.text,
       }));
 
-      fetch("/api/ai/deal-context", {
+      fetchApi("/api/ai/deal-context", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcript: recent }),

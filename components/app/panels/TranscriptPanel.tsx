@@ -204,7 +204,7 @@ export function TranscriptPanel() {
             </p>
             {isElectronApp() && isRecording && showNoSpeechHint && !micError && (
               <p className="mt-4 max-w-sm text-xs text-text-dim">
-                If nothing appears: add <strong>DEEPGRAM_API_KEY</strong> to a <strong>.env</strong> file in the app’s config folder (macOS: <strong>~/Library/Application Support/Persuaid/</strong>), then restart. Also choose your mic or call device in <strong>Listen from</strong> above.
+                If nothing appears: ensure the app is built with <strong>NEXT_PUBLIC_STT_PROXY_URL</strong> pointing at your hosted relay, or for local dev run <code className="text-[11px] bg-amber-500/10 px-1 rounded">npm run stt:proxy</code>. Choose your mic in <strong>Listen from</strong> above.
               </p>
             )}
           </div>
