@@ -7,7 +7,6 @@ import { Sidebar } from "@/components/app/Sidebar";
 import { Header } from "@/components/app/Header";
 import { CallSessionOverlay } from "@/components/app/CallSessionOverlay";
 import { PostCallSaveModal } from "@/components/app/PostCallSaveModal";
-import { MicMacOnboardingGate } from "@/components/app/MicMacOnboardingGate";
 import { MicDebugPanel } from "@/components/app/MicDebugPanel";
 
 export function DashboardCallShell({ children }: { children: React.ReactNode }) {
@@ -76,7 +75,6 @@ export function DashboardCallShell({ children }: { children: React.ReactNode }) 
 
   return (
     <>
-      <MicMacOnboardingGate />
       <MicDebugPanel />
     <div
       className={cn(

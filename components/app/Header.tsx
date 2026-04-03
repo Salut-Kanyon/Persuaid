@@ -8,7 +8,6 @@ import { useSession } from "@/components/app/contexts/SessionContext";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
 import { isElectronApp } from "@/lib/electron-client";
 import { FREE_PLAN_MONTHLY_MINUTES } from "@/lib/usage";
-import { getPersuaidMicApi } from "@/lib/mic-onboarding";
 
 /** Live Session hub only (`/dashboard`). Hide mic + Start PersuAId on Notes, Calls, Analytics, Settings. */
 function isLiveSessionRoute(pathname: string | null): boolean {
@@ -27,7 +26,6 @@ export function Header() {
   } = useSession();
   const { canStartLiveSession, usageLoading, openUpgradeModal, plan, remainingLiveMinutes } = useEntitlements();
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
-  const [micPriming, setMicPriming] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -54,7 +52,6 @@ export function Header() {
 
   const limitButtonLabel = (() => {
     if (usageLoading) return "Checking…";
-    if (micPriming) return "Microphone…";
     if (canStartLiveSession) return "Start PersuAId";
     if (plan === "pro") return "View Team upgrade";
     if (plan === "team") return "Limit reached";
@@ -138,41 +135,16 @@ export function Header() {
         )}
         <button
           type="button"
-          disabled={usageLoading || micPriming}
+          disabled={usageLoading}
           onClick={() => {
-            void (async () => {
-              if (usageLoading || micPriming) return;
-              if (!canStartLiveSession) {
-                openUpgradeModal();
-                return;
-              }
-              /**
-               * macOS: run TCC on this click (same user gesture as starting the call).
-               * If we only relied on async getUserMedia, the system prompt often never appears.
-               */
-              if (isElectronApp()) {
-                const api = getPersuaidMicApi();
-                if (api?.platform === "darwin" && api.getMicStatus && api.requestMicAccess) {
-                  try {
-                    const { status } = await api.getMicStatus();
-                    if (status !== "granted" && status !== "denied" && status !== "restricted") {
-                      setMicPriming(true);
-                      try {
-                        const r = await api.requestMicAccess();
-                        if (!r.granted && r.status !== "granted") return;
-                      } finally {
-                        setMicPriming(false);
-                      }
-                    }
-                  } catch {
-                    setMicPriming(false);
-                  }
-                }
-              }
-              // Default to the computer/system mic to avoid triggering phone/Bluetooth connection popups.
-              setAudioInputDeviceId(null);
-              setRecording(true);
-            })();
+            if (usageLoading) return;
+            if (!canStartLiveSession) {
+              openUpgradeModal();
+              return;
+            }
+            // Default to the computer/system mic to avoid triggering phone/Bluetooth connection popups.
+            setAudioInputDeviceId(null);
+            setRecording(true);
           }}
           className={cn(
             "relative inline-flex shrink-0 items-center overflow-hidden rounded-full px-5 py-2.5 text-sm font-medium text-white",
@@ -199,13 +171,7 @@ export function Header() {
 
             "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
           )}
-          title={
-            micPriming
-              ? "Waiting for microphone permission…"
-              : usageLoading
-                ? "Checking your plan allowance…"
-                : limitTitle
-          }
+          title={usageLoading ? "Checking your plan allowance…" : limitTitle}
         >
           <span className="relative z-10 flex items-center gap-2 sm:gap-2.5">
             <span>{limitButtonLabel}</span>

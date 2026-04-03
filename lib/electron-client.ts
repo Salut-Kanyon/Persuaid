@@ -21,6 +21,9 @@ export function isElectronApp(): boolean {
 type PersuaidPreload = {
   openExternal?: (url: string) => Promise<{ ok?: boolean; error?: string } | void>;
   openOAuthWindow?: (url: string) => Promise<{ ok?: boolean; error?: string }>;
+  /** macOS: System Settings → Privacy & Security → Microphone */
+  openMicSettings?: () => Promise<{ ok?: boolean } | void>;
+  platform?: string;
 };
 
 /**
@@ -59,4 +62,12 @@ export async function openMarketingUrl(url: string): Promise<void> {
     if (r && typeof r === "object" && r.ok === true) return;
   }
   window.open(url, "_blank", "noopener,noreferrer");
+}
+
+/** macOS Electron only: opens System Settings → Microphone. No-op in web or non-mac. */
+export async function openElectronMicrophonePrivacySettings(): Promise<void> {
+  if (typeof window === "undefined" || !isElectronApp()) return;
+  const api = (window as Window & { persuaid?: PersuaidPreload }).persuaid;
+  if (api?.platform !== "darwin" || !api.openMicSettings) return;
+  await api.openMicSettings();
 }

@@ -3,7 +3,21 @@
 import { useState, useEffect } from "react";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { useEntitlements } from "@/components/app/contexts/EntitlementsContext";
-import { isElectronApp } from "@/lib/electron-client";
+import { isElectronApp, openElectronMicrophonePrivacySettings } from "@/lib/electron-client";
+
+function isMacElectronMicPermissionHelpful(micError: string | null): boolean {
+  if (!micError || typeof window === "undefined") return false;
+  const platform = (window as Window & { persuaid?: { platform?: string } }).persuaid?.platform;
+  if (platform !== "darwin" || !isElectronApp()) return false;
+  const m = micError.toLowerCase();
+  return (
+    m.includes("microphone access") ||
+    m.includes("permission") ||
+    m.includes("denied") ||
+    m.includes("blocked") ||
+    m.includes("not allowed")
+  );
+}
 
 /** Only requests mic from the OS (no token/Deepgram). Use this to get the app to appear in System Settings → Microphone. */
 async function requestMicrophoneOnly(): Promise<{ ok: boolean; message: string }> {
@@ -179,6 +193,15 @@ export function TranscriptPanel() {
           )}
           {requestStatus && <p className="text-xs text-text-secondary">{requestStatus}</p>}
           <div className="flex flex-wrap gap-2">
+            {isMacElectronMicPermissionHelpful(micError) && (
+              <button
+                type="button"
+                onClick={() => void openElectronMicrophonePrivacySettings()}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400 hover:bg-amber-500/30 transition-colors"
+              >
+                Open Microphone settings
+              </button>
+            )}
             <button
               type="button"
               onClick={handleRequestAccess}

@@ -295,9 +295,23 @@ function mergeBufferWithNew(buffer: string, newText: string): string {
   return t;
 }
 
+function isPermissionLikeGetUserMediaError(err: unknown): boolean {
+  const name = err instanceof Error ? err.name : "";
+  const message = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    name === "NotAllowedError" ||
+    name === "PermissionDeniedError" ||
+    name === "SecurityError" ||
+    message.includes("permission") ||
+    message.includes("denied") ||
+    message.includes("not allowed")
+  );
+}
+
 export function LiveTranscription() {
   const {
     isRecording,
+    setRecording,
     appendTranscript,
     setSessionId,
     setMicError,
@@ -432,9 +446,13 @@ export function LiveTranscription() {
               noiseSuppression: true,
               autoGainControl: false,
             };
-        let stream = await navigator.mediaDevices
-          .getUserMedia({ audio: audioConstraints })
-          .catch(() => navigator.mediaDevices.getUserMedia({ audio: true }));
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+        } catch (first) {
+          if (isPermissionLikeGetUserMediaError(first)) throw first;
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
         console.log("[STT] gotUserMedia ok, stream:", stream);
 
         const conn = resolveSttConnection();
@@ -909,18 +927,13 @@ export function LiveTranscription() {
         console.error("LiveTranscription error:", err);
         const name = err instanceof Error ? err.name : "";
         const message = (err instanceof Error ? err.message : String(err)).toLowerCase();
-        const isPermission =
-          name === "NotAllowedError" ||
-          name === "PermissionDeniedError" ||
-          name === "SecurityError" ||
-          message.includes("permission") ||
-          message.includes("denied") ||
-          message.includes("not allowed");
+        const isPermission = isPermissionLikeGetUserMediaError(err);
         const isNotFound = name === "NotFoundError" || message.includes("not found");
         const isOverconstrained = name === "OverconstrainedError" || message.includes("constraint");
         let userMsg: string;
         if (isPermission) {
-          userMsg = "Microphone access denied. Use the steps below to allow access, then click Try again.";
+          userMsg =
+            "Microphone access was blocked or denied. On Mac, if you already chose Don’t Allow, the system usually won’t show the prompt again until you enable Persuaid under System Settings → Privacy & Security → Microphone, then click Start PersuAId or Try again.";
         } else if (audioInputDeviceId && (isNotFound || isOverconstrained)) {
           userMsg = "Selected input unavailable. Choose another device or Default in Listen from, then try again.";
         } else if (isNotFound) {
@@ -929,6 +942,9 @@ export function LiveTranscription() {
           userMsg = "Could not start microphone. Check permissions and try again.";
         }
         setMicError(userMsg);
+        if (isPermission) {
+          setRecording(false);
+        }
       }
     })();
 
@@ -939,6 +955,7 @@ export function LiveTranscription() {
     };
   }, [
     isRecording,
+    setRecording,
     audioInputDeviceId,
     appendTranscript,
     setSessionId,
