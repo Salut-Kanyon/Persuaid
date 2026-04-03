@@ -7,6 +7,9 @@ export type PersuaidMicApi = {
   getMicStatus?: () => Promise<{ status: string }>;
   requestMicAccess?: () => Promise<{ status: string; granted: boolean }>;
   openMicSettings?: () => Promise<{ ok: boolean }>;
+  /** Main-process mic diagnostic (logs [MIC_DIAG]); pair with getUserMedia + micDiagnosticLogGum */
+  micDiagnosticMain?: () => Promise<unknown>;
+  micDiagnosticLogGum?: (payload: unknown) => Promise<unknown>;
 };
 
 export function getPersuaidMicApi(): PersuaidMicApi | undefined {

@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld('persuaid', {
   platform: process.platform,
   getMicStatus: () => ipcRenderer.invoke('mic:get-status'),
   requestMicAccess: () => ipcRenderer.invoke('mic:request-access'),
+  /** Full mic diagnostic: main askForMediaAccess + log; pair with getUserMedia in renderer + micDiagnosticLogGum */
+  micDiagnosticMain: () => ipcRenderer.invoke('mic:diagnostic-main'),
+  micDiagnosticLogGum: (payload) => ipcRenderer.invoke('mic:diagnostic-gum', payload),
   openMicSettings: () => ipcRenderer.invoke('mic:open-settings'),
   /** Open http(s)://persuaid.app/... in the default browser (e.g. pricing). */
   openExternal: (url) => ipcRenderer.invoke('persuaid-open-external', url),

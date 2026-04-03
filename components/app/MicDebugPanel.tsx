@@ -70,6 +70,41 @@ export function MicDebugPanel() {
     void refresh();
   };
 
+  /** Main askForMediaAccess + renderer getUserMedia; logs [MIC_DIAG] in main. */
+  const onFullDiag = async () => {
+    const api = getPersuaidMicApi();
+    if (!api?.micDiagnosticMain) {
+      setGum(JSON.stringify({ error: "no micDiagnosticMain (update preload)" }));
+      return;
+    }
+    try {
+      const mainRes = await api.micDiagnosticMain();
+      setLastRequest(JSON.stringify({ step: "mic:diagnostic-main", mainRes }));
+    } catch (e) {
+      setLastRequest(JSON.stringify({ step: "mic:diagnostic-main", error: e instanceof Error ? e.message : String(e) }));
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      stream.getTracks().forEach((t) => t.stop());
+      await api.micDiagnosticLogGum?.({
+        ok: true,
+        name: "OK",
+        message: "getUserMedia({ audio: true, video: false }) succeeded; tracks stopped",
+      });
+      setGum(JSON.stringify({ ok: true, getUserMedia: "success" }));
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      await api.micDiagnosticLogGum?.({
+        ok: false,
+        name: err.name,
+        message: err.message,
+      });
+      setGum(JSON.stringify({ ok: false, name: err.name, message: err.message }));
+    }
+    void refresh();
+  };
+
   if (!visible || !isElectronApp()) return null;
 
   return (
@@ -111,6 +146,14 @@ export function MicDebugPanel() {
           onClick={() => void onGum()}
         >
           getUserMedia
+        </button>
+        <button
+          type="button"
+          className="rounded bg-amber-500/40 px-2 py-1 text-[10px] font-semibold hover:bg-amber-500/55"
+          title="Runs mic:diagnostic-main then getUserMedia — check logs for [MIC_DIAG]"
+          onClick={() => void onFullDiag()}
+        >
+          Full diag (main+GUM)
         </button>
       </div>
     </div>

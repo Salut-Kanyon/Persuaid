@@ -87,44 +87,107 @@ function debugLog(...args) {
   });
 }
 
-/** Packaged-mac microphone / TCC diagnostics — grep logs for [MIC_DEBUG]. */
-function logMicDiagnosticsAtStartup() {
+/**
+ * Shipped-app macOS microphone audit — grep logs for [MIC_AUDIT] and [MIC_DEBUG].
+ * Runs once after debug log streams open; does not call askForMediaAccess (no user gesture).
+ */
+function logMacMicShipAuditAtStartup() {
+  try {
+    debugLog('[MIC_AUDIT] ========== macOS mic ship audit (startup, read-only) ==========');
+    try {
+      debugLog('[MIC_AUDIT] app.getVersion():', app.getVersion());
+    } catch (e) {
+      debugLog('[MIC_AUDIT] app.getVersion() error:', e && e.message);
+    }
+    try {
+      debugLog('[MIC_AUDIT] app.getName():', app.getName());
+    } catch (e) {
+      debugLog('[MIC_AUDIT] app.getName() error:', e && e.message);
+    }
+    try {
+      debugLog('[MIC_AUDIT] app.getPath("exe"):', app.getPath('exe'));
+    } catch (e) {
+      debugLog('[MIC_AUDIT] app.getPath("exe") error:', e && e.message);
+    }
+    try {
+      debugLog('[MIC_AUDIT] app.getAppPath():', app.getAppPath());
+    } catch (e) {
+      debugLog('[MIC_AUDIT] app.getAppPath() error:', e && e.message);
+    }
+    debugLog('[MIC_AUDIT] app.isPackaged:', app.isPackaged);
+    debugLog('[MIC_AUDIT] process.execPath:', process.execPath);
+    debugLog('[MIC_AUDIT] process.resourcesPath:', process.resourcesPath);
+    debugLog(
+      '[MIC_AUDIT] runtime: Electron',
+      process.versions.electron,
+      '| Chrome',
+      process.versions.chrome,
+      '| Node',
+      process.versions.node
+    );
+  } catch (e) {
+    debugLog('[MIC_AUDIT] startup audit outer error:', e && e.message);
+  }
+
   debugLog('[MIC_DEBUG] app.isPackaged:', isPackaged);
   debugLog('[MIC_DEBUG] process.execPath:', process.execPath);
   debugLog('[MIC_DEBUG] process.resourcesPath:', process.resourcesPath);
   try {
     debugLog('[MIC_DEBUG] app.getName():', app.getName());
   } catch (_) {}
-  if (process.platform !== 'darwin') return;
+
+  if (process.platform !== 'darwin') {
+    debugLog('[MIC_AUDIT] non-darwin — skipping Info.plist + TCC read');
+    debugLog('[MIC_AUDIT] ========== end startup audit ==========');
+    return;
+  }
+
   const infoPlist = path.join(process.resourcesPath, '..', 'Info.plist');
   const exists = fs.existsSync(infoPlist);
+  debugLog('[MIC_AUDIT] Info.plist path:', infoPlist, 'exists:', exists);
   debugLog('[MIC_DEBUG] Info.plist path:', infoPlist, 'exists:', exists);
-  if (!exists) return;
+  if (!exists) {
+    debugLog('[MIC_AUDIT] ========== end startup audit ==========');
+    return;
+  }
   try {
     const bid = execSync(`/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${infoPlist}"`, {
       encoding: 'utf8',
     }).trim();
+    debugLog('[MIC_AUDIT] CFBundleIdentifier (Info.plist):', bid);
     debugLog('[MIC_DEBUG] CFBundleIdentifier:', bid);
   } catch (e) {
+    debugLog('[MIC_AUDIT] CFBundleIdentifier read failed:', e && e.message);
     debugLog('[MIC_DEBUG] CFBundleIdentifier read failed:', e && e.message);
   }
   try {
     const mic = execSync(`/usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "${infoPlist}"`, {
       encoding: 'utf8',
     }).trim();
-    debugLog(
-      '[MIC_DEBUG] NSMicrophoneUsageDescription:',
-      mic ? `present (${mic.length} chars): ${mic.slice(0, 120)}${mic.length > 120 ? '…' : ''}` : 'MISSING — TCC dialog text will not work correctly'
-    );
+    const micMsg = mic
+      ? `present (${mic.length} chars): ${mic.slice(0, 120)}${mic.length > 120 ? '…' : ''}`
+      : 'MISSING — TCC dialog text will not work correctly';
+    debugLog('[MIC_AUDIT] NSMicrophoneUsageDescription:', micMsg);
+    debugLog('[MIC_DEBUG] NSMicrophoneUsageDescription:', micMsg);
   } catch (e) {
+    debugLog('[MIC_AUDIT] NSMicrophoneUsageDescription PlistBuddy error:', e && e.message);
     debugLog('[MIC_DEBUG] NSMicrophoneUsageDescription MISSING or PlistBuddy error:', e && e.message);
   }
   try {
     const ver = execSync(`/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${infoPlist}"`, {
       encoding: 'utf8',
     }).trim();
+    debugLog('[MIC_AUDIT] CFBundleShortVersionString:', ver);
     debugLog('[MIC_DEBUG] CFBundleShortVersionString:', ver);
   } catch (_) {}
+
+  try {
+    const st = systemPreferences.getMediaAccessStatus('microphone');
+    debugLog('[MIC_AUDIT] getMediaAccessStatus("microphone") at startup (before any ask):', st);
+  } catch (e) {
+    debugLog('[MIC_AUDIT] getMediaAccessStatus at startup error:', e && e.message);
+  }
+  debugLog('[MIC_AUDIT] ========== end startup audit ==========');
 }
 
 const APP_PROTOCOL = 'app';
@@ -477,6 +540,56 @@ ipcMain.handle('mic:open-settings', async () => {
     debugLog('[mic:open-settings]', e && e.message);
     return { ok: false };
   }
+});
+
+/**
+ * Full mic diagnostic: main-process askForMediaAccess + logged TCC before/after.
+ * Pair with renderer getUserMedia + mic:diagnostic-gum. Logs use [MIC_DIAG].
+ */
+ipcMain.handle('mic:diagnostic-main', async () => {
+  debugLog('[MIC_DIAG] ========== diagnostic: main process askForMediaAccess ==========');
+  if (process.platform !== 'darwin') {
+    debugLog('[MIC_DIAG] non-darwin — skipping main mic diagnostic');
+    return { ok: false, platform: process.platform, reason: 'non-darwin' };
+  }
+  let before = 'unknown';
+  try {
+    before = systemPreferences.getMediaAccessStatus('microphone');
+  } catch (e) {
+    debugLog('[MIC_DIAG] getMediaAccessStatus before error:', e && e.message);
+  }
+  debugLog('[MIC_DIAG] BEFORE askForMediaAccess getMediaAccessStatus("microphone"):', before);
+
+  let granted = false;
+  let after = before;
+  if (before === 'granted') {
+    debugLog('[MIC_DIAG] status already granted — skip askForMediaAccess');
+    granted = true;
+  } else if (before === 'denied' || before === 'restricted') {
+    debugLog('[MIC_DIAG] status denied/restricted — skip askForMediaAccess (no re-prompt)');
+    granted = false;
+  } else {
+    try {
+      granted = await systemPreferences.askForMediaAccess('microphone');
+      debugLog('[MIC_DIAG] askForMediaAccess("microphone") returned:', granted);
+    } catch (e) {
+      debugLog('[MIC_DIAG] askForMediaAccess threw:', e && e.message);
+    }
+    try {
+      after = systemPreferences.getMediaAccessStatus('microphone');
+    } catch (e2) {
+      debugLog('[MIC_DIAG] getMediaAccessStatus after error:', e2 && e2.message);
+    }
+  }
+  debugLog('[MIC_DIAG] AFTER ask path getMediaAccessStatus("microphone"):', after);
+  debugLog('[MIC_DIAG] ========== end diagnostic main ==========');
+  return { before, after, granted, askForMediaAccessReturned: granted };
+});
+
+/** Log renderer getUserMedia outcome (called after mic:diagnostic-main + GUM). */
+ipcMain.handle('mic:diagnostic-gum', (_event, payload) => {
+  debugLog('[MIC_DIAG] renderer getUserMedia result:', payload != null ? JSON.stringify(payload) : '(null)');
+  return { ok: true };
 });
 
 /**
@@ -1145,7 +1258,7 @@ app.whenReady().then(async () => {
     debugLogStreamTmp = fs.createWriteStream(tmpLog, { flags: 'a' });
     debugLogStreamTmp.write('\n--- ' + new Date().toISOString() + ' ---\n');
   } catch (_) {}
-  logMicDiagnosticsAtStartup();
+  logMacMicShipAuditAtStartup();
   registerAppProtocol();
   registerPersuaidAsDefaultProtocolClient();
   const envPath = path.join(app.getPath('userData'), '.env');
@@ -1172,6 +1285,17 @@ app.whenReady().then(async () => {
    * unknown with a localhost URL and empty types. If we only accept "media", we callback(false)
    * and TCC never runs (no prompt, app never listed under Microphone).
    */
+  function isOurAppOrigin(requestingOrigin) {
+    const o = String(requestingOrigin || '');
+    return (
+      o.includes('127.0.0.1') ||
+      o.includes('localhost') ||
+      o.startsWith('file:') ||
+      o.startsWith('http://127.0.0.1:') ||
+      o.startsWith('app://')
+    );
+  }
+
   function isGetUserMediaStyleRequest(perm, det) {
     if (perm === 'media') return true;
     if (perm !== 'unknown') return false;
@@ -1184,12 +1308,44 @@ app.whenReady().then(async () => {
     if (url.includes('127.0.0.1') || url.includes('localhost')) {
       return true;
     }
+    // Packaged app: some Chromium builds send permission "unknown" with empty details for GUM(audio).
+    if (isPackaged && process.platform === 'darwin' && perm === 'unknown' && (!det || (Object.keys(det).length === 0 && !url))) {
+      return true;
+    }
     return false;
   }
+
+  /**
+   * Without this, Chromium may never surface a proper media permission request → no TCC / no Settings entry.
+   * Must allow the *check* so the *request* handler (below) runs with askForMediaAccess on macOS.
+   */
+  session.defaultSession.setPermissionCheckHandler((webContents, permission, requestingOrigin, _details) => {
+    if (permission === 'media' || permission === 'mediaStream' || permission === 'audioCapture') {
+      debugLog('[MIC_AUDIT] setPermissionCheckHandler → allow', permission);
+      return true;
+    }
+    if (permission === 'unknown' && isOurAppOrigin(requestingOrigin)) {
+      debugLog('[MIC_AUDIT] setPermissionCheckHandler → allow unknown (our origin)', requestingOrigin);
+      return true;
+    }
+    return false;
+  });
 
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
     const reqTypes = details && details.requestedMediaTypes;
     const mediaTypes = details && details.mediaTypes;
+    debugLog(
+      '[MIC_AUDIT] permission request (raw):',
+      permission,
+      '| mediaTypes=',
+      mediaTypes,
+      '| requestedMediaTypes=',
+      reqTypes,
+      '| securityOrigin=',
+      details && details.securityOrigin,
+      '| requestingUrl=',
+      details && details.requestingUrl
+    );
     debugLog(
       '[MIC_DEBUG] setPermissionRequestHandler fired permission=',
       permission,
@@ -1213,12 +1369,17 @@ app.whenReady().then(async () => {
 
     if (!isGetUserMediaStyleRequest(permission, details)) {
       debugLog(
+        '[MIC_AUDIT] not media capture (or unknown without localhost/audio hints) → callback(false). permission=',
+        permission
+      );
+      debugLog(
         '[MIC_DEBUG] not a getUserMedia-style request → callback(false). permission=',
         permission
       );
       callback(false);
       return;
     }
+    debugLog('[MIC_AUDIT] treating as media capture → running handler (darwin: askForMediaAccess path)');
     if (permission === 'unknown') {
       debugLog(
         '[MIC_DEBUG] permission=unknown but treating as media capture (localhost / audio) — running macOS TCC path'
@@ -1253,6 +1414,12 @@ app.whenReady().then(async () => {
           '→ callback(' + granted + ')'
         );
         debugLog('[macOS] Chromium media permission → TCC:', types.join(',') || 'audio', '→', granted ? 'granted' : 'denied');
+        try {
+          const auditAfter = systemPreferences.getMediaAccessStatus('microphone');
+          debugLog('[MIC_AUDIT] getMediaAccessStatus("microphone") after Chromium media handler:', auditAfter);
+        } catch (e2) {
+          debugLog('[MIC_AUDIT] getMediaAccessStatus after handler error:', e2 && e2.message);
+        }
         callback(granted);
       } catch (e) {
         debugLog('[MIC_DEBUG] Chromium media handler error → callback(false):', e && e.message);
