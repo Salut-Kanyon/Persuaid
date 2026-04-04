@@ -986,21 +986,22 @@ function setupInspectorSupport(win) {
         { role: 'quit' },
       ],
     });
+    // Edit must be present in packaged builds: without it, macOS often does not deliver Cmd+V / Paste to web text fields.
+    template.push({
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'pasteAndMatchStyle' },
+        { role: 'delete' },
+        { role: 'selectAll' },
+      ],
+    });
     if (showDevMenu) {
-      template.push({
-        label: 'Edit',
-        submenu: [
-          { role: 'undo' },
-          { role: 'redo' },
-          { type: 'separator' },
-          { role: 'cut' },
-          { role: 'copy' },
-          { role: 'paste' },
-          { role: 'pasteAndMatchStyle' },
-          { role: 'delete' },
-          { role: 'selectAll' },
-        ],
-      });
       template.push({
         label: 'View',
         submenu: [
@@ -1018,41 +1019,42 @@ function setupInspectorSupport(win) {
     return;
   }
 
-  if (!showDevMenu) return;
-  Menu.setApplicationMenu(
-    Menu.buildFromTemplate([
-      {
-        label: 'File',
-        submenu: [{ role: 'quit' }],
-      },
-      {
-        label: 'Edit',
-        submenu: [
-          { role: 'undo' },
-          { role: 'redo' },
-          { type: 'separator' },
-          { role: 'cut' },
-          { role: 'copy' },
-          { role: 'paste' },
-          { role: 'pasteAndMatchStyle' },
-          { role: 'delete' },
-          { role: 'selectAll' },
-        ],
-      },
-      {
-        label: 'View',
-        submenu: [
-          { role: 'reload' },
-          { type: 'separator' },
-          {
-            label: 'Toggle Developer Tools',
-            role: 'toggleDevTools',
-            accelerator: 'Ctrl+Shift+I',
-          },
-        ],
-      },
-    ])
-  );
+  // Windows / Linux: same issue — packaged builds need an Edit menu so Ctrl+V / accelerators work.
+  const winLinuxTemplate = [
+    {
+      label: 'File',
+      submenu: [{ role: 'quit' }],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'pasteAndMatchStyle' },
+        { role: 'delete' },
+        { role: 'selectAll' },
+      ],
+    },
+  ];
+  if (showDevMenu) {
+    winLinuxTemplate.push({
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { type: 'separator' },
+        {
+          label: 'Toggle Developer Tools',
+          role: 'toggleDevTools',
+          accelerator: 'Ctrl+Shift+I',
+        },
+      ],
+    });
+  }
+  Menu.setApplicationMenu(Menu.buildFromTemplate(winLinuxTemplate));
 }
 
 /** Packaged macOS app launched from the DMG volume: permissions are unreliable — force copy to /Applications. */

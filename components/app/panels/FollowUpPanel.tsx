@@ -143,6 +143,26 @@ function sanitizeAnswer(raw: string): string {
   return out || t.slice(0, 400).trim();
 }
 
+/** Include 2-digit years/prices like 28, 99 in phrase search (otherwise "$28/month" loses "28"). */
+function isAnswerWordToken(w: string): boolean {
+  const t = w.trim();
+  if (!t) return false;
+  if (t.length > 2) return true;
+  return /^\d{2,}$/.test(t);
+}
+
+/** Expand [start,end) to full line(s) so bullets / headers highlight as whole lines, not a mid-line fragment. */
+function expandHighlightToFullLines(notes: string, start: number, end: number): { start: number; end: number } {
+  const len = notes.length;
+  const s = Math.max(0, Math.min(start, len));
+  const e = Math.max(s, Math.min(end, len));
+  let a = s;
+  while (a > 0 && notes[a - 1] !== "\n") a--;
+  let b = e;
+  while (b < len && notes[b] !== "\n") b++;
+  return { start: a, end: b };
+}
+
 /** Locate a substring in notes that overlaps the answer (highlights “from your notes” provenance). */
 function findNotesHighlightSpan(notes: string, answer: string): { start: number; end: number } | null {
   const n = notes;
@@ -153,19 +173,19 @@ function findNotesHighlightSpan(notes: string, answer: string): { start: number;
     .replace(/[^\w\s'-]/g, " ")
     .split(/\s+/)
     .map((w) => w.trim())
-    .filter((w) => w.length > 2);
+    .filter(isAnswerWordToken);
   for (let len = Math.min(16, words.length); len >= 3; len--) {
     for (let i = 0; i + len <= words.length; i++) {
       const phrase = words.slice(i, i + len).join(" ");
       if (phrase.length < (len >= 4 ? 10 : 14)) continue;
       const idx = lowerN.indexOf(phrase);
-      if (idx !== -1) return { start: idx, end: idx + phrase.length };
+      if (idx !== -1) return expandHighlightToFullLines(notes, idx, idx + phrase.length);
     }
   }
   for (const w of words) {
-    if (w.length < 5) continue;
+    if (w.length < 5 && !/^\d{2,}$/.test(w)) continue;
     const idx = lowerN.indexOf(w);
-    if (idx !== -1) return { start: idx, end: idx + w.length };
+    if (idx !== -1) return expandHighlightToFullLines(notes, idx, idx + w.length);
   }
   return null;
 }
@@ -197,21 +217,21 @@ function findNotesHighlightSpanWithFallback(
 
   const lowerU = u.toLowerCase();
   let idx = lowerU.indexOf(frag.toLowerCase());
-  if (idx !== -1) return { start: idx, end: idx + frag.length };
+  if (idx !== -1) return expandHighlightToFullLines(u, idx, idx + frag.length);
 
   const fragWords = frag
     .toLowerCase()
     .replace(/[^\w\s'-]/g, " ")
     .split(/\s+/)
     .map((w) => w.trim())
-    .filter((w) => w.length > 2);
+    .filter(isAnswerWordToken);
 
   for (let len = Math.min(fragWords.length, 12); len >= 2; len--) {
     for (let i = 0; i + len <= fragWords.length; i++) {
       const phrase = fragWords.slice(i, i + len).join(" ");
       if (phrase.length < 8) continue;
       const j = lowerU.indexOf(phrase);
-      if (j !== -1) return { start: j, end: j + phrase.length };
+      if (j !== -1) return expandHighlightToFullLines(u, j, j + phrase.length);
     }
   }
 

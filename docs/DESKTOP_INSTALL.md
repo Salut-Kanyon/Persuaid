@@ -72,20 +72,21 @@ If macOS says the app **is damaged and can’t be opened**, the build was almost
 
 3. **Partner / CI builds** — A DMG is only safe to ship if **that** build machine had the cert + the three `APPLE_*` variables and the log shows **notarization finished** without errors.
 
-**Environment at build time:** `NEXT_PUBLIC_*` variables are **baked into the client** during `next build`. Put them in **`.env.local`** (or your CI env) before `desktop:build` so the packaged app talks to your Supabase project and, for **production live transcription without per-user Deepgram keys**, set **`NEXT_PUBLIC_STT_PROXY_URL=wss://…`** to your hosted STT relay (same strategy as web — see `docs/STT.md`).
+**Environment at build time:** `NEXT_PUBLIC_*` variables are **baked into the client** during `next build`. Put them in **`.env.local`** (or your CI env) before `desktop:build` so the packaged app talks to your Supabase project. **Required for copilot parity:** **`NEXT_PUBLIC_API_BASE_URL=https://…`** (your production origin where `/api/ai/*` is served, e.g. Vercel). For **production live transcription without per-user Deepgram keys**, set **`NEXT_PUBLIC_STT_PROXY_URL=wss://…`** to your hosted STT relay (same strategy as web — see `docs/STT.md`). Details: **[DESKTOP_AI_PARITY.md](./DESKTOP_AI_PARITY.md)**.
 
 **After install — optional keys in the app support directory**
 
-For transcription and in-app AI routes served by Electron, create:
+For **local STT** (Deepgram) when not using a hosted relay, you can add:
 
 `~/Library/Application Support/Persuaid/.env`
 
 Example:
 
 ```env
-OPENAI_API_KEY=sk-...
 DEEPGRAM_API_KEY=...
 ```
+
+Copilot `/api/ai/*` calls do **not** read `OPENAI_API_KEY` from this file — the static shell talks to your **hosted** Next app. Set **`NEXT_PUBLIC_API_BASE_URL`** at **desktop build time** (see below) and **`OPENAI_API_KEY`** on **Vercel** (or wherever that URL is served). See **[DESKTOP_AI_PARITY.md](./DESKTOP_AI_PARITY.md)**.
 
 ## 4. How the packaged app differs from `desktop:dev`
 
@@ -93,9 +94,11 @@ DEEPGRAM_API_KEY=...
 |--|---------------|---------------------------|
 | UI | `localhost:3000` (full Next server) | Static files from `out/` + local HTTP on port **2999** |
 | Next `/api/*` (Stripe, usage, entitlements, …) | Available | **Not included** (static export cannot ship App Router API routes). The UI falls back gracefully for many flows; `/api/me/*` calls may fail and entitlements behave like **free** until you add hosting or Electron-side proxies. |
-| AI follow-up / STT in Electron | Uses Next or Electron handlers | Electron **main** implements `/api/ai/*` and the STT proxy when keys are set |
+| Copilot `/api/ai/*` (follow-up, answer, …) | Same-origin to Next dev | **Must** target your deployed API: set **`NEXT_PUBLIC_API_BASE_URL=https://your-domain.com`** in **`.env.local`** (or CI env) **before** `npm run desktop:build` so it is **baked into** the static JS. The Electron **main** process does **not** implement `/api/ai/*`; optional **STT** WebSocket proxy is separate. |
 
-For a **full** production desktop experience matching Vercel, you would either load the **deployed site URL** in Electron instead of `out/`, or re-implement critical `/api` routes in `electron/main.js`.
+`npm run desktop:build` runs **`scripts/verify-desktop-ai-config.js`** after the static export to ensure the bundle contains that API base (skip with `SKIP_VERIFY_DESKTOP_AI=1` if needed).
+
+For a **full** production desktop experience matching the live site, you can also load the **deployed site URL** in Electron instead of `out/`, or add **main-process HTTP proxies** for specific routes (more engineering).
 
 ### DMG for production: now or later?
 
