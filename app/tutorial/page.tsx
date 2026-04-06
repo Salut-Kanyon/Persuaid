@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Navbar } from "@/components/ui/Navbar";
@@ -10,10 +10,10 @@ import {
   marketingHeroSubtitleClassName,
   marketingHeroTitleClassName,
 } from "@/components/ui/marketing-landing-art";
+import { TUTORIAL_VIDEO_SRC } from "@/lib/tutorial-video";
 import { cn } from "@/lib/utils";
 
 export default function TutorialPage() {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [copied, setCopied] = useState(false);
 
   const copyPageLink = useCallback(async () => {
@@ -36,13 +36,6 @@ export default function TutorialPage() {
         /* ignore */
       }
     }
-  }, []);
-
-  const playWithSound = useCallback(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    el.muted = false;
-    el.play().catch(() => {});
   }, []);
 
   return (
@@ -79,43 +72,24 @@ export default function TutorialPage() {
               style={{ WebkitMaskImage: "-webkit-radial-gradient(white, black)" }}
             >
               <div className="relative aspect-video bg-[#000000]">
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-14 bg-gradient-to-b from-black/60 to-transparent" />
-                <div className="pointer-events-none absolute left-4 top-4 z-20 rounded-xl border border-white/15 bg-black/55 px-3 py-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-dim">Tutorial</p>
-                  <p className="mt-1 text-[12px] leading-snug text-text-secondary">
-                    give me an example of a healthy young person price
-                  </p>
-                </div>
                 <video
-                  ref={videoRef}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain bg-black"
                   playsInline
-                  preload="auto"
+                  preload="metadata"
                   autoPlay
-                  loop
+                  controls
                   muted
+                  controlsList="nodownload"
                 >
-                  <source src="/go.mp4" type="video/mp4" />
+                  <source src={TUTORIAL_VIDEO_SRC} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col gap-4 px-1 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-md text-left text-sm leading-snug text-text-muted sm:text-[15px]">
-                Want narration? Tap once to unmute and continue playing.
-              </p>
-              <button
-                type="button"
-                onClick={playWithSound}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[#4dc49a]/50 bg-gradient-to-b from-[#1fb388] via-green-primary to-[#127a5c] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_0_0_1px_rgba(26,157,120,0.35),0_4px_20px_rgba(26,157,120,0.35)] transition-[transform,filter] duration-200 hover:brightness-[1.04] active:scale-[0.99] sm:text-[15px]"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-                </svg>
-                Play with sound
-              </button>
-            </div>
+            <p className="mt-6 px-1 text-left text-sm leading-snug text-text-muted sm:text-[15px]">
+              Starts muted—use the player controls to unmute, scrub, or change playback speed.
+            </p>
           </motion.div>
 
           <motion.div

@@ -8,8 +8,8 @@ export function PricingCluelyStyleHero() {
     <div className="mx-auto max-w-[46rem] px-1 text-center">
       <h1
         className={cn(
-          "flex flex-nowrap items-center justify-center gap-x-2 text-balance font-display font-normal tracking-[-0.02em] text-white",
-          "text-[clamp(2.55rem,8vw,4.35rem)] leading-[1.05] sm:gap-x-2.5 md:gap-x-3"
+          "flex flex-nowrap items-center justify-center gap-x-2 text-balance font-sans font-semibold tracking-[-0.025em] leading-[1.06] text-white",
+          "text-4xl sm:text-5xl lg:text-[3.15rem] xl:text-[3.45rem] sm:gap-x-2.5 md:gap-x-3"
         )}
       >
         <span className="whitespace-nowrap">Start</span>
@@ -75,9 +75,9 @@ export function MarketingHeroHeadlineDivider() {
   );
 }
 
-/** Same classes as the landing `Hero` title lines. */
+/** Same as “How Persuaid works” / home hero headline (Inter, scale, weight). */
 export const marketingHeroTitleClassName =
-  "font-display text-[clamp(1.9rem,7.2vw,4.15rem)] leading-[1.05] font-normal tracking-[-0.02em] text-text-primary";
+  "font-sans text-4xl sm:text-5xl lg:text-[3.15rem] xl:text-[3.45rem] font-semibold tracking-[-0.025em] leading-[1.06] text-text-primary";
 
 /** Same classes as the landing `Hero` subtitle paragraph. */
 export const marketingHeroSubtitleClassName =

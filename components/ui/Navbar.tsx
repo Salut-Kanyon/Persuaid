@@ -21,9 +21,11 @@ type NavbarProps = {
   landing?: boolean;
   /** P mark + “ersuaid” text (same as home) instead of the wordmark image */
   landingLogo?: boolean;
+  /** Home: slim announcement strip above nav — offsets floating download CTA */
+  announcementBar?: boolean;
 };
 
-export function Navbar({ liveDemo, landing = false, landingLogo = false }: NavbarProps) {
+export function Navbar({ liveDemo, landing = false, landingLogo = false, announcementBar = false }: NavbarProps) {
   const pathname = usePathname();
   const hideFloatingDownload = pathname === "/download" || pathname === "/pricing";
   const [showCtaButton, setShowCtaButton] = useState(false);
@@ -41,6 +43,7 @@ export function Navbar({ liveDemo, landing = false, landingLogo = false }: Navba
   const navLinks: Array<{ label: string; href: string; marketingOnly?: boolean }> = [
     { label: "Pricing", href: "/pricing", marketingOnly: true },
     { label: "Tutorial", href: "/tutorial" },
+    { label: "The problem", href: "/what-we-found-out" },
   ];
 
   const scrollToDemo = useCallback(() => {
@@ -66,8 +69,10 @@ export function Navbar({ liveDemo, landing = false, landingLogo = false }: Navba
       {showCtaButton && !hideFloatingDownload && (
         <div
           className={cn(
-            "fixed top-4 right-4 z-50 hidden w-[min(calc(100vw-2rem),320px)] flex-col items-stretch md:flex animate-in fade-in slide-in-from-top-2",
-            landing && "landing-floating-cta"
+            "fixed right-4 z-50 hidden flex-col items-end md:flex animate-in fade-in slide-in-from-top-2",
+            announcementBar ? "top-[calc(2.75rem+1rem)]" : "top-4",
+            landing && "landing-floating-cta",
+            landing && announcementBar && "landing-floating-cta-with-banner"
           )}
         >
           {liveDemo ? (
@@ -133,7 +138,7 @@ export function Navbar({ liveDemo, landing = false, landingLogo = false }: Navba
           ) : (
             <a
               href="/download"
-              className="inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-gradient-to-b from-[#1fb388] via-green-primary to-[#127a5c] px-3.5 text-[12px] font-semibold tracking-[-0.02em] text-white shadow-[0_0_0_1px_rgba(26,157,120,0.4),0_3px_12px_rgba(26,157,120,0.35)] transition-[transform,box-shadow,filter] duration-200 ease-out hover:brightness-[1.05] hover:shadow-[0_0_0_1px_rgba(61,184,146,0.5),0_4px_16px_rgba(26,157,120,0.45)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-accent/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg-near-black)] border border-[#4dc49a]/45 sm:px-4 sm:text-[13px]"
+              className="inline-flex h-9 max-w-[calc(100vw-2rem)] shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-gradient-to-b from-[#1fb388] via-green-primary to-[#127a5c] px-4 text-[13px] font-semibold tracking-[-0.02em] text-white shadow-[0_0_0_1px_rgba(26,157,120,0.4),0_3px_12px_rgba(26,157,120,0.35)] transition-[transform,box-shadow,filter] duration-200 ease-out hover:brightness-[1.05] hover:shadow-[0_0_0_1px_rgba(61,184,146,0.5),0_4px_16px_rgba(26,157,120,0.45)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-accent/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg-near-black)] border border-[#4dc49a]/45 sm:h-10 sm:px-5 sm:text-sm"
             >
               Download Now
             </a>

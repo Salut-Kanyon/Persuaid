@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/ui/Navbar";
@@ -14,6 +15,8 @@ import { Section } from "@/components/ui/Section";
 import { Footer } from "@/components/ui/Footer";
 import { FAQSection } from "@/components/ui/FAQSection";
 import { LandingPreFooterCta } from "@/components/landing/LandingPreFooterCta";
+import { LandingResearchBanner } from "@/components/landing/LandingResearchBanner";
+import { TUTORIAL_VIDEO_SRC } from "@/lib/tutorial-video";
 
 function ProductKnowledgeShowcaseCard() {
   const previewLines = [
@@ -30,9 +33,6 @@ function ProductKnowledgeShowcaseCard() {
   return (
     <article className="relative h-full min-h-[396px] overflow-hidden rounded-3xl border border-transparent bg-transparent p-4 sm:min-h-[420px] sm:p-5 shadow-none">
       <h3 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:mt-2 sm:text-[1.9rem]">Add Your Knowledge</h3>
-      <p className="mt-2 text-sm text-text-muted sm:text-[0.95rem]">
-        Notes on policies, pricing notes, rates, and more
-      </p>
       <div className="relative mt-4 overflow-hidden rounded-2xl border border-white/[0.14] bg-black/45 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl backdrop-saturate-150 sm:mt-5 sm:p-4">
         <div
           className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-black/30"
@@ -90,7 +90,9 @@ function EnterInstantAnswerShowcaseCard() {
 
   return (
     <article className="relative flex h-full min-h-[480px] flex-col overflow-hidden rounded-3xl border border-transparent bg-transparent p-4 sm:min-h-[508px] sm:p-5">
-      <h3 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:mt-2 sm:text-[1.9rem]">Right answer at your fingertips</h3>
+      <h3 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:mt-2 sm:text-[1.9rem]">
+        Listens live, press Enter and get an answer
+      </h3>
 
       <div className="mt-5 flex min-h-0 flex-1 flex-col sm:mt-6">
         <div className="border-l-2 border-emerald-400/50 pl-3 sm:pl-3.5">
@@ -135,23 +137,12 @@ function EnterInstantAnswerShowcaseCard() {
                       </p>
                     </>
                   ) : (
-                    <>
-                      <p className="text-[14px] leading-relaxed text-text-primary/95 sm:text-[14.5px]">
+                    <div className="flex min-h-[160px] flex-1 flex-col items-stretch justify-center px-2 sm:min-h-[180px] sm:px-4">
+                      <p className="w-full text-left text-balance text-[16px] font-medium leading-[1.5] tracking-[-0.015em] text-text-primary sm:text-[18px] sm:leading-[1.48]">
                         For a healthy 42-year-old non-smoker at $500k over twenty years, you are usually in the mid-range on monthly
                         premium—and if underwriting comes back preferred, you can tighten that quote quite a bit.
                       </p>
-                      <p className="text-[13px] leading-relaxed text-text-secondary/90">
-                        <span className="text-emerald-200/90">Follow-up question:</span>{" "}
-                        <span className="text-emerald-200/90">&ldquo;</span>
-                        <span className="text-white/95">
-                          Is there anything else I can help you with—coverage, riders, or how this monthly number fits your plan?
-                        </span>
-                        <span className="text-emerald-200/90">&rdquo;</span>
-                      </p>
-                      <p className="mt-2 text-[13px] text-text-dim/45" aria-hidden>
-                        ...
-                      </p>
-                    </>
+                    </div>
                   )}
                 </motion.div>
               ) : (
@@ -228,7 +219,6 @@ function NotesRetrievalShowcaseCard() {
   return (
     <article className="relative h-full min-h-[396px] overflow-hidden rounded-3xl border border-transparent bg-transparent p-4 sm:min-h-[420px] sm:p-5 shadow-none">
       <h3 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:mt-2 sm:text-[1.9rem]">Connect your notes with the AI</h3>
-      <p className="mt-2 text-sm text-text-muted sm:text-[0.95rem]">Notes turn into short, speak-ready lines for live calls.</p>
       <div className="relative mt-4 h-[272px] overflow-hidden rounded-2xl border border-white/[0.14] bg-black/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl backdrop-saturate-150 sm:mt-5 sm:h-[292px]">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-black/30" aria-hidden />
         <motion.div
@@ -358,67 +348,19 @@ function MeetingCaptureShowcaseCard() {
   );
 }
 
-type TutorialSubtitle = {
-  start: number;
-  end?: number;
-  text: string;
-};
-
-const TUTORIAL_SUBTITLES: TutorialSubtitle[] = [
-  { start: 15, end: 18, text: "Hello whats up ready to help me sell:" },
-  { start: 18, end: 22, text: "what are the typical pricing ranges in your policy:" },
-  { start: 22, end: 30, text: "give me an example of a healthy young person price" },
-  { start: 30, text: "give me the three types of insurances" },
-];
-
 function FastTutorialCard() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [subtitle, setSubtitle] = useState<string>("");
-
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-
-    const compute = () => {
-      const t = v.currentTime;
-      const active =
-        TUTORIAL_SUBTITLES.find((s) => t >= s.start && (s.end === undefined || t < s.end)) ??
-        TUTORIAL_SUBTITLES[TUTORIAL_SUBTITLES.length - 1];
-      setSubtitle(t >= TUTORIAL_SUBTITLES[0]!.start ? active.text : "");
-    };
-
-    compute();
-    v.addEventListener("timeupdate", compute);
-    v.addEventListener("seeked", compute);
-    return () => {
-      v.removeEventListener("timeupdate", compute);
-      v.removeEventListener("seeked", compute);
-    };
-  }, []);
-
   return (
     <article className="relative w-full overflow-hidden rounded-3xl border border-white/10 bg-black/40 p-4 sm:p-5">
       <video
-        ref={videoRef}
-        src="/go.mp4"
+        src={TUTORIAL_VIDEO_SRC}
         muted
         playsInline
-        autoPlay
-        loop
         preload="metadata"
-        className="relative aspect-video w-full rounded-2xl object-contain"
+        autoPlay
+        controls
+        controlsList="nodownload"
+        className="relative aspect-video w-full rounded-2xl object-contain bg-black"
       />
-
-      <div className="pointer-events-none absolute left-6 top-6 z-10">
-        <div className="rounded-2xl border border-white/10 bg-black/55 px-3.5 py-2 backdrop-blur-xl">
-          <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/85">Tutorial</p>
-          <div className="mt-1 flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-white/50 animate-pulse" />
-            <p className="text-[12px] text-white/90">Listening (subtitles)</p>
-          </div>
-          <p className="mt-2 text-[13px] leading-snug text-white/95">{subtitle || " "}</p>
-        </div>
-      </div>
     </article>
   );
 }
@@ -676,8 +618,8 @@ function NotesToActionInteractiveDemo() {
   const leftActive = x >= 0.5;
   const leftOpacity = leftActive ? 1 : 0.18;
   const rightOpacity = leftActive ? 0.18 : 1;
-  const leftBlur = leftActive ? 0 : 3.4;
-  const rightBlur = leftActive ? 3.4 : 0;
+  const leftBlur = leftActive ? 0 : 2.25;
+  const rightBlur = leftActive ? 2.25 : 0;
 
   const handleScale = leftActive ? 1.03 : 1.03;
 
@@ -691,8 +633,8 @@ function NotesToActionInteractiveDemo() {
     "Objection: value first, numbers second",
   ];
 
-  // Subtle neutral spotlight (avoid “blue neon” look).
-  const spotlight = `radial-gradient(640px circle at ${x * 100}% 50%, rgba(255,255,255,0.08), rgba(255,255,255,0.03) 35%, transparent 62%)`;
+  // Subtle depth on solid dark (no frosted-glass wash).
+  const spotlight = `radial-gradient(620px circle at ${x * 100}% 50%, rgba(255,255,255,0.045), rgba(255,255,255,0.015) 40%, transparent 65%)`;
 
   useEffect(() => {
     if (!showWorkflow) return;
@@ -742,7 +684,7 @@ function NotesToActionInteractiveDemo() {
             className="mx-auto mb-10 max-w-5xl px-4"
           >
             <div ref={scienceRef} className="scroll-mt-24">
-              <div className="rounded-3xl border border-white/10 bg-black/20 backdrop-blur-2xl px-5 py-5 sm:px-6 sm:py-6">
+              <div className="rounded-3xl border border-white/[0.07] bg-[color:var(--bg-near-black)] px-5 py-5 sm:px-6 sm:py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/80">
                   From messy notes to usable intelligence
                 </p>
@@ -751,9 +693,9 @@ function NotesToActionInteractiveDemo() {
                   <p className="text-white/80">It interprets them.</p>
                 </div>
 
-                <div className="mt-6 rounded-3xl border border-white/10 bg-black/20 overflow-hidden">
+                <div className="mt-6 rounded-3xl border border-white/[0.07] bg-[#0d0d0f] overflow-hidden">
                   <div className="grid sm:grid-cols-2">
-                    <div className="p-4 border-b border-white/10 sm:border-b-0 sm:border-r sm:border-white/10">
+                    <div className="p-4 border-b border-white/[0.08] sm:border-b-0 sm:border-r sm:border-white/[0.08]">
                       <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/85">Raw notes</p>
                       <div className="mt-3 space-y-2 text-[13px] leading-relaxed text-white/60">
                         <p>Customer: 42-year-old, married, 2 kids, income protection</p>
@@ -766,17 +708,17 @@ function NotesToActionInteractiveDemo() {
                       </div>
                     </div>
                     <div className="p-4">
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/90">AI Notes</p>
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/70">AI Notes</p>
                       <div className="mt-3 space-y-3">
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3">
+                        <div className="rounded-2xl border border-white/[0.08] bg-[#121214] px-3 py-3">
                           <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/80">Pricing logic</p>
                           <p className="mt-1 text-[13px] text-text-secondary/90">Underwriting tier → monthly band (coverage + term)</p>
                         </div>
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3">
+                        <div className="rounded-2xl border border-white/[0.08] bg-[#121214] px-3 py-3">
                           <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/80">Suggested narrative</p>
                           <p className="mt-1 text-[13px] text-text-secondary/90">Lead with protection, then introduce price</p>
                         </div>
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3">
+                        <div className="rounded-2xl border border-white/[0.08] bg-[#121214] px-3 py-3">
                           <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/80">Next line</p>
                           <p className="mt-1 text-[13px] text-text-secondary/90">
                             “Let’s focus on protecting income first—then I’ll show where this typically lands monthly based on your profile.”
@@ -794,10 +736,10 @@ function NotesToActionInteractiveDemo() {
 
       <div
         ref={containerRef}
-        className="relative mx-auto max-w-6xl mt-8 h-[500px] rounded-3xl border border-white/10 overflow-hidden backdrop-blur-2xl bg-black/30"
+        className="relative mx-auto max-w-6xl mt-8 h-[500px] rounded-3xl border border-white/[0.07] overflow-hidden bg-[color:var(--bg-near-black)] shadow-[0_24px_80px_-48px_rgba(0,0,0,0.85)]"
         style={{
           background:
-            "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))",
+            "linear-gradient(180deg, #131315 0%, var(--bg-near-black) 45%, #060606 100%)",
         }}
         onMouseMove={(e) => setTargetFromPointer(e.clientX)}
         onMouseEnter={() => setIsHovering(true)}
@@ -815,9 +757,12 @@ function NotesToActionInteractiveDemo() {
           }}
           aria-hidden
         />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/10 to-transparent" aria-hidden />
         <div
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.10),transparent)]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.35),transparent_45%)]"
           aria-hidden
         />
 
@@ -829,14 +774,14 @@ function NotesToActionInteractiveDemo() {
           style={{ left: `${x * 100}%`, transform: "translateX(-50%)" }}
           aria-hidden
         >
-          <div className="absolute inset-0 w-px bg-white/25" />
-          <div className="absolute inset-0 w-px bg-gradient-to-b from-white/60 via-white/20 to-white/60" />
-          <div className="absolute inset-0 w-px bg-white/15" />
+          <div className="absolute inset-0 w-px bg-white/12" />
+          <div className="absolute inset-0 w-px bg-gradient-to-b from-white/25 via-white/10 to-white/25" />
+          <div className="absolute inset-0 w-px bg-white/8" />
         </div>
 
         {/* Handle */}
           <div
-          className="absolute top-1/2 z-30 rounded-full border border-white/25 bg-white/75 backdrop-blur-md"
+          className="absolute top-1/2 z-30 rounded-full border border-white/12 bg-[#1c1c1e] shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
             style={{
               left: `${x * 100}%`,
               transform: `translate(-50%, -50%) scale(${handleScale})`,
@@ -844,8 +789,8 @@ function NotesToActionInteractiveDemo() {
             aria-hidden
           >
           <div className="flex items-center justify-center gap-2 px-3.5 py-2">
-            <span className="text-[12px] font-semibold text-black/85">&lt;</span>
-            <span className="text-[12px] font-semibold text-black/85">&gt;</span>
+            <span className="text-[12px] font-semibold text-white/55">&lt;</span>
+            <span className="text-[12px] font-semibold text-white/55">&gt;</span>
           </div>
         </div>
 
@@ -920,8 +865,8 @@ function NotesToActionInteractiveDemo() {
                 transform: "scale(1)",
               }}
             >
-              <div className="h-full rounded-2xl border border-white/10 bg-black/35 relative overflow-hidden">
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/10 to-transparent" aria-hidden />
+              <div className="h-full rounded-2xl border border-white/[0.08] bg-[#0e0e10] relative overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/30 to-transparent" aria-hidden />
 
                 <div className="relative h-full flex flex-col px-5 pt-5 pb-4">
                   <div className="flex items-start justify-between gap-3">
@@ -967,14 +912,17 @@ function NotesToActionInteractiveDemo() {
                 transform: "scale(1)",
               }}
             >
-                <div className="h-full rounded-2xl border border-white/10 bg-black/20 overflow-hidden">
+                <div className="h-full rounded-2xl border border-white/[0.08] border-t-emerald-500/20 bg-[#0e0e10] overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.04),inset_0_-24px_48px_-32px_rgba(26,157,120,0.06)]">
                 <div className="relative h-full px-4 py-4 flex flex-col">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/90">AI Notes</p>
-                      <p className="mt-2 text-[13px] text-text-secondary/65">Structured, analyzed, ready to act</p>
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/75">AI Notes</p>
+                      <p className="mt-2 text-[13px] text-text-secondary/72">
+                        Structured, analyzed,{" "}
+                        <span className="text-emerald-200/80">ready to act</span>
+                      </p>
                     </div>
-                    <div className="mt-1 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1 text-[11px] text-emerald-200/90">
+                    <div className="mt-1 rounded-full border border-emerald-500/25 bg-emerald-500/[0.09] px-3 py-1 text-[11px] font-medium text-emerald-200/90">
                       Live
                     </div>
                   </div>
@@ -986,9 +934,9 @@ function NotesToActionInteractiveDemo() {
                     transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                     className="mt-4"
                   >
-                    <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
-                      <Shimmer className="opacity-35" />
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/85">
+                    <div className="relative overflow-hidden rounded-xl border border-white/[0.08] border-l-emerald-500/35 bg-[#121214] p-4">
+                      <Shimmer className="opacity-25" />
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/65">
                         Analyzing your notes<span className="inline-flex w-[1.25em] justify-start">
                           <motion.span
                             aria-hidden
@@ -1001,9 +949,9 @@ function NotesToActionInteractiveDemo() {
                       </p>
                       <p className="mt-2 text-[13px] text-text-secondary/80 leading-relaxed">
                         Persuaid identifies{" "}
-                        <span className="rounded bg-white/[0.06] px-1 text-white/85">underwriting signals</span>,{" "}
-                        <span className="rounded bg-white/[0.06] px-1 text-white/85">pricing anchors</span>, and{" "}
-                        <span className="rounded bg-white/[0.06] px-1 text-white/85">positioning intent</span> — then
+                        <span className="rounded bg-emerald-500/[0.12] px-1 text-emerald-100/88">underwriting signals</span>,{" "}
+                        <span className="rounded bg-emerald-500/[0.12] px-1 text-emerald-100/88">pricing anchors</span>, and{" "}
+                        <span className="rounded bg-emerald-500/[0.12] px-1 text-emerald-100/88">positioning intent</span> — then
                         reconstructs them into something usable in the moment.
                       </p>
                     </div>
@@ -1018,20 +966,20 @@ function NotesToActionInteractiveDemo() {
                           animate={visibleBlocks.pricing ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                           transition={{ duration: 0.42 }}
                         >
-                      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur px-4 py-4">
-                        <Shimmer className="opacity-25" />
+                      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] border-l-emerald-500/30 bg-[#121214] px-4 py-4">
+                        <Shimmer className="opacity-20" />
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-emerald-300/30" aria-hidden />
-                            <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/90">Pricing logic</p>
+                            <span className="h-2 w-2 rounded-full bg-emerald-400/45 shadow-[0_0_8px_rgba(52,211,153,0.25)]" aria-hidden />
+                            <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/70">Pricing logic</p>
                           </div>
-                          <span className="text-[11px] text-text-dim/70">Tiered underwriting</span>
+                          <span className="text-[11px] text-emerald-200/45">Tiered underwriting</span>
                         </div>
                         <p className="mt-2 text-[14px] text-text-secondary/90 leading-relaxed">
                           Underwriting determines pricing tier:
                           <span className="block mt-2 text-text-secondary/85">
                             - Age<br />
-                            - <span className="rounded bg-emerald-300/10 px-1 text-white/85">Health class</span>
+                            - <span className="rounded bg-emerald-500/[0.14] px-1 text-emerald-100/85">Health class</span>
                             <br />
                             - Tobacco status
                           </span>
@@ -1047,10 +995,10 @@ function NotesToActionInteractiveDemo() {
                           animate={visibleBlocks.range ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                           transition={{ duration: 0.42 }}
                         >
-                          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur px-4 py-4">
+                          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121214] px-4 py-4">
                             <div className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full bg-emerald-300/30" aria-hidden />
-                              <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/90">Estimated range</p>
+                              <span className="h-2 w-2 rounded-full bg-white/20" aria-hidden />
+                              <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/90">Estimated range</p>
                             </div>
                             <p className="mt-2 text-[14px] text-text-secondary/90 leading-relaxed">
                               $500k · 20-year term
@@ -1066,13 +1014,13 @@ function NotesToActionInteractiveDemo() {
                           animate={visibleBlocks.opt ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                           transition={{ duration: 0.42 }}
                         >
-                          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur px-4 py-4">
+                          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121214] px-4 py-4">
                             <div className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full bg-emerald-300/30" aria-hidden />
-                              <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/90">Optimization insight</p>
+                              <span className="h-2 w-2 rounded-full bg-white/20" aria-hidden />
+                              <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/90">Optimization insight</p>
                             </div>
                             <p className="mt-2 text-[14px] text-text-secondary/90 leading-relaxed">
-                              <span className="rounded bg-emerald-300/10 px-1 text-white/90">Preferred class</span> can
+                              <span className="rounded bg-white/[0.08] px-1 text-white/90">Preferred class</span> can
                               significantly reduce cost
                               <br />
                               <span className="text-text-secondary/75">without changing coverage</span>
@@ -1085,10 +1033,10 @@ function NotesToActionInteractiveDemo() {
                           animate={visibleBlocks.say ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                           transition={{ duration: 0.42 }}
                         >
-                          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur px-4 py-4">
+                          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121214] px-4 py-4">
                             <div className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full bg-emerald-300/30" aria-hidden />
-                              <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/90">How to say it</p>
+                              <span className="h-2 w-2 rounded-full bg-white/20" aria-hidden />
+                              <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/90">How to say it</p>
                             </div>
                             <p className="mt-2 text-[14px] text-text-secondary/90 leading-relaxed whitespace-pre-line">
                               “Let’s focus on protecting income first —
@@ -1102,15 +1050,15 @@ function NotesToActionInteractiveDemo() {
                           animate={visibleBlocks.confirm ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                           transition={{ duration: 0.42 }}
                         >
-                          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur px-4 py-4">
+                          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121214] px-4 py-4">
                             <div className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full bg-emerald-300/30" aria-hidden />
-                              <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/90">What to confirm</p>
+                              <span className="h-2 w-2 rounded-full bg-white/20" aria-hidden />
+                              <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/90">What to confirm</p>
                             </div>
                             <p className="mt-2 text-[14px] text-text-secondary/90 leading-relaxed">
                               Age
                               <br />
-                              <span className="rounded bg-emerald-300/10 px-1 text-white/85">Health class</span>
+                              <span className="rounded bg-white/[0.08] px-1 text-white/85">Health class</span>
                               <br />
                               Tobacco status
                               <br />
@@ -1212,9 +1160,10 @@ function RevenueResearchAccordion() {
 export default function Home() {
   return (
     <main className="landing-home min-h-screen antialiased">
-      {/* One stack: nav overlays hero top; both scroll away together (nav is not fixed to viewport) */}
+      {/* Announcement strip + nav over hero (both scroll with page) */}
+      <LandingResearchBanner />
       <div className="relative">
-        <Navbar landing />
+        <Navbar landing announcementBar />
         <Hero landing />
       </div>
 
@@ -1321,7 +1270,7 @@ export default function Home() {
               transition={{ duration: 0.5, ease: "easeOut", delay: 0.06 }}
               className="lg:col-span-8"
             >
-              <h2 className="font-display text-[clamp(2.15rem,5.5vw,3.35rem)] leading-[1.06] font-normal tracking-[-0.02em] text-text-primary">
+              <h2 className="font-sans text-4xl sm:text-5xl lg:text-[3.15rem] xl:text-[3.45rem] font-semibold tracking-[-0.025em] leading-[1.06] text-text-primary">
                 <span className="block">Train faster.</span>
                 <span className="mt-1 block bg-gradient-to-r from-emerald-200/[0.92] via-[#e8e4dc]/90 to-violet-200/[0.88] bg-clip-text text-transparent">
                   Perform better.
@@ -1333,6 +1282,15 @@ export default function Home() {
                   asking for nothing but honest answers. If we reached out to you, we&rsquo;d love to have you on the
                   team.
                 </p>
+                <Link
+                  href="/what-we-found-out"
+                  className="mt-5 inline-flex items-center gap-1.5 text-[14px] font-semibold tracking-[-0.02em] text-emerald-200/90 underline decoration-emerald-200/25 underline-offset-[3px] transition-colors hover:text-emerald-100/95 hover:decoration-emerald-100/40 sm:mt-6 sm:text-[15px]"
+                >
+                  Read more
+                  <span aria-hidden className="text-emerald-200/70">
+                    →
+                  </span>
+                </Link>
                 <RevenueResearchAccordion />
               </div>
             </motion.div>

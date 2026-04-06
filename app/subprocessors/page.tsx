@@ -15,6 +15,11 @@ const SUBPROCESSORS = [
     location: "United States",
   },
   {
+    name: "Railway",
+    purpose: "Cloud infrastructure and hosting for backend services, databases, and related workloads",
+    location: "United States",
+  },
+  {
     name: "OpenAI",
     purpose: "AI models for real-time suggestions, call analysis, and language processing",
     location: "United States",
@@ -52,7 +57,7 @@ export default function SubprocessorsPage() {
             Subprocessors
           </h1>
           <p className="text-text-muted mt-2 text-base sm:text-lg">
-            Last updated: March 2025
+            Last updated: April 2026
           </p>
         </header>
 

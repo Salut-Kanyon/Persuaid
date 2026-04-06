@@ -16,19 +16,20 @@ const HERO_TITLE_LINE2 = "when you need it.";
 const HERO_LINE1_WORDS = HERO_TITLE_LINE1.split(" ");
 const HERO_LINE2_WORDS = HERO_TITLE_LINE2.split(" ");
 
+/** Same gradient as “Train faster. / Perform better.” on the home revenue section. */
+const HERO_TITLE_GRADIENT =
+  "bg-gradient-to-r from-emerald-200/[0.92] via-[#e8e4dc]/90 to-violet-200/[0.88] bg-clip-text text-transparent";
+
 function HeroTitleTwoLines() {
   const reduce = useReducedMotion();
   const words1 = HERO_LINE1_WORDS;
   const words2 = HERO_LINE2_WORDS;
-  const lineClass =
-    "block whitespace-nowrap font-display text-[clamp(1.9rem,7.2vw,4.15rem)] leading-[1.05] font-normal text-text-primary tracking-[-0.02em]";
+  const lineBase =
+    "font-sans text-4xl sm:text-5xl lg:text-[3.15rem] xl:text-[3.45rem] font-semibold tracking-[-0.025em] leading-[1.06]";
 
-  const renderLine = (words: string[], baseIndex: number) =>
+  const renderLine = (words: string[], baseIndex: number, gradient: boolean) =>
     words.map((word, i) => {
       const index = baseIndex + i;
-      const stripped = word.replace(/[.,!?]/g, "");
-      const isPersuaid = stripped === "Persuaid";
-      const isAi = stripped === "AI";
       return (
         <span key={`${baseIndex}-${i}`} className="inline-block whitespace-pre">
           <motion.span
@@ -39,7 +40,7 @@ function HeroTitleTwoLines() {
               delay: reduce ? 0 : index * 0.06,
               ease: [0.25, 0.1, 0.25, 1],
             }}
-            className={cn((isPersuaid || isAi) && "text-[color:var(--landing-accent)]")}
+            className={cn(lineBase, gradient ? HERO_TITLE_GRADIENT : "text-text-primary")}
           >
             {word}
           </motion.span>
@@ -50,8 +51,8 @@ function HeroTitleTwoLines() {
 
   return (
     <span className="flex flex-col items-center gap-0.5 sm:gap-1">
-      <span className={lineClass}>{renderLine(words1, 0)}</span>
-      <span className={lineClass}>{renderLine(words2, words1.length)}</span>
+      <span className="block whitespace-nowrap">{renderLine(words1, 0, false)}</span>
+      <span className="mt-0.5 block whitespace-nowrap sm:mt-1">{renderLine(words2, words1.length, true)}</span>
     </span>
   );
 }
@@ -165,7 +166,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
                 y: reduceMotion ? 0 : showSubtitle ? 0 : 6,
               }}
               transition={{ duration: reduceMotion ? 0.01 : 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-              className="font-subtitle mt-4 text-[17px] leading-snug sm:mt-5 sm:text-[18px] sm:leading-relaxed lg:text-[19px] text-text-secondary mb-6 max-w-md sm:max-w-2xl mx-auto font-normal text-balance tracking-[-0.01em]"
+              className="font-sans mt-4 text-[17px] leading-snug sm:mt-5 sm:text-[18px] sm:leading-relaxed lg:text-[19px] text-text-secondary mb-12 max-w-md sm:mb-14 lg:mb-16 sm:max-w-2xl mx-auto font-normal text-balance tracking-[-0.01em]"
             >
               <span className="block">
                 <span className="font-semibold text-green-accent">Persuaid</span> listens, understands the moment, and
@@ -185,7 +186,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
                     : { staggerChildren: 0.06, delayChildren: 0.04 },
                 },
               }}
-              className="mx-auto flex w-full max-w-2xl flex-col items-center"
+              className="mx-auto flex w-full max-w-2xl flex-col items-center pt-2 sm:pt-3"
             >
               <motion.div
                 variants={{
@@ -205,8 +206,8 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
                   href="/download"
                   transition={{ type: "spring", stiffness: 520, damping: 32 }}
                   className={cn(
-                    "relative isolate inline-flex h-11 min-h-11 items-center justify-center overflow-hidden rounded-full px-8 sm:h-12 sm:min-h-12 sm:px-10",
-                    "bg-gradient-to-b from-[#1fb388] via-green-primary to-[#127a5c] text-[15px] font-semibold tracking-[-0.02em] text-white antialiased",
+                    "relative isolate inline-flex h-12 min-h-12 items-center justify-center overflow-hidden rounded-full px-10 sm:h-14 sm:min-h-14 sm:px-12",
+                    "bg-gradient-to-b from-[#1fb388] via-green-primary to-[#127a5c] text-base font-semibold tracking-[-0.02em] text-white antialiased sm:text-[17px]",
                     "border border-[#4dc49a]/50 shadow-[0_0_0_1px_rgba(26,157,120,0.35),0_4px_20px_rgba(26,157,120,0.45),0_12px_40px_-8px_rgba(0,0,0,0.55)]",
                     "before:pointer-events-none before:absolute before:inset-x-3 before:top-0 before:h-px before:rounded-full before:bg-white/35",
                     "transition-[transform,box-shadow,filter] duration-200 ease-out",
@@ -235,7 +236,7 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
               ease: [0.16, 1, 0.3, 1],
             }}
             className={cn(
-              "relative mt-6 scroll-mt-24 sm:scroll-mt-28 w-full max-w-full self-stretch",
+              "relative mt-14 scroll-mt-24 sm:mt-16 sm:scroll-mt-28 lg:mt-20 w-full max-w-full self-stretch",
               hasInlineDemo && demoOpen ? "min-h-0 max-h-none" : "min-h-[min(42vh,400px)] max-h-[min(72vh,720px)]"
             )}
             id={hasInlineDemo ? "hero-demo-panel" : "hero-media"}

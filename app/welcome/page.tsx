@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { supabase } from "@/lib/supabase/client";
 import { MicDebugPanel } from "@/components/app/MicDebugPanel";
+import { TUTORIAL_VIDEO_SRC } from "@/lib/tutorial-video";
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -97,14 +98,14 @@ export default function WelcomePage() {
           >
             <div className="relative aspect-video bg-black">
               <video
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-black"
                 playsInline
-                preload="auto"
-                autoPlay
-                loop
+                preload="metadata"
+                controls
                 muted
+                controlsList="nodownload"
               >
-                <source src="/go.mp4" type="video/mp4" />
+                <source src={TUTORIAL_VIDEO_SRC} type="video/mp4" />
               </video>
             </div>
           </div>

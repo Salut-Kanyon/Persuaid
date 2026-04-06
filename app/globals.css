@@ -179,6 +179,10 @@
     top: calc(1rem + 2.5rem);
   }
 
+  html.electron-frameless:not([data-call-active="1"]) .landing-floating-cta.landing-floating-cta-with-banner {
+    top: calc(1rem + 2.5rem + 2.75rem);
+  }
+
   /* Ensure form controls match the app theme instead of browser defaults. */
   input,
   textarea,
