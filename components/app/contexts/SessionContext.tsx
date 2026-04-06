@@ -145,6 +145,12 @@ interface SessionContextValue {
    * Updated in rAF by LiveTranscription; read from ref to avoid tree-wide re-renders.
    */
   inputAudioLevelRef: React.MutableRefObject<number>;
+  /** My notes draft has text — set by NotesPanel (immediate). */
+  notesDraftHasContent: boolean;
+  setNotesDraftHasContent: (v: boolean) => void;
+  /** AI-connected layer exists after Connect to AI — set by NotesPanel. */
+  hasAiNotesLayer: boolean;
+  setHasAiNotesLayer: (v: boolean) => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -214,6 +220,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const recentSpeechRef = useRef("");
   const clearBufferRef = useRef<(() => void) | null>(null);
   const inputAudioLevelRef = useRef(0);
+  const [notesDraftHasContent, setNotesDraftHasContent] = useState(false);
+  const [hasAiNotesLayer, setHasAiNotesLayer] = useState(false);
 
   useEffect(() => {
     const stored = getStoredAudioInputId();
@@ -610,6 +618,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       diarizationMeSpeakerId,
       setDiarizationMeSpeakerId,
       inputAudioLevelRef,
+      notesDraftHasContent,
+      setNotesDraftHasContent,
+      hasAiNotesLayer,
+      setHasAiNotesLayer,
     }),
     [
       transcript,
@@ -646,6 +658,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       diarizationSpeakerIds,
       diarizationMeSpeakerId,
       resetCall,
+      notesDraftHasContent,
+      hasAiNotesLayer,
     ]
   );
 

@@ -74,17 +74,17 @@ export function ElectronFramelessChrome() {
           className="h-3 w-3 rounded-full bg-[#28c840] transition-opacity hover:opacity-90"
         />
       </div>
-      <div className="flex min-w-0 flex-1 justify-center" style={dragStyle}>
+      <div className="min-w-0 flex-1" style={dragStyle} aria-hidden />
+      <div className="flex w-14 shrink-0 items-center justify-end" style={dragStyle} aria-hidden>
         <img
           src={PERSUAID_MARK_PNG}
           alt=""
           width={22}
           height={22}
-          className="h-[22px] w-[22px] shrink-0 select-none opacity-95"
+          className="mr-0.5 h-[22px] w-[22px] shrink-0 select-none brightness-0 invert opacity-95"
           draggable={false}
         />
       </div>
-      <div className="w-14 shrink-0" style={dragStyle} aria-hidden />
     </div>
   );
 }

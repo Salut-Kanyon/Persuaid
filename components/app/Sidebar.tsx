@@ -13,11 +13,14 @@ import type { User } from "@supabase/supabase-js";
 const SIDEBAR_COLLAPSED_KEY = "persuaid_sidebar_collapsed";
 
 function getStoredCollapsed(): boolean {
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined") return true;
   try {
-    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+    const v = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    // Default collapsed (icon-only) to match the desktop-style rail UI.
+    if (v == null) return true;
+    return v === "1";
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -89,13 +92,11 @@ export function Sidebar() {
   const [user, setUser] = useState<User | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const [collapsed, setCollapsedState] = useState(false);
+  const [collapsed, setCollapsedState] = useState(getStoredCollapsed());
   /** When a call starts we collapse the sidebar; when it ends we restore this. */
   const openBeforeCallRef = useRef<boolean | null>(null);
 
-  useEffect(() => {
-    setCollapsedState(getStoredCollapsed());
-  }, []);
+  // `collapsed` is initialized from storage; no post-mount sync needed.
 
   useEffect(() => {
     if (isRecording) {

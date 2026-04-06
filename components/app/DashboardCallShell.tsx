@@ -8,6 +8,7 @@ import { Header } from "@/components/app/Header";
 import { CallSessionOverlay } from "@/components/app/CallSessionOverlay";
 import { PostCallSaveModal } from "@/components/app/PostCallSaveModal";
 import { MicDebugPanel } from "@/components/app/MicDebugPanel";
+import { DashboardOnboardingTour } from "@/components/app/DashboardOnboardingTour";
 
 export function DashboardCallShell({ children }: { children: React.ReactNode }) {
   const { isRecording } = useSession();
@@ -101,6 +102,7 @@ export function DashboardCallShell({ children }: { children: React.ReactNode }) 
       {isRecording && <CallSessionOverlay />}
       {/* Must stay mounted so it can detect recording true→false transition. */}
       <PostCallSaveModal />
+      <DashboardOnboardingTour />
     </div>
     </>
   );

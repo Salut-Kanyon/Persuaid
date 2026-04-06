@@ -20,13 +20,14 @@ interface SavedNote {
 type NotesView = "my" | "ai";
 
 export function NotesPanel() {
-  const { setNotesContext, setNotesUserPlain } = useSession();
+  const { setNotesContext, setNotesUserPlain, setNotesDraftHasContent, setHasAiNotesLayer } = useSession();
   const [myNotes, setMyNotes] = useState("");
   const [aiConnectedNotes, setAiConnectedNotes] = useState("");
   const [notesView, setNotesView] = useState<NotesView>("my");
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [connectPercent, setConnectPercent] = useState(0);
   const [connectError, setConnectError] = useState<string | null>(null);
   const [savedNotes, setSavedNotes] = useState<SavedNote[]>([]);
   const [savedSidebarOpen, setSavedSidebarOpen] = useState(true);
@@ -78,6 +79,29 @@ export function NotesPanel() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    setNotesDraftHasContent(myNotes.trim().length > 0);
+  }, [myNotes, setNotesDraftHasContent]);
+
+  useEffect(() => {
+    setHasAiNotesLayer(aiConnectedNotes.trim().length > 0);
+  }, [aiConnectedNotes, setHasAiNotesLayer]);
+
+  useEffect(() => {
+    if (!connecting) {
+      setConnectPercent(0);
+      return;
+    }
+    setConnectPercent(3);
+    const t = window.setInterval(() => {
+      setConnectPercent((p) => {
+        if (p >= 94) return 94;
+        return Math.min(94, p + 6 + Math.floor(Math.random() * 6));
+      });
+    }, 160);
+    return () => window.clearInterval(t);
+  }, [connecting]);
 
   /** Copilot APIs get AI-connected text when set; HUD and display use `notesUserPlain` (My notes only). */
   useEffect(() => {
@@ -150,6 +174,7 @@ export function NotesPanel() {
     if (!content) return;
     setConnectError(null);
     setConnecting(true);
+    let finishLater = false;
     try {
       const res = await fetchApi("/api/ai/rewrite-notes", {
         method: "POST",
@@ -158,15 +183,18 @@ export function NotesPanel() {
       });
       const data = (await res.json()) as { text?: string; error?: string };
       if (res.ok && typeof data.text === "string") {
+        setConnectPercent(100);
         setAiConnectedNotes(data.text);
         setNotesView("ai");
+        finishLater = true;
+        window.setTimeout(() => setConnecting(false), 320);
       } else {
         setConnectError(data.error || "Connect failed");
       }
     } catch {
       setConnectError("Request failed");
     } finally {
-      setConnecting(false);
+      if (!finishLater) setConnecting(false);
     }
   };
 
@@ -174,7 +202,9 @@ export function NotesPanel() {
     fileInputRef.current?.click();
   };
 
-  const handleClear = () => {
+  /** Clears My notes draft, removes the AI-connected layer, and resets session notes context. */
+  const handleDisconnectNotes = () => {
+    if (!myNotes.trim() && !aiConnectedNotes.trim()) return;
     setMyNotes("");
     setActiveSavedNoteId(null);
     invalidateAiLayer();
@@ -573,12 +603,15 @@ export function NotesPanel() {
           )}
         >
           {connecting ? (
-            <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-2 tabular-nums">
               <span
                 className="inline-block size-4 animate-spin rounded-full border-2 border-white/25 border-t-white"
                 aria-hidden
               />
-              <span className="font-medium">Connecting…</span>
+              <span className="font-medium">
+                Connecting… {connectPercent}
+                <span className="text-white/80">%</span>
+              </span>
             </span>
           ) : (
             <span className="inline-flex flex-wrap items-center justify-center gap-2">
@@ -605,12 +638,12 @@ export function NotesPanel() {
 
         <button
           type="button"
-          onClick={handleClear}
-          disabled={!myNotes.trim() && !aiConnectedNotes.trim()}
-          className="rounded-lg px-3 py-2 text-xs font-medium text-text-muted transition-colors duration-300 ease-out hover:bg-white/[0.06] hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-45"
-          title="Clear draft"
+          onClick={handleDisconnectNotes}
+          disabled={(!myNotes.trim() && !aiConnectedNotes.trim()) || connecting}
+          className="rounded-lg px-3 py-2 text-xs font-semibold text-white/95 transition-colors duration-300 ease-out hover:bg-white/[0.1] hover:text-white disabled:cursor-not-allowed disabled:text-white/35 disabled:opacity-60"
+          title="Clear all notes here: My notes draft and the AI-connected layer."
         >
-          Clear
+          Disconnect Notes
         </button>
         <button
           type="button"
@@ -628,12 +661,18 @@ export function NotesPanel() {
       </div>
       {connecting && (
         <div
-          className="h-px w-full flex-shrink-0 overflow-hidden bg-white/[0.06]"
+          className="h-1 w-full flex-shrink-0 overflow-hidden rounded-full bg-white/[0.08]"
           role="progressbar"
-          aria-label="Connecting to AI"
+          aria-valuenow={connectPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="AI loading notes"
           aria-busy="true"
         >
-          <div className="h-full w-[32%] bg-white/25 notes-ai-connect-progress" />
+          <div
+            className="h-full min-w-[8%] rounded-full bg-green-primary/90 transition-[width] duration-200 ease-out"
+            style={{ width: `${Math.max(8, connectPercent)}%` }}
+          />
         </div>
       )}
       {connectError && (
