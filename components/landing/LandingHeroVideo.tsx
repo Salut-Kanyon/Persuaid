@@ -23,7 +23,17 @@ export function LandingHeroVideo({ show }: Props) {
   const [aiStage, setAiStage] = useState<AiStage>("question");
   const [pkScrollToObjections, setPkScrollToObjections] = useState(false);
   const [pkHighlight, setPkHighlight] = useState<"pricing" | null>(null);
+  const [pkViewportH, setPkViewportH] = useState(92);
+  const [dimVideo, setDimVideo] = useState(false);
   const transcriptTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const sync = () => setPkViewportH(mq.matches ? 68 : 92);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   const questionLabel = "Question";
   const questionTextBetter =
@@ -47,6 +57,7 @@ export function LandingHeroVideo({ show }: Props) {
     if (!show) {
       setExpanded(false);
       videoRef.current?.pause();
+      setDimVideo(false);
       setAiOverlayVisible(false);
       setAiStage("question");
       setPkScrollToObjections(false);
@@ -61,8 +72,15 @@ export function LandingHeroVideo({ show }: Props) {
     return undefined;
   }, [show]);
 
-  // Landing-only mock “Live AI transcript” overlay.
-  // Appears ~3s after the landing hero becomes visible, matching the desktop transcript panel look.
+  /** Darken the hero video slightly so the transcript reads easier — 5s after the slot is visible. */
+  useEffect(() => {
+    if (!show) return;
+    setDimVideo(false);
+    const t = window.setTimeout(() => setDimVideo(true), 5000);
+    return () => window.clearTimeout(t);
+  }, [show]);
+
+  // Landing-only mock “Live AI transcript” overlay — short delays so the script reads soon after the hero video shows.
   useEffect(() => {
     transcriptTimersRef.current.forEach((t) => clearTimeout(t));
     transcriptTimersRef.current = [];
@@ -77,7 +95,7 @@ export function LandingHeroVideo({ show }: Props) {
         transcriptTimersRef.current.push(
           setTimeout(() => {
             setAiStage("thinking");
-          }, 900),
+          }, 420),
         );
 
         transcriptTimersRef.current.push(
@@ -88,11 +106,11 @@ export function LandingHeroVideo({ show }: Props) {
             transcriptTimersRef.current.push(
               setTimeout(() => {
                 setPkHighlight("pricing");
-              }, 650),
+              }, 380),
             );
-          }, 2800),
+          }, 1500),
         );
-      }, 3000),
+      }, 750),
     );
 
     return () => {
@@ -144,97 +162,114 @@ export function LandingHeroVideo({ show }: Props) {
           controls={false}
         />
 
-        {/* Mock “Live transcript” overlay above the landing hero video. */}
         <div
-          className="pointer-events-none absolute left-0 right-0 top-0 z-[3] flex justify-center px-3 pt-4 transition-opacity duration-300"
+          className="pointer-events-none absolute inset-0 z-[2] rounded-2xl bg-black transition-opacity duration-[900ms] ease-out"
+          style={{ opacity: dimVideo ? 0.42 : 0 }}
+          aria-hidden
+        />
+
+        {/* Mock “Live transcript” overlay — compact on phones so it fits the hero frame */}
+        <div
+          className="pointer-events-none absolute left-0 right-0 top-0 z-[3] flex justify-center px-1.5 pt-2 sm:px-3 sm:pt-4 transition-opacity duration-300"
           style={{ opacity: aiOverlayVisible ? 1 : 0 }}
           aria-hidden
         >
-          <div className="w-full max-w-[32rem] rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
-            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/20">
-              <img
-                src={PERSUAID_MARK_PNG}
-                alt=""
-                className="h-7 w-7 shrink-0 object-contain brightness-0 invert opacity-90"
-                width={28}
-                height={28}
-              />
-              <h3 className="text-base font-semibold text-text-primary tracking-tight">Persuaid</h3>
-              <span className="ml-auto text-[11px] font-medium text-text-dim/75">Live</span>
-            </div>
-
-            <div className="px-4 py-3 space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-dim/85">{questionLabel}</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-text-dim/70">Enter</span>
-                  <span
-                    className={cn(
-                      "inline-flex h-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 px-2.5 text-[11px] font-semibold text-white/90",
-                      aiStage === "thinking" ? "scale-[0.92] opacity-85" : "scale-100 opacity-100",
-                    )}
-                    style={{
-                      transition: "transform 180ms ease, opacity 180ms ease",
-                      transform: aiStage === "thinking" ? "translateY(1px) scale(0.92)" : "translateY(0px) scale(1)",
-                    }}
-                  >
-                    ⏎
-                  </span>
-                </div>
+          <div className="w-full max-w-[min(100%,17.5rem)] origin-top scale-[0.88] sm:max-w-[28rem] sm:scale-95 md:max-w-[32rem] md:scale-100">
+            <div className="rounded-xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden shadow-lg sm:rounded-2xl">
+              <div className="flex items-center gap-2 px-2.5 py-2 border-b border-border/20 sm:gap-2.5 sm:px-4 sm:py-3">
+                <img
+                  src={PERSUAID_MARK_PNG}
+                  alt=""
+                  className="h-5 w-5 shrink-0 object-contain brightness-0 invert opacity-90 sm:h-7 sm:w-7"
+                  width={28}
+                  height={28}
+                />
+                <h3 className="text-sm font-semibold text-text-primary tracking-tight sm:text-base">Persuaid</h3>
+                <span className="ml-auto text-[10px] font-medium text-text-dim/75 sm:text-[11px]">Live</span>
               </div>
 
-              <p className="text-[15px] font-bold text-white leading-snug">{questionTextBetter}</p>
-
-              {aiStage === "thinking" ? (
-                <p className="text-xs text-text-dim/90 italic leading-snug">AI is thinking…</p>
-              ) : null}
-
-              {aiStage === "answer" ? (
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-green-accent">Answer</p>
-                  <p className="text-sm text-text-primary/95 leading-relaxed">{answerTextBetter}</p>
-                </div>
-              ) : null}
-
-              {aiStage === "answer" ? (
-                <div className="pt-0.5">
-                  <div className="flex items-center justify-between gap-3 mb-1">
-                    <p className="text-[11px] font-semibold text-text-dim/85">From product knowledge</p>
-                    <p className="text-[11px] text-text-dim/70">
-                      {pkHighlight === "pricing" ? "Highlighted" : "Scrolling…"}
-                    </p>
-                  </div>
-
-                  <div className="h-[92px] overflow-hidden rounded-xl border border-white/10 bg-black/20">
-                    <div
-                      className="transition-transform duration-1200 ease-in-out will-change-transform"
-                      style={{ transform: pkScrollToObjections ? "translateY(-84px)" : "translateY(0)" }}
+              <div className="px-2.5 py-2 space-y-1.5 sm:px-4 sm:py-3 sm:space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-text-dim/85 sm:text-[11px] sm:tracking-[0.16em]">
+                    {questionLabel}
+                  </p>
+                  <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                    <span className="hidden text-[10px] text-text-dim/70 sm:inline">Enter</span>
+                    <span
+                      className={cn(
+                        "inline-flex h-6 items-center justify-center rounded-md border border-white/10 bg-white/5 px-2 text-[10px] font-semibold text-white/90 sm:h-7 sm:rounded-lg sm:px-2.5 sm:text-[11px]",
+                        aiStage === "thinking" ? "scale-[0.92] opacity-85" : "scale-100 opacity-100",
+                      )}
+                      style={{
+                        transition: "transform 180ms ease, opacity 180ms ease",
+                        transform: aiStage === "thinking" ? "translateY(1px) scale(0.92)" : "translateY(0px) scale(1)",
+                      }}
                     >
-                      <div className="h-[92px] px-3 py-2">
-                        <p className="mt-0.5 text-[11px] text-text-secondary leading-tight">
-                          We price by coverage + term length. Typical tiers: Starter $39/mo ($250k / 10-year), Standard
-                          $59/mo ($500k / 20-year), Plus $89/mo ($1M / 20-year). Confirm age + health class to finalize.
-                        </p>
-                      </div>
-                      <div className="h-[92px] px-3 py-2">
-                        <p className="mt-0.5 text-[11px] text-text-secondary leading-tight">
-                          <span
-                            className={cn(
-                              "inline-block rounded-md px-1.5 py-0.5 transition-colors",
-                              pkHighlight === "pricing"
-                                ? "text-white bg-emerald-400/30 ring-1 ring-emerald-300/45 shadow-[0_0_0_1px_rgba(16,185,129,0.22),0_12px_34px_rgba(16,185,129,0.16)]"
-                                : "text-text-secondary bg-transparent",
-                            )}
-                          >
-                            Starter ≈ $250k, Standard ≈ $500k, Plus ≈ $1M — then match term length and quote the closest
-                            tier.
-                          </span>
-                        </p>
+                      ⏎
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-[11px] font-bold text-white leading-[1.35] sm:text-[13px] sm:leading-snug md:text-[15px]">
+                  {questionTextBetter}
+                </p>
+
+                {aiStage === "thinking" ? (
+                  <p className="text-[10px] text-text-dim/90 italic leading-snug sm:text-xs">AI is thinking…</p>
+                ) : null}
+
+                {aiStage === "answer" ? (
+                  <div className="space-y-0.5 sm:space-y-1">
+                    <p className="text-[10px] font-medium text-green-accent sm:text-xs">Answer</p>
+                    <p className="text-[11px] text-text-primary/95 leading-relaxed sm:text-sm">{answerTextBetter}</p>
+                  </div>
+                ) : null}
+
+                {aiStage === "answer" ? (
+                  <div className="pt-0 sm:pt-0.5">
+                    <div className="mb-0.5 flex items-center justify-between gap-2 sm:mb-1 sm:gap-3">
+                      <p className="text-[9px] font-semibold text-text-dim/85 sm:text-[11px]">From product knowledge</p>
+                      <p className="text-[9px] text-text-dim/70 sm:text-[11px]">
+                        {pkHighlight === "pricing" ? "Highlighted" : "Scrolling…"}
+                      </p>
+                    </div>
+
+                    <div
+                      className="overflow-hidden rounded-lg border border-white/10 bg-black/20 sm:rounded-xl"
+                      style={{ height: pkViewportH }}
+                    >
+                      <div
+                        className="transition-transform duration-700 ease-in-out will-change-transform"
+                        style={{
+                          transform: pkScrollToObjections ? `translateY(-${pkViewportH}px)` : "translateY(0)",
+                        }}
+                      >
+                        <div className="px-2 py-1.5 sm:px-3 sm:py-2" style={{ height: pkViewportH }}>
+                          <p className="mt-0.5 text-[9px] text-text-secondary leading-tight sm:text-[11px]">
+                            We price by coverage + term length. Typical tiers: Starter $39/mo ($250k / 10-year), Standard
+                            $59/mo ($500k / 20-year), Plus $89/mo ($1M / 20-year). Confirm age + health class to finalize.
+                          </p>
+                        </div>
+                        <div className="px-2 py-1.5 sm:px-3 sm:py-2" style={{ height: pkViewportH }}>
+                          <p className="mt-0.5 text-[9px] text-text-secondary leading-tight sm:text-[11px]">
+                            <span
+                              className={cn(
+                                "inline-block rounded-md px-1 py-0.5 transition-colors sm:px-1.5 sm:py-0.5",
+                                pkHighlight === "pricing"
+                                  ? "text-white bg-emerald-400/30 ring-1 ring-emerald-300/45 shadow-[0_0_0_1px_rgba(16,185,129,0.22),0_12px_34px_rgba(16,185,129,0.16)]"
+                                  : "text-text-secondary bg-transparent",
+                              )}
+                            >
+                              Starter ≈ $250k, Standard ≈ $500k, Plus ≈ $1M — then match term length and quote the closest
+                              tier.
+                            </span>
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
             </div>
           </div>
         </div>

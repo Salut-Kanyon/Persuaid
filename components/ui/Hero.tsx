@@ -84,10 +84,10 @@ export function Hero({ demoOpen = false, onDemoOpenChange, children, landing = f
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Stagger subtitle and CTA after word-by-word title finishes
+  // Stagger subtitle, CTA, and hero video — slightly earlier so the transcript demo starts sooner
   useEffect(() => {
-    const t1 = setTimeout(() => setShowSubtitle(true), 1200);
-    const t2 = setTimeout(() => setShowCTA(true), 1650);
+    const t1 = setTimeout(() => setShowSubtitle(true), 900);
+    const t2 = setTimeout(() => setShowCTA(true), 1100);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);

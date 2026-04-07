@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { PERSUAID_MARK_PNG } from "@/lib/branding";
 import { supabase } from "@/lib/supabase/client";
 import { MicDebugPanel } from "@/components/app/MicDebugPanel";
-import { TUTORIAL_VIDEO_SRC } from "@/lib/tutorial-video";
+import { WELCOME_VIDEO_SRC } from "@/lib/tutorial-video";
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -85,7 +85,7 @@ export default function WelcomePage() {
           <span className="text-green-primary">every call</span>
         </motion.h1>
 
-        {/* Tutorial video (same asset as /tutorial) */}
+        {/* Welcome preview video */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -105,7 +105,7 @@ export default function WelcomePage() {
                 muted
                 controlsList="nodownload"
               >
-                <source src={TUTORIAL_VIDEO_SRC} type="video/mp4" />
+                <source src={WELCOME_VIDEO_SRC} type="video/mp4" />
               </video>
             </div>
           </div>

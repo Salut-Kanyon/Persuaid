@@ -647,18 +647,18 @@ function NotesToActionInteractiveDemo() {
 
   return (
     <div>
-      <div className="mt-10 md:mt-14 text-center mb-10">
-        <h2 className="text-4xl sm:text-[3.25rem] font-semibold tracking-tight text-text-primary">
+      <div className="mt-8 text-center mb-6 sm:mt-10 sm:mb-10 md:mt-14">
+        <h2 className="text-[1.65rem] leading-[1.12] sm:text-4xl sm:leading-tight md:text-[3.25rem] font-semibold tracking-tight text-text-primary px-1">
           Make your notes useful for the first time
         </h2>
-        <p className="mt-3 text-sm sm:text-[15px] text-white/60 max-w-2xl mx-auto leading-relaxed">
+        <p className="mt-2.5 text-[13px] sm:text-sm md:text-[15px] text-white/60 max-w-2xl mx-auto leading-relaxed px-2 sm:px-0">
           Not stored. Not summarized. Actually usable in the moment.
         </p>
 
         <button
           type="button"
           onClick={() => setShowWorkflow((s) => !s)}
-          className="mt-4 inline-flex items-center gap-2 text-[13px] sm:text-[14px] font-medium text-white/75 hover:text-white/90 underline-offset-4 hover:underline transition-colors"
+          className="mt-3 sm:mt-4 inline-flex items-center gap-2 text-[12px] sm:text-[14px] font-medium text-white/75 hover:text-white/90 underline-offset-4 hover:underline transition-colors"
           aria-expanded={showWorkflow}
         >
           How does this actually work?
@@ -670,7 +670,7 @@ function NotesToActionInteractiveDemo() {
           </span>
         </button>
 
-        <div className="mt-8 mx-auto w-[min(26rem,92%)] h-px bg-white/10" aria-hidden />
+        <div className="mt-6 sm:mt-8 mx-auto w-[min(26rem,92%)] h-px bg-white/10" aria-hidden />
       </div>
 
       <AnimatePresence>
@@ -681,23 +681,25 @@ function NotesToActionInteractiveDemo() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
-            className="mx-auto mb-10 max-w-5xl px-4"
+            className="mx-auto mb-6 max-w-5xl px-3 sm:mb-10 sm:px-4"
           >
             <div ref={scienceRef} className="scroll-mt-24">
-              <div className="rounded-3xl border border-white/[0.07] bg-[color:var(--bg-near-black)] px-5 py-5 sm:px-6 sm:py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-text-dim/80">
+              <div className="rounded-2xl border border-white/[0.07] bg-[color:var(--bg-near-black)] px-3 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:rounded-3xl sm:px-6 sm:py-6">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-text-dim/80 sm:text-[11px] sm:tracking-[0.16em]">
                   From messy notes to usable intelligence
                 </p>
-                <div className="mt-3 space-y-2 text-[14px] leading-relaxed text-text-secondary/90">
+                <div className="mt-2 space-y-1.5 text-[13px] leading-snug text-text-secondary/90 sm:mt-3 sm:space-y-2 sm:text-[14px] sm:leading-relaxed">
                   <p>Persuaid doesn’t store your notes.</p>
                   <p className="text-white/80">It interprets them.</p>
                 </div>
 
-                <div className="mt-6 rounded-3xl border border-white/[0.07] bg-[#0d0d0f] overflow-hidden">
+                <div className="mt-4 rounded-2xl border border-white/[0.07] bg-[#0d0d0f] overflow-hidden sm:mt-6 sm:rounded-3xl">
                   <div className="grid sm:grid-cols-2">
-                    <div className="p-4 border-b border-white/[0.08] sm:border-b-0 sm:border-r sm:border-white/[0.08]">
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/85">Raw notes</p>
-                      <div className="mt-3 space-y-2 text-[13px] leading-relaxed text-white/60">
+                    <div className="p-3 border-b border-white/[0.08] sm:border-b-0 sm:border-r sm:border-white/[0.08] sm:p-4">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-text-dim/85 sm:text-[11px] sm:tracking-[0.14em]">
+                        Raw notes
+                      </p>
+                      <div className="mt-2 space-y-1.5 text-[11px] leading-snug text-white/60 sm:mt-3 sm:space-y-2 sm:text-[13px] sm:leading-relaxed">
                         <p>Customer: 42-year-old, married, 2 kids, income protection</p>
                         <p>Health: non-smoker, no major conditions</p>
                         <p>Coverage: $500k · 20-year term</p>
@@ -707,20 +709,30 @@ function NotesToActionInteractiveDemo() {
                         <p style={{ filter: "blur(2px)", opacity: 0.55 }}>Objection: value first, numbers second</p>
                       </div>
                     </div>
-                    <div className="p-4">
+                    <div className="p-3 sm:p-4">
                       <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/70">AI Notes</p>
-                      <div className="mt-3 space-y-3">
-                        <div className="rounded-2xl border border-white/[0.08] bg-[#121214] px-3 py-3">
-                          <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/80">Pricing logic</p>
-                          <p className="mt-1 text-[13px] text-text-secondary/90">Underwriting tier → monthly band (coverage + term)</p>
+                      <div className="mt-2 space-y-2 sm:mt-3 sm:space-y-3">
+                        <div className="rounded-xl border border-white/[0.08] bg-[#121214] px-2.5 py-2 sm:rounded-2xl sm:px-3 sm:py-3">
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-text-dim/80 sm:text-[11px] sm:tracking-[0.14em]">
+                            Pricing logic
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-text-secondary/90 sm:mt-1 sm:text-[13px]">
+                            Underwriting tier → monthly band (coverage + term)
+                          </p>
                         </div>
-                        <div className="rounded-2xl border border-white/[0.08] bg-[#121214] px-3 py-3">
-                          <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/80">Suggested narrative</p>
-                          <p className="mt-1 text-[13px] text-text-secondary/90">Lead with protection, then introduce price</p>
+                        <div className="rounded-xl border border-white/[0.08] bg-[#121214] px-2.5 py-2 sm:rounded-2xl sm:px-3 sm:py-3">
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-text-dim/80 sm:text-[11px] sm:tracking-[0.14em]">
+                            Suggested narrative
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-text-secondary/90 sm:mt-1 sm:text-[13px]">
+                            Lead with protection, then introduce price
+                          </p>
                         </div>
-                        <div className="rounded-2xl border border-white/[0.08] bg-[#121214] px-3 py-3">
-                          <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/80">Next line</p>
-                          <p className="mt-1 text-[13px] text-text-secondary/90">
+                        <div className="rounded-xl border border-white/[0.08] bg-[#121214] px-2.5 py-2 sm:rounded-2xl sm:px-3 sm:py-3">
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-text-dim/80 sm:text-[11px] sm:tracking-[0.14em]">
+                            Next line
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-text-secondary/90 sm:mt-1 sm:text-[13px]">
                             “Let’s focus on protecting income first—then I’ll show where this typically lands monthly based on your profile.”
                           </p>
                         </div>
@@ -736,7 +748,7 @@ function NotesToActionInteractiveDemo() {
 
       <div
         ref={containerRef}
-        className="relative mx-auto max-w-6xl mt-8 h-[500px] rounded-3xl border border-white/[0.07] overflow-hidden bg-[color:var(--bg-near-black)] shadow-[0_24px_80px_-48px_rgba(0,0,0,0.85)]"
+        className="relative mx-auto max-w-6xl mt-5 h-[min(42vh,360px)] rounded-2xl border border-white/[0.07] overflow-hidden bg-[color:var(--bg-near-black)] shadow-[0_24px_80px_-48px_rgba(0,0,0,0.85)] sm:mt-8 sm:h-[min(52vh,440px)] sm:rounded-3xl md:h-[500px]"
         style={{
           background:
             "linear-gradient(180deg, #131315 0%, var(--bg-near-black) 45%, #060606 100%)",
@@ -770,7 +782,7 @@ function NotesToActionInteractiveDemo() {
 
           {/* Vertical divider */}
         <div
-          className="absolute top-10 bottom-10 z-20"
+          className="absolute top-8 bottom-8 z-20 sm:top-10 sm:bottom-10"
           style={{ left: `${x * 100}%`, transform: "translateX(-50%)" }}
           aria-hidden
         >
@@ -788,9 +800,9 @@ function NotesToActionInteractiveDemo() {
             }}
             aria-hidden
           >
-          <div className="flex items-center justify-center gap-2 px-3.5 py-2">
-            <span className="text-[12px] font-semibold text-white/55">&lt;</span>
-            <span className="text-[12px] font-semibold text-white/55">&gt;</span>
+          <div className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:gap-2 sm:px-3.5 sm:py-2">
+            <span className="text-[10px] font-semibold text-white/55 sm:text-[12px]">&lt;</span>
+            <span className="text-[10px] font-semibold text-white/55 sm:text-[12px]">&gt;</span>
           </div>
         </div>
 
@@ -858,7 +870,7 @@ function NotesToActionInteractiveDemo() {
           {/* LEFT: Raw Notes */}
           <div className="absolute inset-y-0 left-0 w-1/2 overflow-hidden">
             <div
-              className="h-full w-full p-7 sm:p-10 transition-[opacity,filter,transform] duration-300"
+              className="h-full w-full p-3 transition-[opacity,filter,transform] duration-300 sm:p-6 md:p-10"
               style={{
                 opacity: leftOpacity,
                 filter: `blur(${leftBlur}px) saturate(92%)`,
@@ -868,16 +880,18 @@ function NotesToActionInteractiveDemo() {
               <div className="h-full rounded-2xl border border-white/[0.08] bg-[#0e0e10] relative overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/30 to-transparent" aria-hidden />
 
-                <div className="relative h-full flex flex-col px-5 pt-5 pb-4">
-                  <div className="flex items-start justify-between gap-3">
+                <div className="relative h-full flex flex-col px-3 pt-3 pb-2 sm:px-5 sm:pt-5 sm:pb-4">
+                  <div className="flex items-start justify-between gap-2 sm:gap-3">
                     <div>
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/85">Raw notes</p>
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-text-dim/85 sm:text-[11px] sm:tracking-[0.14em]">
+                        Raw notes
+                      </p>
                     </div>
-                    <div className="mt-1 h-2.5 w-2.5 rounded-full bg-white/35" aria-hidden />
+                    <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-white/35 sm:mt-1 sm:h-2.5 sm:w-2.5" aria-hidden />
                   </div>
 
-                  <div className="mt-5 flex-1 overflow-hidden">
-                    <ul className="space-y-2.5 text-[13px] leading-relaxed text-text-secondary/85">
+                  <div className="mt-3 flex-1 overflow-hidden sm:mt-5">
+                    <ul className="space-y-1.5 text-[11px] leading-snug text-text-secondary/85 sm:space-y-2.5 sm:text-[13px] sm:leading-relaxed">
                       {rawNotes.map((l, i) => (
                         <li
                           key={l}
@@ -905,24 +919,26 @@ function NotesToActionInteractiveDemo() {
           {/* RIGHT: Persuaid */}
           <div className="absolute inset-y-0 right-0 w-1/2 overflow-hidden">
             <div
-              className="h-full w-full p-6 sm:p-8 transition-[opacity,filter,transform] duration-300"
+              className="h-full w-full p-3 transition-[opacity,filter,transform] duration-300 sm:p-6 md:p-8"
               style={{
                 opacity: rightOpacity,
                 filter: `blur(${rightBlur}px) saturate(105%)`,
                 transform: "scale(1)",
               }}
             >
-                <div className="h-full rounded-2xl border border-white/[0.08] border-t-emerald-500/20 bg-[#0e0e10] overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.04),inset_0_-24px_48px_-32px_rgba(26,157,120,0.06)]">
-                <div className="relative h-full px-4 py-4 flex flex-col">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/75">AI Notes</p>
-                      <p className="mt-2 text-[13px] text-text-secondary/72">
+                <div className="h-full rounded-xl border border-white/[0.08] border-t-emerald-500/20 bg-[#0e0e10] overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.04),inset_0_-24px_48px_-32px_rgba(26,157,120,0.06)] sm:rounded-2xl">
+                <div className="relative h-full px-2.5 py-2.5 flex flex-col sm:px-4 sm:py-4">
+                  <div className="flex items-start justify-between gap-2 sm:gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-emerald-200/75 sm:text-[11px] sm:tracking-[0.14em]">
+                        AI Notes
+                      </p>
+                      <p className="mt-1 text-[11px] text-text-secondary/72 sm:mt-2 sm:text-[13px]">
                         Structured, analyzed,{" "}
                         <span className="text-emerald-200/80">ready to act</span>
                       </p>
                     </div>
-                    <div className="mt-1 rounded-full border border-emerald-500/25 bg-emerald-500/[0.09] px-3 py-1 text-[11px] font-medium text-emerald-200/90">
+                    <div className="mt-0.5 shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/[0.09] px-2 py-0.5 text-[9px] font-medium text-emerald-200/90 sm:mt-1 sm:px-3 sm:py-1 sm:text-[11px]">
                       Live
                     </div>
                   </div>
@@ -932,11 +948,11 @@ function NotesToActionInteractiveDemo() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={transformStage >= 1 ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                     transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                    className="mt-4"
+                    className="mt-2 sm:mt-4"
                   >
-                    <div className="relative overflow-hidden rounded-xl border border-white/[0.08] border-l-emerald-500/35 bg-[#121214] p-4">
+                    <div className="relative overflow-hidden rounded-lg border border-white/[0.08] border-l-emerald-500/35 bg-[#121214] p-2.5 sm:rounded-xl sm:p-4">
                       <Shimmer className="opacity-25" />
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/65">
+                      <p className="text-[9px] uppercase tracking-[0.12em] text-emerald-200/65 sm:text-[11px] sm:tracking-[0.14em]">
                         Analyzing your notes<span className="inline-flex w-[1.25em] justify-start">
                           <motion.span
                             aria-hidden
@@ -947,7 +963,7 @@ function NotesToActionInteractiveDemo() {
                           </motion.span>
                         </span>
                       </p>
-                      <p className="mt-2 text-[13px] text-text-secondary/80 leading-relaxed">
+                      <p className="mt-1.5 text-[11px] text-text-secondary/80 leading-snug sm:mt-2 sm:text-[13px] sm:leading-relaxed">
                         Persuaid identifies{" "}
                         <span className="rounded bg-emerald-500/[0.12] px-1 text-emerald-100/88">underwriting signals</span>,{" "}
                         <span className="rounded bg-emerald-500/[0.12] px-1 text-emerald-100/88">pricing anchors</span>, and{" "}
@@ -958,7 +974,7 @@ function NotesToActionInteractiveDemo() {
                   </motion.div>
 
                   {/* Step 2: polished modules */}
-                  <div className="mt-4 space-y-2 overflow-hidden">
+                  <div className="mt-2 space-y-1.5 overflow-hidden sm:mt-4 sm:space-y-2">
                     {transformStage >= 2 ? (
                       <>
                         <motion.div
@@ -966,16 +982,18 @@ function NotesToActionInteractiveDemo() {
                           animate={visibleBlocks.pricing ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                           transition={{ duration: 0.42 }}
                         >
-                      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] border-l-emerald-500/30 bg-[#121214] px-4 py-4">
+                      <div className="relative overflow-hidden rounded-xl border border-white/[0.08] border-l-emerald-500/30 bg-[#121214] px-2.5 py-2.5 sm:rounded-2xl sm:px-4 sm:py-4">
                         <Shimmer className="opacity-20" />
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-emerald-400/45 shadow-[0_0_8px_rgba(52,211,153,0.25)]" aria-hidden />
-                            <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/70">Pricing logic</p>
+                        <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-3">
+                          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400/45 shadow-[0_0_8px_rgba(52,211,153,0.25)] sm:h-2 sm:w-2" aria-hidden />
+                            <p className="text-[9px] uppercase tracking-[0.12em] text-emerald-200/70 sm:text-[11px] sm:tracking-[0.14em]">
+                              Pricing logic
+                            </p>
                           </div>
-                          <span className="text-[11px] text-emerald-200/45">Tiered underwriting</span>
+                          <span className="text-[9px] text-emerald-200/45 sm:text-[11px]">Tiered underwriting</span>
                         </div>
-                        <p className="mt-2 text-[14px] text-text-secondary/90 leading-relaxed">
+                        <p className="mt-1.5 text-[12px] text-text-secondary/90 leading-snug sm:mt-2 sm:text-[14px] sm:leading-relaxed">
                           Underwriting determines pricing tier:
                           <span className="block mt-2 text-text-secondary/85">
                             - Age<br />
@@ -995,12 +1013,14 @@ function NotesToActionInteractiveDemo() {
                           animate={visibleBlocks.range ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                           transition={{ duration: 0.42 }}
                         >
-                          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121214] px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full bg-white/20" aria-hidden />
-                              <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/90">Estimated range</p>
+                          <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#121214] px-2.5 py-2.5 sm:rounded-2xl sm:px-4 sm:py-4">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <span className="h-1.5 w-1.5 rounded-full bg-white/20 sm:h-2 sm:w-2" aria-hidden />
+                              <p className="text-[9px] uppercase tracking-[0.12em] text-text-dim/90 sm:text-[11px] sm:tracking-[0.14em]">
+                                Estimated range
+                              </p>
                             </div>
-                            <p className="mt-2 text-[14px] text-text-secondary/90 leading-relaxed">
+                            <p className="mt-1.5 text-[12px] text-text-secondary/90 leading-snug sm:mt-2 sm:text-[14px] sm:leading-relaxed">
                               $500k · 20-year term
                               <br />→ typically mid-range monthly band
                               <br />
@@ -1014,12 +1034,14 @@ function NotesToActionInteractiveDemo() {
                           animate={visibleBlocks.opt ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                           transition={{ duration: 0.42 }}
                         >
-                          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121214] px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full bg-white/20" aria-hidden />
-                              <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/90">Optimization insight</p>
+                          <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#121214] px-2.5 py-2.5 sm:rounded-2xl sm:px-4 sm:py-4">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <span className="h-1.5 w-1.5 rounded-full bg-white/20 sm:h-2 sm:w-2" aria-hidden />
+                              <p className="text-[9px] uppercase tracking-[0.12em] text-text-dim/90 sm:text-[11px] sm:tracking-[0.14em]">
+                                Optimization insight
+                              </p>
                             </div>
-                            <p className="mt-2 text-[14px] text-text-secondary/90 leading-relaxed">
+                            <p className="mt-1.5 text-[12px] text-text-secondary/90 leading-snug sm:mt-2 sm:text-[14px] sm:leading-relaxed">
                               <span className="rounded bg-white/[0.08] px-1 text-white/90">Preferred class</span> can
                               significantly reduce cost
                               <br />
@@ -1033,12 +1055,14 @@ function NotesToActionInteractiveDemo() {
                           animate={visibleBlocks.say ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                           transition={{ duration: 0.42 }}
                         >
-                          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121214] px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full bg-white/20" aria-hidden />
-                              <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/90">How to say it</p>
+                          <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#121214] px-2.5 py-2.5 sm:rounded-2xl sm:px-4 sm:py-4">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <span className="h-1.5 w-1.5 rounded-full bg-white/20 sm:h-2 sm:w-2" aria-hidden />
+                              <p className="text-[9px] uppercase tracking-[0.12em] text-text-dim/90 sm:text-[11px] sm:tracking-[0.14em]">
+                                How to say it
+                              </p>
                             </div>
-                            <p className="mt-2 text-[14px] text-text-secondary/90 leading-relaxed whitespace-pre-line">
+                            <p className="mt-1.5 text-[12px] text-text-secondary/90 leading-snug whitespace-pre-line sm:mt-2 sm:text-[14px] sm:leading-relaxed">
                               “Let’s focus on protecting income first —
                               then I’ll show you where this typically lands monthly based on your profile.”
                             </p>
@@ -1050,12 +1074,14 @@ function NotesToActionInteractiveDemo() {
                           animate={visibleBlocks.confirm ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                           transition={{ duration: 0.42 }}
                         >
-                          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121214] px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full bg-white/20" aria-hidden />
-                              <p className="text-[11px] uppercase tracking-[0.14em] text-text-dim/90">What to confirm</p>
+                          <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#121214] px-2.5 py-2.5 sm:rounded-2xl sm:px-4 sm:py-4">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <span className="h-1.5 w-1.5 rounded-full bg-white/20 sm:h-2 sm:w-2" aria-hidden />
+                              <p className="text-[9px] uppercase tracking-[0.12em] text-text-dim/90 sm:text-[11px] sm:tracking-[0.14em]">
+                                What to confirm
+                              </p>
                             </div>
-                            <p className="mt-2 text-[14px] text-text-secondary/90 leading-relaxed">
+                            <p className="mt-1.5 text-[12px] text-text-secondary/90 leading-snug sm:mt-2 sm:text-[14px] sm:leading-relaxed">
                               Age
                               <br />
                               <span className="rounded bg-white/[0.08] px-1 text-white/85">Health class</span>
