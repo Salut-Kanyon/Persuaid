@@ -14,6 +14,9 @@ const electronEnv = {
   ...process.env,
   DESKTOP_DEV: "1",
 };
+// Dev must hit same-origin Next dev APIs (not production). Packaged builds bake NEXT_PUBLIC_API_BASE_URL,
+// but during `desktop:dev` we explicitly clear it so /api/* is served by localhost:<port>.
+delete electronEnv.NEXT_PUBLIC_API_BASE_URL;
 if (process.env.ELECTRON_OPEN_DEVTOOLS === "1") {
   electronEnv.ELECTRON_OPEN_DEVTOOLS = "1";
 }
@@ -62,7 +65,7 @@ function startElectron(port) {
 
 const nextProc = spawn("npx", ["next", "dev"], {
   cwd: root,
-  env: process.env,
+  env: { ...process.env, NEXT_PUBLIC_API_BASE_URL: "" },
   stdio: ["inherit", "pipe", "pipe"],
   shell: process.platform === "win32",
 });

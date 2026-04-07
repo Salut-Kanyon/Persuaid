@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useSession } from "@/components/app/contexts/SessionContext";
 import { cn } from "@/lib/utils";
@@ -39,7 +39,6 @@ export function NotesPanel() {
   const [renameError, setRenameError] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<SavedNote | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refreshSavedNotes = useCallback(async () => {
     try {
@@ -198,10 +197,6 @@ export function NotesPanel() {
     }
   };
 
-  const handleLoadFile = () => {
-    fileInputRef.current?.click();
-  };
-
   /** Clears My notes draft, removes the AI-connected layer, and resets session notes context. */
   const handleDisconnectNotes = () => {
     if (!myNotes.trim() && !aiConnectedNotes.trim()) return;
@@ -215,21 +210,6 @@ export function NotesPanel() {
     } catch {
       // ignore
     }
-  };
-
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = reader.result;
-      if (typeof text === "string") {
-        invalidateAiLayer();
-        setMyNotes(text);
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
   };
 
   const selectSavedNote = (note: SavedNote) => {
@@ -573,22 +553,6 @@ export function NotesPanel() {
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <div className="flex flex-shrink-0 flex-wrap items-center gap-2 border-b border-white/[0.06] px-4 py-2.5 sm:px-5">
-        <input
-          id="notes-import-file"
-          name="notesImportFile"
-          ref={fileInputRef}
-          type="file"
-          accept=".txt,.md,text/plain,text/markdown,text/*"
-          className="hidden"
-          onChange={onFileChange}
-        />
-        <button
-          type="button"
-          onClick={handleLoadFile}
-          className="rounded-lg bg-white/[0.06] px-3 py-1.5 text-xs font-normal text-text-primary transition-colors duration-300 ease-out hover:bg-white/[0.09]"
-        >
-          Load from file
-        </button>
         <button
           type="button"
           onClick={handleConnectWithAi}

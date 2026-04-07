@@ -358,8 +358,8 @@ export default function NotesPage() {
 
       {/* Create/Edit modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-          <div className="bg-background-elevated border border-border rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60">
+          <div className="bg-background-elevated border border-border rounded-2xl shadow-xl w-full max-w-5xl min-h-[min(85vh,720px)] max-h-[92vh] flex flex-col">
             <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
               <h2 className="text-lg font-semibold text-text-primary">
                 {editingNote ? "Edit note" : "New note"}
@@ -374,7 +374,7 @@ export default function NotesPage() {
                 </svg>
               </button>
             </div>
-            <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-5">
+            <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col overflow-hidden p-6 sm:p-8 space-y-5">
               <div>
                 <label htmlFor="note-form-title" className="block text-xs font-medium text-text-muted mb-1.5">
                   Title (optional)
@@ -390,7 +390,7 @@ export default function NotesPage() {
                   className="w-full px-4 py-2.5 rounded-xl bg-background-surface/60 border border-border text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/40 text-sm"
                 />
               </div>
-              <div>
+              <div className="flex min-h-0 flex-1 flex-col">
                 <label htmlFor="note-form-content" className="block text-xs font-medium text-text-muted mb-1.5">
                   Content
                 </label>
@@ -401,11 +401,11 @@ export default function NotesPage() {
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
                   placeholder="Note content…"
-                  rows={4}
-                  className="w-full px-4 py-2.5 rounded-xl bg-background-surface/60 border border-border text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/40 text-sm resize-y min-h-[100px]"
+                  rows={16}
+                  className="min-h-[min(55vh,420px)] w-full flex-1 resize-y rounded-xl border border-border bg-background-surface/60 px-4 py-3 text-sm text-text-primary placeholder-text-dim focus:outline-none focus:ring-2 focus:ring-green-primary/40"
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex shrink-0 justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={closeModal}
